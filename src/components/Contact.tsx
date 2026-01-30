@@ -1,13 +1,10 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Github, Linkedin, MapPin } from 'lucide-react';
-import { useInView } from '../hooks/useInView';
-import { useCVData } from '../context/CVDataContext';
-import './Contact.css';
+import { useApp, useInView } from '../context/AppContext';
 
-const Contact: React.FC = () => {
+const Contact = () => {
   const { ref, isInView } = useInView({ threshold: 0.3 });
-  const { cvData, isFreelance } = useCVData();
+  const { cvData, isFreelance } = useApp();
   const { hero } = cvData;
 
   return (

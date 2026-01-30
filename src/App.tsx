@@ -1,6 +1,5 @@
 import React from 'react';
-import { ThemeProvider } from './context/ThemeContext';
-import { CVDataProvider } from './context/CVDataContext';
+import { AppProvider } from './context/AppContext';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import About from './components/About';
@@ -10,25 +9,21 @@ import Skills from './components/Skills';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 
-const App: React.FC = () => {
-  return (
-    <ThemeProvider>
-      <CVDataProvider>
-        <div className="app">
-          <Navbar />
-          <main>
-            <Hero />
-            <About />
-            <Experience />
-            <Projects />
-            <Skills />
-            <Contact />
-          </main>
-          <Footer />
-        </div>
-      </CVDataProvider>
-    </ThemeProvider>
-  );
-};
+const App: React.FC = () => (
+  <AppProvider>
+    <div className="app">
+      <Navbar />
+      <main>
+        <Hero />
+        <About />
+        <Experience />
+        <Projects />
+        <Skills />
+        <Contact />
+      </main>
+      <Footer />
+    </div>
+  </AppProvider>
+);
 
 export default App;

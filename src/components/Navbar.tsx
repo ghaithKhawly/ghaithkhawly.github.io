@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Menu, X, Moon, Sun } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
-import './Navbar.css';
+import { useApp } from '../context/AppContext';
 
 const navLinks = [
   { href: '#about', label: 'About' },
@@ -12,15 +11,13 @@ const navLinks = [
   { href: '#contact', label: 'Contact' },
 ];
 
-const Navbar: React.FC = () => {
+const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useApp();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -52,36 +49,22 @@ const Navbar: React.FC = () => {
         </div>
 
         <div className="nav-actions">
-          <button
-            className="theme-toggle"
-            onClick={toggleTheme}
-            aria-label="Toggle theme"
-          >
+          <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </button>
-          
-          <button
-            className="mobile-menu-btn"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
+          <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-label="Toggle menu">
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <motion.div
         className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}
         initial={false}
         animate={isMobileMenuOpen ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
       >
-        {navLinks.map((link) => (
-          <a
-            key={link.href}
-            href={link.href}
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
+        {navLinks.map(link => (
+          <a key={link.href} href={link.href} onClick={() => setIsMobileMenuOpen(false)}>
             {link.label}
           </a>
         ))}

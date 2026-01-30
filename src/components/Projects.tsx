@@ -1,9 +1,7 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ExternalLink, Github, Folder } from 'lucide-react';
-import { useInView } from '../hooks/useInView';
-import { useCVData } from '../context/CVDataContext';
-import './Projects.css';
+import { useApp, useInView } from '../context/AppContext';
 
 interface ProjectItem {
   title: string;
@@ -15,9 +13,9 @@ interface ProjectItem {
   image?: string;
 }
 
-const Projects: React.FC = () => {
+const Projects = () => {
   const { ref, isInView } = useInView({ threshold: 0.1 });
-  const { cvData, isFulltime } = useCVData();
+  const { cvData, isFulltime } = useApp();
 
   // Map CV projects to component format
   const projects: ProjectItem[] = useMemo(() => 

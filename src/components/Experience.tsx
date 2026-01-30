@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useInView } from '../hooks/useInView';
-import { useCVData } from '../context/CVDataContext';
-import './Experience.css';
+import { useApp, useInView } from '../context/AppContext';
 
-const Experience: React.FC = () => {
+const Experience = () => {
   const { ref, isInView } = useInView({ threshold: 0.2 });
-  const { cvData } = useCVData();
+  const { cvData } = useApp();
   const experiences = cvData.experiences;
   const [activeIndex, setActiveIndex] = useState(0);
 

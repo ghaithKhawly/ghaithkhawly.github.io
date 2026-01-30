@@ -1,13 +1,11 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowDown, Github, Linkedin, Mail } from 'lucide-react';
-import { useCVData } from '../context/CVDataContext';
-import './Hero.css';
+import { useApp } from '../context/AppContext';
 
-const Hero: React.FC = () => {
-  const { cvData } = useCVData();
+const Hero = () => {
+  const { cvData } = useApp();
   const { hero } = cvData;
-  
+
   return (
     <section id="hero" className="hero">
       <div className="hero-container">

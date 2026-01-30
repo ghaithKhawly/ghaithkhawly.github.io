@@ -1,12 +1,10 @@
-import React from 'react';
 import { Github, Linkedin, Mail } from 'lucide-react';
-import { useCVData } from '../context/CVDataContext';
-import './Footer.css';
+import { useApp } from '../context/AppContext';
 
-const Footer: React.FC = () => {
-  const { cvData } = useCVData();
+const Footer = () => {
+  const { cvData } = useApp();
   const { hero } = cvData;
-  
+
   return (
     <footer className="footer">
       <div className="footer-container">

@@ -1,15 +1,11 @@
-import React from 'react';
 import { motion } from 'framer-motion';
-import { useInView } from '../hooks/useInView';
-import { useCVData } from '../context/CVDataContext';
-import './About.css';
+import { useApp, useInView } from '../context/AppContext';
 
-const About: React.FC = () => {
+const About = () => {
   const { ref, isInView } = useInView({ threshold: 0.3 });
-  const { cvData } = useCVData();
+  const { cvData } = useApp();
   const { hero, education, skillCategories } = cvData;
-  
-  // Get first 6 skills from Frontend and Backend categories
+
   const techSkills = skillCategories
     .filter(cat => ['Frontend', 'Backend'].includes(cat.title))
     .flatMap(cat => cat.skills)
