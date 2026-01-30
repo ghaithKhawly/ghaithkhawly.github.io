@@ -1,0 +1,144 @@
+{
+  "cvType": "freelance",
+  "cvSource": "cv-freelance.tex",
+  "hero": {
+    "name": "Ghaith Khawly",
+    "firstName": "Ghaith",
+    "lastName": "Khawly",
+    "title": "Full-Stack Developer",
+    "location": "Damascus, Syria",
+    "email": "ghaithk04@gmail.com",
+    "github": "https://github.com/ghaithKhawly",
+    "linkedin": "https://linkedin.com/in/ghaith-khawly-dev",
+    "phone": "+963 948597621"
+  },
+  "about": "I build reliable web and mobile applications with clean, maintainable code. With experience in both frontend and backend development, I can handle full-stack projects from concept to deployment.",
+  "whatIOffer": "I build reliable web and mobile applications with clean, maintainable code. With experience in both frontend and backend development, I can handle full-stack projects from concept to deployment.",
+  "services": [
+    {
+      "title": "Web Development",
+      "description": "React.js applications, responsive websites, admin dashboards"
+    },
+    {
+      "title": "Mobile Apps",
+      "description": "React Native cross-platform mobile applications"
+    },
+    {
+      "title": "Backend/API",
+      "description": "REST APIs using Node.js, FastAPI, or C\\# .NET"
+    },
+    {
+      "title": "Database",
+      "description": "PostgreSQL database design and optimization"
+    }
+  ],
+  "experiences": [
+    {
+      "company": "Titan",
+      "position": "Full-Stack Developer",
+      "period": "June 2025 - Present",
+      "description": [
+        "Building and maintaining production React applications with DevExpress",
+        "Resolving bugs and improving system reliability in enterprise software",
+        "Code reviews and quality assurance for stable releases"
+      ],
+      "technologies": [
+        "React",
+        "DevExpress"
+      ]
+    },
+    {
+      "company": "Titan",
+      "position": "Front-end Developer",
+      "period": "Aug 2024 - June 2025",
+      "description": [
+        "Built frontend components and integrated APIs for enterprise clients",
+        "Set up CI/CD pipelines with GitHub Actions and Azure DevOps"
+      ],
+      "technologies": [
+        "Git",
+        "GitHub",
+        "Azure",
+        "API",
+        "CI/CD"
+      ]
+    }
+  ],
+  "skillCategories": [
+    {
+      "title": "Frontend",
+      "skills": [
+        "React.js",
+        "React Native",
+        "JavaScript",
+        "HTML5",
+        "CSS3"
+      ]
+    },
+    {
+      "title": "Backend",
+      "skills": [
+        "Node.js",
+        "FastAPI (Python)",
+        "C# .NET Core",
+        "DevExpress"
+      ]
+    },
+    {
+      "title": "Database",
+      "skills": [
+        "PostgreSQL"
+      ]
+    },
+    {
+      "title": "DevOps",
+      "skills": [
+        "Git",
+        "GitHub Actions",
+        "Azure DevOps",
+        "Google Cloud Platform"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "title": "Medical App",
+      "description": "Backend development for healthcare application using FastAPI and PostgreSQL. Built scalable architecture for medical data management.",
+      "technologies": [
+        "FastAPI",
+        "PostgreSQL",
+        "API",
+        "SQL"
+      ],
+      "featured": true
+    },
+    {
+      "title": "Savings Tracker",
+      "description": "React Native mobile app for personal finance tracking. Frontend development showcasing mobile UI/UX skills.",
+      "technologies": [
+        "React",
+        "React Native"
+      ],
+      "featured": true
+    }
+  ],
+  "education": {
+    "period": "2022 - 2027",
+    "degree": "B.Sc. Computer Science",
+    "institution": "Arab International University",
+    "location": "Damascus",
+    "gpa": "",
+    "description": "Currently in 4th year, focusing on software engineering and web development."
+  },
+  "languages": [
+    {
+      "language": "Arabic",
+      "level": "Native"
+    },
+    {
+      "language": "English",
+      "level": "Professional"
+    }
+  ],
+  "certifications": []
+}

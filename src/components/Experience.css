@@ -1,0 +1,136 @@
+.experience {
+  background: var(--bg-secondary);
+}
+
+.experience-content {
+  display: flex;
+  gap: 3rem;
+  max-width: 900px;
+}
+
+.experience-tabs {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-width: 180px;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 1rem 1.5rem;
+  text-align: left;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 2px solid var(--border);
+}
+
+.tab-button:hover {
+  background: var(--bg-tertiary);
+  color: var(--accent);
+}
+
+.tab-button.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+}
+
+.tab-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 48px;
+  background: var(--accent);
+  transition: transform 0.3s ease;
+}
+
+.experience-details {
+  flex: 1;
+}
+
+.exp-position {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.exp-company {
+  color: var(--accent);
+}
+
+.exp-period {
+  color: var(--text-tertiary);
+  font-size: 0.9rem;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 1.5rem;
+}
+
+.exp-description {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1.5rem;
+}
+
+.exp-description li {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.exp-description li::before {
+  content: '▹';
+  color: var(--accent);
+  position: absolute;
+  left: 0;
+}
+
+.exp-technologies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tech-tag {
+  background: var(--bg-tertiary);
+  color: var(--accent);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+@media (max-width: 768px) {
+  .experience-content {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .experience-tabs {
+    flex-direction: row;
+    overflow-x: auto;
+    min-width: 100%;
+  }
+
+  .tab-button {
+    border-left: none;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .tab-button.active {
+    border-bottom-color: var(--accent);
+    border-left-color: transparent;
+  }
+
+  .tab-indicator {
+    display: none;
+  }
+}

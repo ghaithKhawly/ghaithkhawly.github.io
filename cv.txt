@@ -1,0 +1,99 @@
+
+\documentclass[11pt,a4paper,sans]{moderncv}
+
+% ModernCV themes
+\moderncvstyle{casual} % You can try 'classic', 'banking', 'oldstyle', or 'casual'
+\moderncvcolor{blue} % You can choose from 'blue', 'green', 'red', 'orange', 'purple', 'grey'
+
+% Adjust margins if needed (these are good defaults for A4)
+\usepackage[scale=0.75]{geometry}
+
+% Personal details - IMPORTANT: Replace with your actual information
+\name{Ghaith}{Khawly} % Your first and last name
+\title{Full-Stack Developer} % e.g., Full-Stack Developer
+\address{Damascus, Syria}{} % Your city and country
+\phone[mobile]{+963 948597621} % Your phone number
+\email{ghaithk04@gmail.com} % Your email
+\social[linkedin]{ghaith-khawly-dev} % Optional: Your LinkedIn username
+\social[github]{ghaithKhawly} % Optional: Your GitHub username
+
+
+\begin{document}
+
+%  CV Title (Name, Professional Title, Contact Info) 
+\makecvtitle
+
+
+
+\section{Experience}
+\cventry{June-2025 -- Present}{Full-Stack Developer}{Dev Express}{Damascus}{}{
+\begin{itemize}
+  \item Developed and maintained features in a React-based codebase
+  \item Enhanced legacy code and resolved production bugs to improve system reliability in Dev Express
+  \item Participated in code reviews and QA testing for stable deployments
+\end{itemize}}
+
+\cventry{Aug-2024 -- Present}{Part-Time Front-end Developer}{Solution Soft Inc.}{Damascus}{}{
+\begin{itemize}
+  \item Developed and optimized frontend components using React.js, HTML, and CSS
+  \item Collaborated with backend teams to integrate APIs and ensure smooth user experiences
+  \item Implemented CI/CD pipelines using GitHub Actions and Azure DevOps
+\end{itemize}}
+
+\cventry{July-2024 -- Aug-2024}{React Intern}{Tech Innovations Inc.}{Damascus}{}{
+\begin{itemize}
+  \item Built reusable React components with dynamic data handling capabilities
+  \item Learned React.js framework and modern frontend development practices
+  \item Created web-based variant of existing product under mentorship
+  \item Worked collaboratively with development team and technical mentor
+\end{itemize}}
+
+
+
+\section{Education}
+\cventry{2023--2027}{Bachelor of Computer Science}{Arab International University}{Damascus, Syria}{GPA: 3.2}{
+\begin{itemize}
+  \item Currently in 4th year, focusing on software engineering and web development principles
+\end{itemize}
+}
+
+
+
+\section{Skills}
+\cvitem{Frontend}{React.js, React Native, JavaScript, HTML5, CSS3, Responsive Design}
+\cvitem{Backend}{Node.js, Dev Express, C\# .NET Core, C\# .NET Framework, FastAPI (Python)}
+\cvitem{Languages}{JavaScript, C\#, Python, C++, Java}
+\cvitem{Databases}{PostgreSQL}
+\cvitem{Tools}{Git, Visual Studio Code, Visual Studio, npm, GitHub Actions, Azure DevOps}
+\cvitem{Cloud}{Google Cloud Platform}
+\cvitem{Other}{REST APIs, Version Control, API Integration}
+
+
+
+\section{Current Projects}
+\cvitem{Medical App}{Backend Developer in team developing healthcare application using FastAPI and PostgreSQL. Working as part of the backend team to build scalable architecture and robust database solutions for medical data management.}
+
+
+
+\section{Certifications}
+\cvitem{Google Cloud}{Digital Transformation with Google Cloud - 2024}
+\cvitem{Google Cloud}{Exploring Data Transformation with Google Cloud - 2024}
+\cvitem{Google Cloud}{Innovating with Google Cloud Artificial Intelligence - 2024}
+\cvitem{Google Cloud}{Modernize Infrastructure and Applications with Google Cloud - 2024}
+\cvitem{Google Cloud}{Trust and Security with Google Cloud - 2024}
+\cvitem{Google Cloud}{Scaling with Google Cloud Operations - 2024}
+
+
+
+\section{Languages}
+\cvitemwithcomment{Arabic}{Native}{}
+\cvitemwithcomment{English}{Professional}{}
+\cvitemwithcomment{German}{Basic}{}
+
+
+
+\section{Interests}
+\cvitem{Athletics}{Boxing and gym training - demonstrating discipline and goal-oriented mindset}
+\cvitem{Technology}{Continuous learning in React ecosystem and modern web development trends. Explored React Native development, finding it intuitive due to existing React knowledge}
+
+\end{document}

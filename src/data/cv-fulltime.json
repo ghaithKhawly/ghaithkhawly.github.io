@@ -1,0 +1,185 @@
+{
+  "cvType": "fulltime",
+  "cvSource": "cv-fulltime.tex",
+  "hero": {
+    "name": "Ghaith Khawly",
+    "firstName": "Ghaith",
+    "lastName": "Khawly",
+    "title": "Full-Stack Developer",
+    "location": "Damascus, Syria",
+    "email": "ghaithk04@gmail.com",
+    "github": "https://github.com/ghaithKhawly",
+    "linkedin": "https://linkedin.com/in/ghaith-khawly-dev",
+    "phone": "+963 948597621"
+  },
+  "about": "I'm a Full-Stack Developer with hands-on experience building production applications. I started as an intern and grew into a full-stack role, developing strong skills in frontend development, API integration, and CI/CD pipelines. I'm passionate about writing clean, maintainable code and continuously learning new technologies.",
+  "experiences": [
+    {
+      "company": "Titan",
+      "position": "Full-Stack Developer",
+      "period": "June 2025 - Present",
+      "description": [
+        "Develop and maintain features using React.js and DevExpress framework",
+        "Enhance legacy code and resolve production bugs to improve system reliability",
+        "Participate in code reviews and QA testing for stable deployments"
+      ],
+      "technologies": [
+        "React.js",
+        "DevExpress",
+        "C# .NET"
+      ]
+    },
+    {
+      "company": "Titan",
+      "position": "Front-end Developer",
+      "period": "Aug 2024 - June 2025",
+      "description": [
+        "Developed and optimized frontend components using React.js, HTML, and CSS",
+        "Collaborated with backend teams to integrate APIs and ensure smooth user experiences",
+        "Implemented CI/CD pipelines using GitHub Actions and Azure DevOps"
+      ],
+      "technologies": [
+        "React.js",
+        "HTML",
+        "CSS",
+        "GitHub Actions",
+        "Azure DevOps"
+      ]
+    },
+    {
+      "company": "Titan",
+      "position": "React Intern",
+      "period": "July 2024 - Aug 2024",
+      "description": [
+        "Built reusable React components with dynamic data handling capabilities",
+        "Created web-based variant of existing product under mentorship"
+      ],
+      "technologies": [
+        "React.js",
+        "JavaScript"
+      ]
+    }
+  ],
+  "skillCategories": [
+    {
+      "title": "Frontend",
+      "skills": [
+        "React.js",
+        "React Native",
+        "JavaScript",
+        "HTML5",
+        "CSS3",
+        "Responsive Design"
+      ]
+    },
+    {
+      "title": "Backend",
+      "skills": [
+        "Node.js",
+        "DevExpress",
+        "C# .NET Core",
+        "C# .NET Framework",
+        "FastAPI"
+      ]
+    },
+    {
+      "title": "Languages",
+      "skills": [
+        "JavaScript",
+        "C#",
+        "Python",
+        "C++",
+        "Java"
+      ]
+    },
+    {
+      "title": "Database",
+      "skills": [
+        "PostgreSQL"
+      ]
+    },
+    {
+      "title": "Tools",
+      "skills": [
+        "Git",
+        "GitHub Actions",
+        "Azure DevOps",
+        "Visual Studio Code",
+        "Visual Studio"
+      ]
+    },
+    {
+      "title": "Cloud",
+      "skills": [
+        "Google Cloud Platform"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "title": "Medical App",
+      "description": "Contributed as Backend Developer in a team building a healthcare application using FastAPI and PostgreSQL. Helped build scalable architecture and database solutions until the project reached a stable release.",
+      "technologies": [
+        "FastAPI",
+        "PostgreSQL",
+        "Python",
+        "REST API"
+      ],
+      "featured": true
+    },
+    {
+      "title": "Savings Tracker",
+      "description": "Personal React Native mobile app for tracking savings goals. Built as a frontend-only project to explore mobile development.",
+      "technologies": [
+        "React Native",
+        "JavaScript",
+        "Mobile UI/UX"
+      ],
+      "featured": true
+    }
+  ],
+  "education": {
+    "period": "2022 - 2027",
+    "degree": "Bachelor of Computer Science",
+    "institution": "Arab International University",
+    "location": "Damascus, Syria",
+    "gpa": "3.13",
+    "description": "Currently in 4th year, focusing on software engineering and web development."
+  },
+  "certifications": [
+    {
+      "title": "Digital Transformation with Google Cloud",
+      "year": "2024"
+    },
+    {
+      "title": "Exploring Data Transformation with Google Cloud",
+      "year": "2024"
+    },
+    {
+      "title": "Innovating with Google Cloud Artificial Intelligence",
+      "year": "2024"
+    },
+    {
+      "title": "Infrastructure Modernization with Google Cloud",
+      "year": "2024"
+    },
+    {
+      "title": "Trust & Security with Google Cloud",
+      "year": "2024"
+    },
+    {
+      "title": "Cloud Operations with Google Cloud",
+      "year": "2024"
+    }
+  ],
+  "languages": [
+    {
+      "language": "Arabic",
+      "level": "Native"
+    },
+    {
+      "language": "English",
+      "level": "Professional"
+    }
+  ]
+}
