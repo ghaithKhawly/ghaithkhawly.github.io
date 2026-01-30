@@ -95,7 +95,9 @@
     {
       "title": "Database",
       "skills": [
-        "PostgreSQL"
+        "PostgreSQL",
+        "SSMS",
+        "SQLite"
       ]
     },
     {

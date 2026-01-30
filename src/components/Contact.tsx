@@ -45,13 +45,15 @@ const Contact = () => {
 
           <div className="contact-links">
             <motion.a
-              href={`mailto:${hero.email}`}
+              href={`https://mail.google.com/mail/?view=cm&to=${hero.email}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="contact-btn primary"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
             >
               <Mail size={20} />
-              <span>Say Hello</span>
+              <span>Send Email</span>
             </motion.a>
 
             <motion.a
