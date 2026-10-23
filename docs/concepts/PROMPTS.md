@@ -102,3 +102,57 @@ Known issue: the hand shadow came out as an "OK" sign, not a rabbit.
 > far left edge, the fading wall shadow of the two hands that formed the bird.
 > Deep indigo and warm amber palette, soft volumetric light, floating dust,
 > visible paper texture, poetic and calm, cinematic, no text.
+
+---
+
+# The Cave (webcam concept)
+
+Generated with Figma `gemini-3.1-flash-lite-image`, 1920×1080 requested.
+
+## Firelit gallery — `cave-firelit-gallery.jpg`
+
+> Cinematic 3D concept art: the interior of a vast limestone cave at night lit
+> only by a small crackling campfire in the foreground. The curved cave wall is
+> covered in prehistoric-style paintings in red ochre, charcoal black and yellow
+> pigment: running deer, bison and hunters, but mixed in, drawn in the exact same
+> primitive style, are modern things: a laptop, a smartphone, a rocket, a
+> satellite dish, a little robot. Flickering warm orange firelight and deep
+> blue-black shadows, smoke rising, floating embers, rough rock texture, sense of
+> depth into the cave. Atmospheric, mysterious, cinematic, no text, no user
+> interface.
+
+Known issue: the modern objects came out as clean black line icons, not ochre
+pigment. Next run: "painted with fingers in smudged red ochre, same crude style
+as the animals, no clean lines, no icons".
+
+## Shadow wolf — `cave-shadow-wolf.jpg`
+
+> Cinematic 3D concept art: on a firelit cave wall covered in prehistoric
+> red-ochre and charcoal paintings of animals, a large shadow of human hands
+> forming a wolf head appears among them, cast by the campfire. The painted
+> animals next to it have turned to look at the shadow wolf, and the painted
+> pigment around it glows faintly as if awakening. Flickering orange firelight,
+> deep black shadows, embers and smoke, rough limestone texture, magical and
+> primal mood, high detail, no text, no user interface.
+
+## Painting steps out — `cave-painting-steps-out.jpg`
+
+> Cinematic 3D concept art, a magical transformation: a prehistoric red-ochre
+> cave painting of a smartphone is stepping out of the cave wall and becoming a
+> real, solid, glowing 3D smartphone floating in the air, its screen lit with a
+> colorful app interface. Flakes of ochre pigment and dust peel away from it and
+> drift in the firelight, the flat outline of the painting still visible on the
+> rock behind it. Surrounding wall covered with other primitive paintings of
+> animals and hunters. Warm campfire light, deep shadows, embers, cinematic depth
+> of field, high detail, no readable text.
+
+## Handprint contact — `cave-handprint-contact.jpg`
+
+> Cinematic 3D concept art: the deepest chamber of a cave, a smooth rock wall
+> covered with dozens of prehistoric negative hand stencils sprayed in red and
+> yellow ochre, ancient handprints of many people. In the center, one fresh
+> handprint is glowing softly with warm golden light, as if just left by a
+> visitor, with a small trail of glowing pigment dust drifting from it. A single
+> torch on the left casts flickering light and long shadows, the rest fades into
+> darkness. Quiet, sacred, intimate mood, rough stone texture, high detail, no
+> text, no user interface.
