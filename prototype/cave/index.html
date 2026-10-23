@@ -63,17 +63,23 @@
   .headbox { position: relative; width: 34px; height: 22px; border: 1px solid var(--ash); border-radius: 5px; }
   .headbox i { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #5a4b3e; transition: background 0.3s; }
   .headbox.on i { background: var(--ember); box-shadow: 0 0 6px var(--ember); }
+  #hud-found { color: var(--ink); }
   #tools {
     position: fixed; z-index: 10; top: calc(env(safe-area-inset-top) + 10px); right: max(16px, env(safe-area-inset-right));
     display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 64vw;
   }
   .tool { border: 1px solid var(--ash); background: rgba(7,5,4,0.55); padding: 6px 11px; border-radius: 999px; font: 500 12px/1.2 var(--mono); color: var(--ink); backdrop-filter: blur(6px); }
   .tool[aria-pressed="true"] { border-color: var(--ember); color: var(--ember); }
+  #step-back {
+    position: fixed; z-index: 12; left: 50%; top: calc(env(safe-area-inset-top) + 14px); transform: translateX(-50%);
+    border: 1px solid rgba(255,178,94,0.5); background: rgba(7,5,4,0.7); color: var(--ink); padding: 8px 16px; border-radius: 999px;
+    font: 500 13px/1.2 var(--mono); backdrop-filter: blur(8px);
+  }
 
-  #lean-hint {
+  #toast {
     position: fixed; z-index: 12; left: 50%; top: calc(env(safe-area-inset-top) + 64px); transform: translateX(-50%);
-    padding: 10px 16px; border-radius: 999px; background: rgba(7,5,4,0.7); border: 1px solid rgba(255,178,94,0.4);
-    font: 500 13px/1.3 var(--body); color: var(--ink); backdrop-filter: blur(8px); animation: rise-c 0.5s ease; max-width: calc(100vw - 32px); text-align: center;
+    padding: 10px 16px; border-radius: 999px; background: rgba(7,5,4,0.72); border: 1px solid rgba(255,178,94,0.4);
+    font: 500 13px/1.35 var(--body); color: var(--ink); backdrop-filter: blur(8px); animation: rise-c 0.5s ease; max-width: calc(100vw - 32px); text-align: center;
   }
 
   #gesture {
@@ -116,6 +122,8 @@
     backdrop-filter: blur(10px); box-shadow: 0 30px 80px rgba(0,0,0,0.5);
     animation: rise 0.45s cubic-bezier(.2,.8,.2,1);
   }
+  /* Things found in the crack open on the left, so the crack stays in view. */
+  #panel.left { right: auto; left: max(16px, env(safe-area-inset-left)); top: calc(env(safe-area-inset-top) + 108px); }
   @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   @keyframes rise-c { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
   #panel header { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; margin-bottom: 14px; }
@@ -136,6 +144,7 @@
   .contact-line .value { font: 500 15px/1.4 var(--mono); user-select: all; word-break: break-all; }
   .linkrow { display: flex; gap: 8px; flex-wrap: wrap; }
   .linkrow a { color: var(--ember); text-decoration: none; border-bottom: 1px solid rgba(255,178,94,0.35); }
+  .list { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
 
   /* ---------- tracking view ---------- */
   #debug {
@@ -152,12 +161,13 @@
     #tools { max-width: calc(100vw - 32px); }
     #gesture { font-size: 12px; }
     #chips { bottom: calc(env(safe-area-inset-bottom) + 70px); }
+    #step-back { top: calc(env(safe-area-inset-top) + 56px); }
     #shapes { width: auto; right: max(16px, env(safe-area-inset-right)); bottom: calc(env(safe-area-inset-bottom) + 74px); grid-template-columns: repeat(3, 1fr); }
     #shapes h3 { grid-column: 1 / -1; }
     .shape { flex-direction: column; text-align: center; }
     .shape span { display: none; }
   }
-  @media (prefers-reduced-motion: reduce) { #panel, #lean-hint { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { #panel, #toast { animation: none; } }
 </style>
 <script type="importmap">
 { "imports": {
@@ -174,7 +184,7 @@
   <div class="intro-inner">
     <div class="eyebrow">Prototype · The Cave</div>
     <h1 id="intro-title">Ghaith Khawly</h1>
-    <p>Full-stack developer. This portfolio is a cave. Bring your hands into the firelight and cast shadows on the wall; the paintings answer.</p>
+    <p>Full-stack developer. This portfolio is a cave. Bring your hands into the firelight and cast shadows on the wall; the paintings answer. Three things are hidden. Lean to find them.</p>
     <ul class="gestures">
       <li><canvas class="thumb" data-thumb="wolf" width="88" height="88"></canvas><div><b>Wolf</b><span>Hand sideways, thumb up, three fingers together. Experience.</span></div></li>
       <li><canvas class="thumb" data-thumb="rabbit" width="88" height="88"></canvas><div><b>Rabbit</b><span>Two fingers up, the rest folded. About.</span></div></li>
@@ -194,6 +204,7 @@
   <div class="row"><span class="dot" id="dot-cam"></span><span id="hud-cam">camera off</span></div>
   <div class="row"><span class="headbox" id="headbox"><i id="head-dot"></i></span><span id="hud-head">head</span></div>
   <div class="row"><span class="dot" id="dot-hand"></span><span id="hud-hand">hand: none</span></div>
+  <div class="row"><span class="dot" id="dot-found"></span><span id="hud-found">hidden: 0 / 3 found</span></div>
 </div>
 
 <div id="tools" hidden>
@@ -204,8 +215,9 @@
   <button class="tool" id="t-debug" type="button" aria-pressed="false" hidden>Tracking view</button>
   <button class="tool" id="t-recenter" type="button" hidden>Recenter</button>
 </div>
+<button id="step-back" type="button" hidden>← Step back from the wall</button>
 
-<div id="lean-hint" hidden role="status"></div>
+<div id="toast" hidden role="status"></div>
 
 <div id="gesture" hidden aria-live="polite">
   <svg class="ring" viewBox="0 0 26 26" aria-hidden="true"><circle class="track" cx="13" cy="13" r="10"/><circle class="fill" id="ring-fill" cx="13" cy="13" r="10" stroke-dasharray="62.8" stroke-dashoffset="62.8"/></svg>
@@ -223,6 +235,9 @@
   <button class="chip" type="button" data-section="experience">Experience</button>
   <button class="chip" type="button" data-section="about">About</button>
   <button class="chip" type="button" data-section="contact">Contact</button>
+  <button class="chip" type="button" data-section="education">Education</button>
+  <button class="chip" type="button" data-section="certs">Certifications</button>
+  <button class="chip" type="button" data-section="languages">Languages</button>
 </div>
 
 <aside id="panel" hidden aria-labelledby="panel-title">
@@ -248,7 +263,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 // ---------------------------------------------------------------------------
-// Content (mirrors src/data/cv-data.json)
+// Content (mirrors src/data/cv-data.json and cv-fulltime.json)
 // ---------------------------------------------------------------------------
 const CV = {
   name: 'Ghaith Khawly',
@@ -268,7 +283,9 @@ const CV = {
     { title: 'Database', skills: ['PostgreSQL', 'SSMS', 'SQLite'] },
     { title: 'DevOps', skills: ['Git', 'GitHub Actions', 'Azure DevOps', 'Google Cloud Platform'] },
   ],
-  education: { degree: 'B.Sc. Computer Science', institution: 'Arab International University', period: '2022 – 2027' },
+  education: { degree: 'B.Sc. Computer Science', institution: 'Arab International University', period: '2022 – 2027', note: 'Currently in 4th year, focusing on software engineering and web development.' },
+  certifications: { year: '2024', items: ['Digital Transformation with Google Cloud', 'Exploring Data Transformation with Google Cloud', 'Innovating with Google Cloud Artificial Intelligence', 'Infrastructure Modernization with Google Cloud', 'Trust & Security with Google Cloud', 'Cloud Operations with Google Cloud'] },
+  languages: [{ language: 'Arabic', level: 'Native' }, { language: 'English', level: 'Professional' }],
   projects: {
     phone: { title: 'Savings Tracker', description: 'React Native mobile app for personal finance tracking. Frontend development showcasing mobile UI/UX skills.', technologies: ['React Native', 'React'] },
     laptop: { title: 'Medical App', description: 'Backend development for a healthcare application using FastAPI and PostgreSQL. Built scalable architecture for medical data management.', technologies: ['FastAPI', 'PostgreSQL', 'REST API', 'SQL'] },
@@ -285,6 +302,7 @@ const FACE_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_detecto
 
 const SCREEN_H = 2.2;          // height of the "window" (the browser viewport) in world units
 const EYE_D = 3.5;             // default eye distance from the window
+const HEAD_GAIN = 3.2;         // world units of eye travel per unit of face movement in the camera frame
 const WALL_W = 10, WALL_H = 5, WALL_Z = -3.1;
 const FLOOR_Y = -1.35;
 const FIRE = new THREE.Vector3(0, FLOOR_Y + 0.02, -1.45);
@@ -292,6 +310,8 @@ const ART_W = 2048, ART_H = 1024;   // paint layer, maps 1:1 onto the wall UVs
 const SH_W = 1024, SH_H = 512;      // shadow + glow layers (half resolution)
 const SHADOW_MAG = 1.25;
 const HOLD_GESTURE = 0.9, HOLD_PALM = 1.0, HOLD_DWELL = 1.1;
+const COLUMN = { x: -1.8, z: -0.9, bottom: FLOOR_Y - 0.05, height: 3.7 };
+const CRACK = { ax: 1500, ay: 420, halfW: 66, halfH: 120 };   // in paint-layer pixels
 
 const params = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
@@ -354,9 +374,10 @@ class OneEuro {
 const deadzone = (prev, v, dz) => { const d = v - prev; return Math.abs(d) <= dz ? prev : v - Math.sign(d) * dz; };
 
 // ---------------------------------------------------------------------------
-// Rock textures (tileable colour + normal map, generated once)
+// Rock textures (tileable colour + normal map + height, generated once)
 // ---------------------------------------------------------------------------
-function makeRockTextures(N = 512) {
+const ROCK_N = 512;
+function makeRockTextures(N = ROCK_N) {
   const F = 6;
   const H = new Float32Array(N * N);
   const col = makeCanvas(N, N);
@@ -402,7 +423,7 @@ function makeRockTextures(N = 512) {
   map.colorSpace = THREE.SRGBColorSpace;
   const normal = new THREE.CanvasTexture(nrm);
   for (const t of [map, normal]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; }
-  return { map, normal };
+  return { map, normal, height: H };
 }
 
 // Grain used to erode pigment so paint looks dabbed onto stone.
@@ -497,22 +518,38 @@ function makeStalactite(len, rad, seed) {
   g.translate(0, -len / 2, 0);
   return g;
 }
+// A floor-to-ceiling stone column: thick at the base, lumpy, slightly leaning.
+const columnRadius = (y) => THREE.MathUtils.lerp(0.34, 0.2, clamp((y - COLUMN.bottom) / COLUMN.height, 0, 1));
+function makeColumn() {
+  const g = new THREE.CylinderGeometry(1, 1, COLUMN.height, 28, 60, true);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const yw = y + COLUMN.bottom + COLUMN.height / 2;
+    const a = Math.atan2(z, x);
+    const r = columnRadius(yw) * (1 + (fbm(a * 1.6 + 3, yw * 1.4, 4, 91) - 0.5) * 0.5);
+    p.setXYZ(i, Math.cos(a) * r + Math.sin(yw * 0.7) * 0.05, yw, Math.sin(a) * r);
+  }
+  g.computeVertexNormals();
+  return g;
+}
 
 // ---------------------------------------------------------------------------
 // Paintings
 // ---------------------------------------------------------------------------
 const PIG = { red: 'rgb(150,52,31)', deep: 'rgb(108,36,23)', yellow: 'rgb(196,136,58)', char: 'rgb(32,25,22)' };
 
-function smoothClosed(ctx, pts, w, h) {
-  const P = pts.map(([x, y]) => [x * w, y * h]);
+function shapePath(pts, w, h, ox = 0, oy = 0) {
+  const P = pts.map(([x, y]) => [ox + x * w, oy + y * h]);
   const n = P.length;
-  ctx.beginPath();
-  ctx.moveTo((P[0][0] + P[1][0]) / 2, (P[0][1] + P[1][1]) / 2);
+  const path = new Path2D();
+  path.moveTo((P[0][0] + P[1][0]) / 2, (P[0][1] + P[1][1]) / 2);
   for (let i = 1; i <= n; i++) {
     const p = P[i % n], q = P[(i + 1) % n];
-    ctx.quadraticCurveTo(p[0], p[1], (p[0] + q[0]) / 2, (p[1] + q[1]) / 2);
+    path.quadraticCurveTo(p[0], p[1], (p[0] + q[0]) / 2, (p[1] + q[1]) / 2);
   }
-  ctx.closePath();
+  path.closePath();
+  return path;
 }
 function smoothOpen(ctx, pts, w, h) {
   ctx.beginPath();
@@ -535,15 +572,15 @@ function limb(ctx, x1, y1, x2, y2, w1, w2) {
   ctx.fill();
 }
 const jit = (pts, r, a) => pts.map(([x, y]) => [x + (r() - 0.5) * a, y + (r() - 0.5) * a]);
+const fillShape = (ctx, pts, w, h) => ctx.fill(shapePath(pts, w, h));
 
 const PAINTERS = {
   bison(ctx, w, h, r) {
     ctx.fillStyle = PIG.red;
-    smoothClosed(ctx, jit([[0.08, 0.56], [0.1, 0.36], [0.2, 0.22], [0.33, 0.1], [0.45, 0.04], [0.56, 0.13], [0.72, 0.17], [0.88, 0.26], [0.96, 0.42], [0.9, 0.6], [0.75, 0.66], [0.5, 0.66], [0.3, 0.7], [0.16, 0.68]], r, 0.025), w, h);
-    ctx.fill();
+    fillShape(ctx, jit([[0.08, 0.56], [0.1, 0.36], [0.2, 0.22], [0.33, 0.1], [0.45, 0.04], [0.56, 0.13], [0.72, 0.17], [0.88, 0.26], [0.96, 0.42], [0.9, 0.6], [0.75, 0.66], [0.5, 0.66], [0.3, 0.7], [0.16, 0.68]], r, 0.025), w, h);
     ctx.fillStyle = PIG.char; ctx.globalAlpha = 0.85;
-    smoothClosed(ctx, jit([[0.1, 0.52], [0.12, 0.34], [0.22, 0.2], [0.36, 0.08], [0.47, 0.04], [0.55, 0.14], [0.48, 0.24], [0.35, 0.32], [0.26, 0.44], [0.18, 0.56]], r, 0.02), w, h);
-    ctx.fill(); ctx.globalAlpha = 1;
+    fillShape(ctx, jit([[0.1, 0.52], [0.12, 0.34], [0.22, 0.2], [0.36, 0.08], [0.47, 0.04], [0.55, 0.14], [0.48, 0.24], [0.35, 0.32], [0.26, 0.44], [0.18, 0.56]], r, 0.02), w, h);
+    ctx.globalAlpha = 1;
     ctx.fillStyle = PIG.deep;
     for (const [x1, y1, x2, y2] of [[0.27, 0.6, 0.25, 0.95], [0.37, 0.62, 0.4, 0.94], [0.72, 0.6, 0.74, 0.95], [0.83, 0.58, 0.88, 0.92]]) limb(ctx, x1 * w, y1 * h, x2 * w, y2 * h, h * 0.06, h * 0.028);
     ctx.strokeStyle = PIG.char; ctx.lineCap = 'round'; ctx.lineWidth = h * 0.035;
@@ -556,11 +593,10 @@ const PAINTERS = {
   },
   horse(ctx, w, h, r) {
     ctx.fillStyle = PIG.yellow;
-    smoothClosed(ctx, jit([[0.1, 0.44], [0.2, 0.33], [0.45, 0.3], [0.62, 0.26], [0.72, 0.12], [0.83, 0.05], [0.94, 0.12], [0.96, 0.22], [0.86, 0.25], [0.8, 0.36], [0.78, 0.5], [0.65, 0.6], [0.35, 0.62], [0.15, 0.58]], r, 0.02), w, h);
-    ctx.fill();
+    fillShape(ctx, jit([[0.1, 0.44], [0.2, 0.33], [0.45, 0.3], [0.62, 0.26], [0.72, 0.12], [0.83, 0.05], [0.94, 0.12], [0.96, 0.22], [0.86, 0.25], [0.8, 0.36], [0.78, 0.5], [0.65, 0.6], [0.35, 0.62], [0.15, 0.58]], r, 0.02), w, h);
     ctx.fillStyle = PIG.char; ctx.globalAlpha = 0.9;
-    smoothClosed(ctx, jit([[0.74, 0.12], [0.84, 0.05], [0.95, 0.12], [0.96, 0.22], [0.86, 0.25], [0.8, 0.22]], r, 0.015), w, h);
-    ctx.fill(); ctx.globalAlpha = 1;
+    fillShape(ctx, jit([[0.74, 0.12], [0.84, 0.05], [0.95, 0.12], [0.96, 0.22], [0.86, 0.25], [0.8, 0.22]], r, 0.015), w, h);
+    ctx.globalAlpha = 1;
     ctx.fillStyle = PIG.deep;
     for (const [x1, y1, x2, y2] of [[0.2, 0.55, 0.15, 0.95], [0.3, 0.58, 0.33, 0.95], [0.62, 0.56, 0.6, 0.95], [0.71, 0.53, 0.78, 0.93]]) limb(ctx, x1 * w, y1 * h, x2 * w, y2 * h, h * 0.05, h * 0.024);
     ctx.strokeStyle = PIG.char; ctx.lineCap = 'round';
@@ -571,11 +607,9 @@ const PAINTERS = {
   },
   deer(ctx, w, h, r) {
     ctx.fillStyle = PIG.red;
-    smoothClosed(ctx, jit([[0.22, 0.52], [0.32, 0.44], [0.6, 0.43], [0.78, 0.46], [0.86, 0.55], [0.78, 0.66], [0.5, 0.68], [0.3, 0.66], [0.23, 0.6]], r, 0.02), w, h);
-    ctx.fill();
+    fillShape(ctx, jit([[0.22, 0.52], [0.32, 0.44], [0.6, 0.43], [0.78, 0.46], [0.86, 0.55], [0.78, 0.66], [0.5, 0.68], [0.3, 0.66], [0.23, 0.6]], r, 0.02), w, h);
     limb(ctx, 0.3 * w, 0.5 * h, 0.17 * w, 0.27 * h, h * 0.07, h * 0.045);
-    smoothClosed(ctx, jit([[0.06, 0.26], [0.13, 0.18], [0.22, 0.21], [0.21, 0.31], [0.12, 0.32]], r, 0.015), w, h);
-    ctx.fill();
+    fillShape(ctx, jit([[0.06, 0.26], [0.13, 0.18], [0.22, 0.21], [0.21, 0.31], [0.12, 0.32]], r, 0.015), w, h);
     ctx.fillStyle = PIG.deep;
     for (const [x1, y1, x2, y2] of [[0.32, 0.63, 0.28, 0.98], [0.4, 0.64, 0.43, 0.98], [0.72, 0.62, 0.7, 0.98], [0.8, 0.6, 0.86, 0.97]]) limb(ctx, x1 * w, y1 * h, x2 * w, y2 * h, h * 0.035, h * 0.016);
     ctx.strokeStyle = PIG.char; ctx.lineCap = 'round'; ctx.lineWidth = h * 0.022;
@@ -611,8 +645,7 @@ const PAINTERS = {
   phone(ctx, w, h, r) {
     ctx.strokeStyle = PIG.red; ctx.fillStyle = PIG.red; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.lineWidth = w * 0.09;
-    smoothClosed(ctx, jit([[0.14, 0.06], [0.86, 0.05], [0.9, 0.5], [0.87, 0.95], [0.13, 0.95], [0.1, 0.5]], r, 0.03), w, h);
-    ctx.stroke();
+    ctx.stroke(shapePath(jit([[0.14, 0.06], [0.86, 0.05], [0.9, 0.5], [0.87, 0.95], [0.13, 0.95], [0.1, 0.5]], r, 0.03), w, h));
     for (let row = 0; row < 4; row++) for (let col = 0; col < 3; col++) {
       ctx.beginPath(); ctx.arc(w * (0.3 + col * 0.2 + (r() - 0.5) * 0.03), h * (0.2 + row * 0.13 + (r() - 0.5) * 0.02), w * 0.055, 0, Math.PI * 2); ctx.fill();
     }
@@ -621,8 +654,7 @@ const PAINTERS = {
   laptop(ctx, w, h, r) {
     ctx.strokeStyle = PIG.red; ctx.fillStyle = PIG.red; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.lineWidth = h * 0.06;
-    smoothClosed(ctx, jit([[0.2, 0.05], [0.8, 0.06], [0.81, 0.6], [0.19, 0.6]], r, 0.02), w, h);
-    ctx.stroke();
+    ctx.stroke(shapePath(jit([[0.2, 0.05], [0.8, 0.06], [0.81, 0.6], [0.19, 0.6]], r, 0.02), w, h));
     ctx.beginPath(); ctx.moveTo(w * 0.12, h * 0.68); ctx.lineTo(w * 0.88, h * 0.68); ctx.lineTo(w * 0.98, h * 0.9); ctx.lineTo(w * 0.02, h * 0.9); ctx.closePath(); ctx.fill();
     ctx.lineWidth = h * 0.035; ctx.strokeStyle = PIG.char;
     for (let i = 0; i < 4; i++) {
@@ -643,6 +675,49 @@ const PAINTERS = {
       ctx.beginPath(); ctx.moveTo(x + (r() - 0.5) * 6, h * 0.1); ctx.lineTo(x + (r() - 0.5) * 6, h * 0.9); ctx.stroke();
     }
   },
+  // Hidden paintings.
+  owl(ctx, w, h, r) {  // Education: the owl of learning
+    ctx.fillStyle = PIG.yellow;
+    fillShape(ctx, jit([[0.5, 0.12], [0.78, 0.22], [0.86, 0.55], [0.74, 0.88], [0.5, 0.96], [0.26, 0.88], [0.14, 0.55], [0.22, 0.22]], r, 0.02), w, h);
+    ctx.fillStyle = PIG.char;
+    fillShape(ctx, [[0.2, 0.24], [0.16, 0.04], [0.34, 0.16]], w, h);
+    fillShape(ctx, [[0.8, 0.24], [0.84, 0.04], [0.66, 0.16]], w, h);
+    for (const ex of [0.36, 0.64]) {
+      ctx.fillStyle = PIG.char; ctx.beginPath(); ctx.arc(w * ex, h * 0.38, w * 0.13, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = PIG.yellow; ctx.beginPath(); ctx.arc(w * ex, h * 0.38, w * 0.05, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = PIG.red; fillShape(ctx, [[0.46, 0.5], [0.54, 0.5], [0.5, 0.6]], w, h);
+    ctx.strokeStyle = PIG.red; ctx.lineWidth = w * 0.03; ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(w * 0.5, h * (0.66 + i * 0.08), w * 0.16, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke(); }
+  },
+  cloud(ctx, w, h, r) {  // Certifications: six suns under a cloud
+    ctx.strokeStyle = PIG.char; ctx.lineWidth = h * 0.05; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(w * 0.18, h * 0.46);
+    ctx.bezierCurveTo(w * 0.08, h * 0.44, w * 0.1, h * 0.26, w * 0.24, h * 0.27);
+    ctx.bezierCurveTo(w * 0.26, h * 0.1, w * 0.48, h * 0.06, w * 0.54, h * 0.2);
+    ctx.bezierCurveTo(w * 0.66, h * 0.1, w * 0.84, h * 0.18, w * 0.8, h * 0.32);
+    ctx.bezierCurveTo(w * 0.94, h * 0.34, w * 0.92, h * 0.48, w * 0.8, h * 0.47);
+    ctx.closePath(); ctx.stroke();
+    for (let i = 0; i < 6; i++) {
+      const x = w * (0.14 + (i % 3) * 0.36), y = h * (0.66 + Math.floor(i / 3) * 0.2);
+      ctx.fillStyle = PIG.red; ctx.beginPath(); ctx.arc(x, y, h * 0.055, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = PIG.red; ctx.lineWidth = h * 0.018;
+      for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * h * 0.075, y + Math.sin(a) * h * 0.075); ctx.lineTo(x + Math.cos(a) * h * 0.11, y + Math.sin(a) * h * 0.11); ctx.stroke(); }
+    }
+  },
+  talk(ctx, w, h, r) {  // Languages: two figures, words passing between them
+    ctx.strokeStyle = PIG.red; ctx.fillStyle = PIG.red; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = w * 0.035;
+    for (const [cx, dir] of [[0.18, 1], [0.82, -1]]) {
+      ctx.beginPath(); ctx.arc(w * cx, h * 0.3, w * 0.06, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(w * cx, h * 0.38); ctx.lineTo(w * cx, h * 0.68); ctx.lineTo(w * (cx - 0.06), h * 0.95); ctx.moveTo(w * cx, h * 0.68); ctx.lineTo(w * (cx + 0.06), h * 0.95); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(w * cx, h * 0.46); ctx.lineTo(w * (cx + dir * 0.12), h * 0.36); ctx.stroke();
+    }
+    ctx.fillStyle = PIG.yellow;
+    for (let i = 0; i < 7; i++) { ctx.beginPath(); ctx.arc(w * (0.3 + i * 0.065), h * (0.24 + Math.sin(i * 0.9) * 0.04), w * 0.018, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = PIG.char;
+    for (let i = 0; i < 7; i++) { ctx.beginPath(); ctx.arc(w * (0.7 - i * 0.065), h * (0.4 + Math.sin(i * 0.9) * 0.04), w * 0.018, 0, Math.PI * 2); ctx.fill(); }
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -657,7 +732,7 @@ const POSES = {
 };
 POSES.wolfOpen = POSES.wolf.map(([x, y], i) => (i >= 17 ? [x - 0.05 * (i - 17), y + 0.12 * (i - 16)] : [x, y]));
 
-function drawHandSilhouette(ctx, pts, s, armLength = 2.6, fadeTo = 'rgba(255,255,255,0)') {
+function drawHandSilhouette(ctx, pts, s, armLength = 2.6, fadeTo = 'rgba(255,255,255,0)', stick = false) {
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const w = pts[0], m = pts[9];
   let dx = w.x - m.x, dy = w.y - m.y;
@@ -684,6 +759,13 @@ function drawHandSilhouette(ctx, pts, s, armLength = 2.6, fadeTo = 'rgba(255,255
   ctx.lineWidth = s * 0.3; ctx.stroke();
   const seg = (ids, wd) => { ctx.lineWidth = wd; ctx.beginPath(); ids.forEach((i, k) => (k ? ctx.lineTo(pts[i].x, pts[i].y) : ctx.moveTo(pts[i].x, pts[i].y))); ctx.stroke(); };
   seg([1, 2, 3, 4], s * 0.24); seg([5, 6, 7, 8], s * 0.19); seg([9, 10, 11, 12], s * 0.2); seg([13, 14, 15, 16], s * 0.185); seg([17, 18, 19, 20], s * 0.16);
+  if (stick) {
+    // A charcoal stick held between thumb and finger, its tip at the fingertip.
+    const a = pts[6], b = pts[8];
+    const ux = (b.x - a.x), uy = (b.y - a.y), l = Math.hypot(ux, uy) || 1;
+    ctx.lineWidth = s * 0.11;
+    ctx.beginPath(); ctx.moveTo(b.x + (ux / l) * s * 0.08, b.y + (uy / l) * s * 0.08); ctx.lineTo(b.x - (ux / l) * s * 1.5 + (pts[4].x - b.x) * 0.3, b.y - (uy / l) * s * 1.5 + (pts[4].y - b.y) * 0.3); ctx.stroke();
+  }
 }
 
 // A sprayed "negative" handprint: pigment blown around a hand, the hand left bare.
@@ -813,23 +895,54 @@ const camera = new THREE.PerspectiveCamera();
 
 const rock = makeRockTextures();
 rock.map.repeat.set(3.2, 1.6); rock.normal.repeat.set(3.2, 1.6);
-const rockMat = new THREE.MeshStandardMaterial({ map: rock.map, normalMap: rock.normal, normalScale: new THREE.Vector2(1.2, 1.2), roughness: 0.95, metalness: 0, color: 0xe8ddd0 });
+// Rock relief at a paint-layer pixel, so pigment can catch on the bumps.
+function rockHeight(ax, ay) {
+  const u = ((ax / ART_W) * 3.2) % 1, v = (((1 - ay / ART_H) * 1.6) % 1 + 1) % 1;
+  return rock.height[Math.floor((1 - v) * (ROCK_N - 1)) * ROCK_N + Math.floor(u * (ROCK_N - 1))];
+}
 
+// The crack: a hole in the wall's alpha mask that opens onto a hidden chamber.
+const crackMask = makeCanvas(SH_W, SH_H);
+const crackPts = [];
+{
+  const ctx = crackMask.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, SH_W, SH_H);
+  const cx = CRACK.ax / 2, cy = CRACK.ay / 2, hw = CRACK.halfW / 2, hh = CRACK.halfH / 2;
+  const N = 28;
+  for (let i = 0; i <= N; i++) { const t = i / N; crackPts.push([cx - hw * Math.sin(Math.PI * t) * (0.75 + 0.5 * vnoise(t * 9, 1, 81)) - Math.sin(t * 7) * 2, cy - hh + 2 * hh * t]); }
+  for (let i = N; i >= 0; i--) { const t = i / N; crackPts.push([cx + hw * Math.sin(Math.PI * t) * (0.75 + 0.5 * vnoise(t * 9, 4, 82)) - Math.sin(t * 7) * 2, cy - hh + 2 * hh * t]); }
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); crackPts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); ctx.fill();
+}
+const crackData = crackMask.getContext('2d').getImageData(0, 0, SH_W, SH_H).data;
+const crackPath = new Path2D();   // in shadow-canvas pixels
+crackPts.forEach(([x, y], i) => (i ? crackPath.lineTo(x, y) : crackPath.moveTo(x, y)));
+crackPath.closePath();
+const crackTex = new THREE.CanvasTexture(crackMask);
+const inCrack = (ax, ay) => { const i = (Math.floor(ay / 2) * SH_W + Math.floor(ax / 2)) * 4; return ax >= 0 && ay >= 0 && ax < ART_W && ay < ART_H && crackData[i] < 128; };
+
+const wallMat = new THREE.MeshStandardMaterial({ map: rock.map, normalMap: rock.normal, normalScale: new THREE.Vector2(1.2, 1.2), roughness: 0.95, metalness: 0, color: 0xe8ddd0, alphaMap: crackTex, alphaTest: 0.5 });
 const wallGeo = makeWall();
-const wall = new THREE.Mesh(wallGeo, rockMat);
+const wall = new THREE.Mesh(wallGeo, wallMat);
 scene.add(wall);
 
 const floorMap = rock.map.clone(); floorMap.repeat.set(4, 2.4); floorMap.needsUpdate = true;
 const floorNormal = rock.normal.clone(); floorNormal.repeat.set(4, 2.4); floorNormal.needsUpdate = true;
 scene.add(new THREE.Mesh(makeFloor(), new THREE.MeshStandardMaterial({ map: floorMap, normalMap: floorNormal, roughness: 1, color: 0x9a8a78 })));
 
+// Floor props: hidden while you're up at the wall, where they'd only block the view.
+const props = new THREE.Group();
+scene.add(props);
 const rockPieceMat = new THREE.MeshStandardMaterial({ map: rock.map, normalMap: rock.normal, roughness: 0.95, color: 0xb9a996 });
 for (const [x, z, rad, seed] of [[-2.4, -1.0, 0.55, 3], [2.2, -0.8, 0.45, 5], [-1.3, -0.4, 0.22, 9], [1.4, -0.3, 0.26, 12], [-3.0, -2.2, 0.7, 14], [2.9, -2.4, 0.6, 18], [0.8, -2.6, 0.3, 21]]) {
   const m = new THREE.Mesh(makeRock(rad, seed), rockPieceMat);
   m.position.set(x, FLOOR_Y + rad * 0.25, z);
   m.rotation.y = seed;
-  scene.add(m);
+  props.add(m);
 }
+const column = new THREE.Mesh(makeColumn(), new THREE.MeshStandardMaterial({ map: rock.map, normalMap: rock.normal, roughness: 0.95, color: 0xa39280 }));
+column.position.set(COLUMN.x, 0, COLUMN.z);
+scene.add(column);
 
 // Fire pit: stones, logs, flames, embers, light.
 const stoneMat = new THREE.MeshStandardMaterial({ color: 0x5b5047, roughness: 0.9 });
@@ -837,7 +950,7 @@ for (let i = 0; i < 10; i++) {
   const a = (i / 10) * Math.PI * 2;
   const st = new THREE.Mesh(makeRock(0.07 + (i % 3) * 0.015, 30 + i, 0.7), stoneMat);
   st.position.set(FIRE.x + Math.cos(a) * 0.3, FIRE.y + 0.03, FIRE.z + Math.sin(a) * 0.3);
-  scene.add(st);
+  props.add(st);
 }
 const logMat = new THREE.MeshStandardMaterial({ color: 0x1c130d, roughness: 1, emissive: new THREE.Color(0xff4a12), emissiveIntensity: 0.25 });
 for (let i = 0; i < 3; i++) {
@@ -845,11 +958,11 @@ for (let i = 0; i < 3; i++) {
   lg.rotation.z = Math.PI / 2 - 0.25;
   lg.rotation.y = (i / 3) * Math.PI;
   lg.position.set(FIRE.x, FIRE.y + 0.08, FIRE.z);
-  scene.add(lg);
+  props.add(lg);
 }
 
 const flameUniforms = { uTime: { value: 0 }, uProj: { value: 500 }, uLevel: { value: 0.4 } };
-function makeParticles(count, spread, seedBase, vertexMain, fragment) {
+function makeParticles(count, spread, seedBase, vertexMain, fragment, at = FIRE, uniforms = flameUniforms) {
   const g = new THREE.BufferGeometry();
   const pos = new Float32Array(count * 3), seed = new Float32Array(count);
   const r = mulberry(seedBase);
@@ -861,7 +974,7 @@ function makeParticles(count, spread, seedBase, vertexMain, fragment) {
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
   const mat = new THREE.ShaderMaterial({
-    uniforms: flameUniforms,
+    uniforms,
     vertexShader: `
       attribute float aSeed; uniform float uTime; uniform float uProj; uniform float uLevel;
       varying float vLife; varying float vSeed;
@@ -877,20 +990,12 @@ function makeParticles(count, spread, seedBase, vertexMain, fragment) {
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
   });
   const pts = new THREE.Points(g, mat);
-  pts.position.copy(FIRE);
+  pts.position.copy(at);
   pts.frustumCulled = false;
   scene.add(pts);
   return pts;
 }
-makeParticles(260, 0.15, 3, `
-  life = fract(uTime * (0.7 + aSeed * 0.6) + aSeed * 7.13);
-  float hgt = 0.95 * uLevel + 0.15;
-  p.y += life * hgt;
-  p.xz *= (1.0 - life * 0.85);
-  p.x += sin(uTime * 4.0 + aSeed * 40.0) * 0.035 * life;
-  p.z += cos(uTime * 3.1 + aSeed * 23.0) * 0.025 * life;
-  size = (1.0 - life) * (0.16 + aSeed * 0.12) * (0.5 + 0.5 * uLevel);
-`, `
+const FLAME_FRAG = `
   varying float vLife; varying float vSeed;
   void main() {
     vec2 c = gl_PointCoord - 0.5; float d = length(c);
@@ -899,8 +1004,17 @@ makeParticles(260, 0.15, 3, `
     col = mix(col, vec3(0.35, 0.06, 0.02), smoothstep(0.55, 1.0, vLife));
     a *= 1.0 - smoothstep(0.5, 1.0, vLife);
     gl_FragColor = vec4(col * a * 1.4, a);
-  }`);
-makeParticles(90, 0.2, 9, `
+  }`;
+const flames = makeParticles(260, 0.15, 3, `
+  life = fract(uTime * (0.7 + aSeed * 0.6) + aSeed * 7.13);
+  float hgt = 0.95 * uLevel + 0.15;
+  p.y += life * hgt;
+  p.xz *= (1.0 - life * 0.85);
+  p.x += sin(uTime * 4.0 + aSeed * 40.0) * 0.035 * life;
+  p.z += cos(uTime * 3.1 + aSeed * 23.0) * 0.025 * life;
+  size = (1.0 - life) * (0.16 + aSeed * 0.12) * (0.5 + 0.5 * uLevel);
+`, FLAME_FRAG);
+const embers = makeParticles(90, 0.2, 9, `
   life = fract(uTime * (0.12 + aSeed * 0.1) + aSeed * 3.7);
   p.y += life * (2.6 + aSeed);
   p.x += sin(uTime * 0.9 + aSeed * 50.0) * 0.35 * life + (aSeed - 0.5) * life * 0.8;
@@ -923,7 +1037,8 @@ function radialTexture(stops) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
-const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialTexture([[0, 'rgba(255,170,80,0.9)'], [0.35, 'rgba(255,110,30,0.25)'], [1, 'rgba(255,80,20,0)']]), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+const haloTex = radialTexture([[0, 'rgba(255,170,80,0.9)'], [0.35, 'rgba(255,110,30,0.25)'], [1, 'rgba(255,80,20,0)']]);
+const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
 halo.position.set(FIRE.x, FIRE.y + 0.22, FIRE.z);
 halo.scale.set(1.3, 1.3, 1);
 scene.add(halo);
@@ -937,7 +1052,65 @@ scene.add(fillLight);
 const washLight = new THREE.PointLight(0xff9a50, 0, 0, 2);
 washLight.position.set(0, 0.7, -0.5);
 scene.add(washLight);
+// An oil lamp held close to the wall while painting: raking light shows the rock relief.
+const lampLight = new THREE.PointLight(0xffb070, 0, 3.2, 2);
+scene.add(lampLight);
 scene.add(new THREE.HemisphereLight(0x22324a, 0x0b0705, 0.6));
+
+// ---------------------------------------------------------------------------
+// The hidden chamber behind the crack
+// ---------------------------------------------------------------------------
+const chamber = new THREE.Group();
+const CH = { w: 0.9, h: 1.3, d: 1.9 };
+{
+  const S = wallPoint(CRACK.ax / ART_W, CRACK.ay / ART_H);
+  // Aligned with the straight-on line of sight, so looking straight in shows only the back wall.
+  // A phone can't see the crack from the middle, so there it's aligned for someone standing in front of it.
+  const narrow = (window.innerWidth / window.innerHeight) * SCREEN_H < 1.6;
+  const E = new THREE.Vector3(narrow ? S.x : 0, 0, EYE_D);
+  const dir = S.clone().sub(E).normalize();
+  chamber.rotation.set(Math.asin(dir.y), Math.atan2(-dir.x, -dir.z), 0, 'YXZ');
+  chamber.position.copy(S).addScaledVector(dir, 0.12);
+  const box = new THREE.BoxGeometry(CH.w, CH.h, CH.d);
+  box.translate(0, 0, -CH.d / 2);
+  const inner = rock.map.clone(); inner.repeat.set(1.2, 1.2); inner.needsUpdate = true;
+  chamber.add(new THREE.Mesh(box, new THREE.MeshStandardMaterial({ map: inner, normalMap: rock.normal, color: 0x7a6656, roughness: 1, side: THREE.BackSide })));
+  const lamp = new THREE.PointLight(0xffa04a, 2.2, 2.6, 2);
+  lamp.position.set(0, -0.38, -CH.d * 0.62);
+  chamber.add(lamp);
+  chamber.userData.lamp = lamp;
+  const flame = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+  flame.position.copy(lamp.position); flame.scale.set(0.22, 0.3, 1);
+  chamber.add(flame);
+  const lampBowl = new THREE.Mesh(makeRock(0.06, 120, 0.5), stoneMat);
+  lampBowl.position.set(0, -CH.h / 2 + 0.04, -CH.d * 0.62);
+  chamber.add(lampBowl);
+  // A handprint on the back wall: what you see when you look straight in.
+  const bait = makeStencil(posePoints('palm', 128, 120, 34), 34, PIG.red, 333, 1);
+  chamber.add(wallDecal(bait.canvas, 0.42, new THREE.Vector3(0.05, 0.05, -CH.d + 0.005), 0));
+  scene.add(chamber);
+  const spill = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.4 }));
+  spill.position.copy(S).add(new THREE.Vector3(0, 0, 0.06));
+  spill.scale.set(0.42, 1.05, 1);
+  scene.add(spill);
+  chamber.userData.spill = spill;
+}
+function wallDecal(srcCanvas, width, pos, rotY) {
+  const tex = new THREE.CanvasTexture(srcCanvas); tex.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(width, (width * srcCanvas.height) / srcCanvas.width), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 1, depthWrite: false, emissive: new THREE.Color(0xff7a2a), emissiveMap: tex, emissiveIntensity: 0 }));
+  m.position.copy(pos); m.rotation.y = rotY;
+  return m;
+}
+function paintedCanvas(kind, w, h, seed) {
+  const c = makeCanvas(w, h);
+  PAINTERS[kind](c.getContext('2d'), w, h, mulberry(seed));
+  erode(c, seed);
+  return c;
+}
+// Paintings on the chamber's inner walls: lean left to see the right wall, lean right to see the left one.
+const certsDecal = wallDecal(paintedCanvas('cloud', 280, 230, 401), 0.86, new THREE.Vector3(CH.w / 2 - 0.004, 0.05, -CH.d * 0.4), -Math.PI / 2);
+const langDecal = wallDecal(paintedCanvas('talk', 280, 230, 402), 0.86, new THREE.Vector3(-CH.w / 2 + 0.004, 0.05, -CH.d * 0.4), Math.PI / 2);
+chamber.add(certsDecal, langDecal);
 
 // ---------------------------------------------------------------------------
 // Foreground: the cave mouth and stalactites, close to the screen.
@@ -949,7 +1122,7 @@ const mouthMaskTex = new THREE.CanvasTexture(mouthMask);
 const mouthMap = rock.map.clone(); mouthMap.repeat.set(1.1, 1.1); mouthMap.needsUpdate = true;
 const mouthNormal = rock.normal.clone(); mouthNormal.repeat.set(1.1, 1.1); mouthNormal.needsUpdate = true;
 const mouthMat = new THREE.MeshStandardMaterial({ map: mouthMap, normalMap: mouthNormal, alphaMap: mouthMaskTex, alphaTest: 0.5, alphaToCoverage: true, color: 0x6e5d50, roughness: 1, side: THREE.DoubleSide });
-let mouth = null;
+let mouth = null, mouthData = null, mouthDims = { W: 1, H: 1 };
 const stalactites = new THREE.Group();
 scene.add(stalactites);
 const stalMat = new THREE.MeshStandardMaterial({ map: rock.map, normalMap: rock.normal, color: 0x9d8b79, roughness: 0.9 });
@@ -988,6 +1161,8 @@ function buildMouth() {
   mctx.closePath(); mctx.fill();
   mctx.filter = 'none';
   mouthMaskTex.needsUpdate = true;
+  mouthData = mctx.getImageData(0, 0, 512, 512).data;
+  mouthDims = { W, H };
   const g = new THREE.PlaneGeometry(W, H, 90, 90);
   const p = g.attributes.position;
   for (let i = 0; i < p.count; i++) {
@@ -1013,7 +1188,7 @@ const artCanvas = makeCanvas(ART_W, ART_H);
 const artCtx = artCanvas.getContext('2d');
 const artTex = new THREE.CanvasTexture(artCanvas);
 artTex.colorSpace = THREE.SRGBColorSpace; artTex.anisotropy = 4;
-const artMat = new THREE.MeshStandardMaterial({ map: artTex, normalMap: rock.normal, transparent: true, roughness: 0.95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
+const artMat = new THREE.MeshStandardMaterial({ map: artTex, alphaMap: crackTex, normalMap: rock.normal, transparent: true, roughness: 0.95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
 scene.add(new THREE.Mesh(offsetGeometry(wallGeo, 0.006), artMat));
 
 const shadowCanvas = makeCanvas(SH_W, SH_H);
@@ -1028,21 +1203,22 @@ const fxCanvas = makeCanvas(SH_W, SH_H);
 const fxCtx = fxCanvas.getContext('2d');
 const fxTex = new THREE.CanvasTexture(fxCanvas);
 fxTex.colorSpace = THREE.SRGBColorSpace;
-const fxMat = new THREE.MeshBasicMaterial({ map: fxTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -6 });
+const fxMat = new THREE.MeshBasicMaterial({ map: fxTex, alphaMap: crackTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -6 });
 scene.add(new THREE.Mesh(offsetGeometry(wallGeo, 0.018), fxMat));
 
-// Painting layout in art-canvas pixels. The visible wall spans roughly x 390–1660, y 110–790.
+// Painting layout in paint-layer pixels. The visible wall spans roughly x 390–1660, y 110–790;
+// the stone column hides x ≈ 400–600 from straight on, and the crack sits at x ≈ 1500.
 const PAINTINGS = [
-  { id: 'bison', kind: 'bison', x: 520, y: 210, w: 290, h: 170, group: 'herd', seed: 11 },
-  { id: 'horse', kind: 'horse', x: 880, y: 150, w: 280, h: 160, group: 'herd', seed: 12 },
-  { id: 'deer', kind: 'deer', x: 1250, y: 200, w: 250, h: 190, group: 'herd', seed: 13 },
-  { id: 'bison2', kind: 'bison', x: 1460, y: 420, w: 190, h: 112, group: 'herd', seed: 14 },
-  { id: 'hunters', kind: 'hunters', x: 690, y: 440, w: 250, h: 140, group: 'hunt', seed: 15 },
-  { id: 'self', kind: 'self', x: 990, y: 380, w: 150, h: 170, group: 'self', seed: 16 },
-  { id: 'phone', kind: 'phone', x: 1215, y: 450, w: 110, h: 190, group: 'project', project: 'phone', seed: 17 },
-  { id: 'laptop', kind: 'laptop', x: 450, y: 520, w: 210, h: 150, group: 'project', project: 'laptop', seed: 18 },
-  { id: 'dots', kind: 'dots', x: 420, y: 130, w: 200, h: 40, group: 'sign', seed: 19 },
-  { id: 'tally', kind: 'tally', x: 1530, y: 140, w: 110, h: 60, group: 'sign', seed: 20 },
+  { id: 'bison', kind: 'bison', x: 640, y: 262, w: 235, h: 140, group: 'herd', seed: 11 },
+  { id: 'horse', kind: 'horse', x: 900, y: 240, w: 235, h: 135, group: 'herd', seed: 12 },
+  { id: 'deer', kind: 'deer', x: 1160, y: 245, w: 195, h: 150, group: 'herd', seed: 13 },
+  { id: 'hunters', kind: 'hunters', x: 640, y: 425, w: 230, h: 125, group: 'hunt', seed: 15 },
+  { id: 'self', kind: 'self', x: 905, y: 405, w: 130, h: 150, group: 'self', seed: 16 },
+  { id: 'phone', kind: 'phone', x: 1075, y: 410, w: 95, h: 165, group: 'project', project: 'phone', seed: 17 },
+  { id: 'laptop', kind: 'laptop', x: 1225, y: 430, w: 185, h: 135, group: 'project', project: 'laptop', seed: 18 },
+  { id: 'dots', kind: 'dots', x: 700, y: 205, w: 200, h: 40, group: 'sign', seed: 19 },
+  { id: 'tally', kind: 'tally', x: 1580, y: 285, w: 100, h: 55, group: 'sign', seed: 20 },
+  { id: 'owl', kind: 'owl', x: 520, y: 330, w: 100, h: 130, group: 'secret', secret: 'education', seed: 21 },
 ];
 const GLOW_PAD = 26;
 const glowRGB = 'rgb(255,128,48)';
@@ -1061,9 +1237,7 @@ function makeGlowSprite(src, w, h) {
 }
 function addPaintingState(p) { p.alpha = 1; p.g = 0; p.boostFrom = 0; p.boostTo = 0; p.glow = makeGlowSprite(p.canvas, p.w / 2, p.h / 2); }
 for (const p of PAINTINGS) {
-  p.canvas = makeCanvas(p.w, p.h);
-  PAINTERS[p.kind](p.canvas.getContext('2d'), p.w, p.h, mulberry(p.seed));
-  erode(p.canvas, p.seed);
+  p.canvas = paintedCanvas(p.kind, p.w, p.h, p.seed);
   addPaintingState(p);
 }
 
@@ -1071,7 +1245,7 @@ for (const p of PAINTINGS) {
 const STENCILS = [];
 {
   const r = mulberry(77);
-  const spots = [[1570, 600], [1640, 520], [1610, 745], [1665, 675], [1545, 830], [430, 720], [500, 790], [360, 640], [600, 775], [1430, 835]];
+  const spots = [[1600, 640], [1640, 545], [1610, 760], [1665, 690], [1545, 835], [430, 720], [500, 790], [360, 640]];
   spots.forEach(([x, y], i) => {
     const s = 26 + r() * 10;
     const pts = posePoints('palm', x, y, s, (r() - 0.5) * 0.9);
@@ -1084,11 +1258,11 @@ const STENCILS = [];
 // Tracing guides (painting mode): dotted outlines waiting to be painted in
 // ---------------------------------------------------------------------------
 const GUIDES = [
-  { id: 'wolf', section: 'experience', title: 'the wolf', x: 690, y: 590, w: 210, h: 170, color: PIG.char, eye: [0.6, 0.38],
-    pts: [[0.05, 1.0], [0.1, 0.62], [0.16, 0.42], [0.22, 0.12], [0.3, 0.0], [0.36, 0.22], [0.42, 0.3], [0.5, 0.32], [0.62, 0.36], [0.78, 0.42], [0.96, 0.5], [1.0, 0.58], [0.92, 0.62], [0.78, 0.6], [0.9, 0.7], [0.82, 0.76], [0.62, 0.74], [0.45, 0.82], [0.36, 1.0]] },
-  { id: 'rabbit', section: 'about', title: 'the rabbit', x: 965, y: 570, w: 170, h: 195, color: PIG.yellow, eye: [0.74, 0.46],
+  { id: 'wolf', section: 'experience', title: 'the wolf', x: 655, y: 590, w: 215, h: 175, tool: 'charcoal', line: PIG.char, fill: PIG.red, eye: [0.6, 0.4],
+    pts: [[0.08, 1.0], [0.1, 0.66], [0.17, 0.42], [0.22, 0.22], [0.28, 0.0], [0.37, 0.2], [0.47, 0.03], [0.52, 0.26], [0.63, 0.3], [0.8, 0.38], [0.97, 0.44], [1.0, 0.52], [0.95, 0.56], [0.8, 0.58], [0.88, 0.64], [0.72, 0.68], [0.6, 0.74], [0.48, 0.84], [0.42, 1.0]] },
+  { id: 'rabbit', section: 'about', title: 'the rabbit', x: 1135, y: 585, w: 160, h: 190, tool: 'charcoal', line: PIG.char, fill: PIG.yellow, eye: [0.74, 0.46],
     pts: [[0.12, 1.0], [0.02, 0.82], [0.04, 0.6], [0.18, 0.46], [0.36, 0.42], [0.5, 0.42], [0.47, 0.2], [0.5, 0.02], [0.57, 0.02], [0.6, 0.3], [0.64, 0.14], [0.7, 0.02], [0.76, 0.06], [0.7, 0.36], [0.8, 0.42], [0.86, 0.54], [0.78, 0.62], [0.68, 0.66], [0.72, 0.94], [0.6, 1.0]] },
-  { id: 'hand', section: 'contact', title: 'the hand', x: 1350, y: 565, w: 150, h: 190, color: PIG.red,
+  { id: 'hand', section: 'contact', title: 'the hand', x: 1345, y: 590, w: 140, h: 180, tool: 'ochre', line: PIG.deep, fill: PIG.red,
     pts: [[0.28, 1.0], [0.14, 0.72], [0.0, 0.54], [0.02, 0.44], [0.12, 0.48], [0.22, 0.6], [0.22, 0.32], [0.24, 0.06], [0.32, 0.05], [0.34, 0.33], [0.38, 0.28], [0.42, 0.0], [0.5, 0.0], [0.52, 0.29], [0.56, 0.32], [0.6, 0.06], [0.68, 0.08], [0.68, 0.38], [0.72, 0.44], [0.78, 0.22], [0.86, 0.24], [0.84, 0.55], [0.82, 0.8], [0.72, 1.0]] },
 ];
 const SECTION_NAME = { experience: 'Experience', about: 'About', contact: 'Contact' };
@@ -1107,7 +1281,7 @@ for (const g of GUIDES) {
     const t = Math.min(1, dist / segs[i]);
     samples.push([raw[i][0] + (raw[i + 1][0] - raw[i][0]) * t, raw[i][1] + (raw[i + 1][1] - raw[i][1]) * t]);
   }
-  Object.assign(g, { samples, covered: new Uint8Array(n), near: 0, inBox: 0, done: false, hover: 0 });
+  Object.assign(g, { samples, covered: new Uint8Array(n), near: 0, inBox: 0, done: false, hover: 0, artPath: shapePath(g.pts, g.w, g.h, g.x, g.y), localPath: shapePath(g.pts, g.w, g.h) });
 }
 function guideAt(ax, ay, pad = 30) { return GUIDES.find((g) => ax > g.x - pad && ax < g.x + g.w + pad && ay > g.y - pad && ay < g.y + g.h + pad) || null; }
 function guideProgress(g) { let c = 0; for (const v of g.covered) c += v; return c / g.covered.length; }
@@ -1128,48 +1302,48 @@ function checkGuides(final) {
   for (const g of GUIDES) {
     if (g.done || !g.inBox) continue;
     const cov = guideProgress(g), prec = g.near / g.inBox;
-    if ((final && cov >= 0.68 && prec >= 0.55) || cov >= 0.9) completeGuide(g);
+    if ((final && cov >= 0.68 && prec >= 0.55) || cov >= 0.9) startFinish(g);
   }
 }
-function completeGuide(g) {
-  g.done = true;
-  const c = makeCanvas(g.w, g.h);
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = g.color;
-  smoothClosed(ctx, g.pts, g.w, g.h);
-  ctx.fill();
-  erode(c, 900 + g.id.length);
-  const p = { id: `g-${g.id}`, kind: 'traced', x: g.x, y: g.y, w: g.w, h: g.h, group: 'traced', guide: g, canvas: c };
-  addPaintingState(p);
-  PAINTINGS.push(p);
-  artDirty = true;
-  boost([p.id]);
-  playChime(g.id);
-  openPanel(g.section);
-}
 
-// Visitor strokes, finger-painted in ochre.
-const STROKES = [];
-let currentStroke = null;
-function paintSegment(ctx, a, b, seed) {
-  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.strokeStyle = PIG.red;
-  ctx.globalAlpha = 0.85; ctx.lineWidth = 10;
-  ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
-  // A few dry flecks along the edge, so it reads as pigment rather than a pen line.
-  const r = mulberry(seed);
-  ctx.fillStyle = PIG.deep;
-  ctx.globalAlpha = 0.5;
-  for (let i = 0; i < 2; i++) {
-    const t = r();
-    ctx.beginPath(); ctx.arc(a[0] + (b[0] - a[0]) * t + (r() - 0.5) * 12, a[1] + (b[1] - a[1]) * t + (r() - 0.5) * 12, 0.8 + r() * 1.6, 0, Math.PI * 2); ctx.fill();
+// ---------------------------------------------------------------------------
+// Pigment: dabs that catch on the rock, thicken when slow, and run dry
+// ---------------------------------------------------------------------------
+const TOOLS = {
+  charcoal: { base: 4.2, catchLo: 0.32, catchHi: 0.62, flecks: 0.6 },
+  ochre: { base: 7.5, catchLo: 0.18, catchHi: 0.55, flecks: 0.25 },
+};
+function dab(ctx, ax, ay, r, color, load, seed, tool, ox = 0, oy = 0) {
+  const T = TOOLS[tool];
+  const rr = mulberry(seed);
+  const stick = 0.3 + 0.7 * smooth(T.catchLo, T.catchHi, rockHeight(ax, ay));
+  ctx.fillStyle = color;
+  for (let k = 0; k < 3; k++) {
+    ctx.globalAlpha = clamp(load * stick * (0.32 + rr() * 0.36), 0, 1);
+    ctx.beginPath(); ctx.arc(ax - ox + (rr() - 0.5) * r * 0.8, ay - oy + (rr() - 0.5) * r * 0.8, r * (0.45 + rr() * 0.55), 0, Math.PI * 2); ctx.fill();
+  }
+  if (rr() < T.flecks) {
+    ctx.globalAlpha = 0.5 * load;
+    ctx.beginPath(); ctx.arc(ax - ox + (rr() - 0.5) * r * 2.4, ay - oy + (rr() - 0.5) * r * 2.4, 0.6 + rr() * 1.2, 0, Math.PI * 2); ctx.fill();
   }
   ctx.globalAlpha = 1;
 }
 
+// Visitor strokes. Each point stores [x, y, radius, load] so a redraw reproduces it exactly.
+const STROKES = [];
+let currentStroke = null;
+function renderStroke(ctx, s) { s.pts.forEach(([x, y, r, l], i) => dab(ctx, x, y, r, s.color, l, s.seed + i, s.tool)); }
+
 let artDirty = true, artUploadAt = 0, artUploadPending = false;
 function redrawArt() {
   artCtx.clearRect(0, 0, ART_W, ART_H);
+  artCtx.save();
+  artCtx.scale(2, 2);
+  if (supportsFilter) artCtx.filter = 'blur(5px)';
+  artCtx.strokeStyle = 'rgba(16,9,5,0.85)'; artCtx.lineWidth = 9; artCtx.stroke(crackPath);
+  artCtx.filter = 'none';
+  artCtx.strokeStyle = 'rgba(12,7,4,0.9)'; artCtx.lineWidth = 2.5; artCtx.stroke(crackPath);
+  artCtx.restore();
   for (const s of STENCILS) { artCtx.globalAlpha = s.alpha; artCtx.drawImage(s.canvas, s.x, s.y); }
   for (const p of PAINTINGS) {
     if (p.alpha <= 0.001) continue;
@@ -1177,7 +1351,7 @@ function redrawArt() {
     artCtx.drawImage(p.canvas, p.x, p.y);
   }
   artCtx.globalAlpha = 1;
-  for (const s of STROKES) for (let i = 1; i < s.pts.length; i++) paintSegment(artCtx, s.pts[i - 1], s.pts[i], s.seed + i);
+  for (const s of STROKES) renderStroke(artCtx, s);
   artTex.needsUpdate = true;
   artDirty = false;
 }
@@ -1187,7 +1361,8 @@ function redrawArt() {
 // ---------------------------------------------------------------------------
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-composer.addPass(new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.7, 0.82));
+const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.7, 0.82);
+composer.addPass(bloom);
 const vignette = new ShaderPass({
   uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uStrength: { value: 0.88 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
@@ -1219,12 +1394,14 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-// The viewport is a window onto the cave: an off-axis frustum through a fixed screen rectangle.
+// The viewport is a window onto the cave: an off-axis frustum through a screen rectangle.
+// win moves and scales that rectangle; zooming to the wall moves the window up to the rock.
+const win = { x: 0, y: 0, z: 0, s: 1 };
 function applyWindowCamera(eye) {
   const n = 0.05, f = 60;
   const l = ((-screenW / 2 - eye.x) * n) / eye.z, r = ((screenW / 2 - eye.x) * n) / eye.z;
   const b = ((-SCREEN_H / 2 - eye.y) * n) / eye.z, t = ((SCREEN_H / 2 - eye.y) * n) / eye.z;
-  camera.position.set(pan.x + eye.x, eye.y, eye.z);
+  camera.position.set(win.x + eye.x * win.s, win.y + eye.y * win.s, win.z + eye.z * win.s);
   camera.quaternion.identity();
   camera.updateMatrixWorld();
   camera.projectionMatrix.makePerspective(l, r, t, b, n, f);
@@ -1371,6 +1548,7 @@ function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.
 function openPanel(kind, arg) {
   panelKind = kind;
   panelBody.replaceChildren();
+  panel.classList.toggle('left', kind === 'certs' || kind === 'languages');
   const eyebrow = $('panel-eyebrow'), title = $('panel-title');
   if (kind === 'experience') {
     eyebrow.textContent = 'The hunt · Wolf';
@@ -1381,7 +1559,7 @@ function openPanel(kind, arg) {
       const ul = el('ul'); for (const d of x.description) ul.append(el('li', null, d));
       r.append(ul); panelBody.append(r);
     }
-    boost(['bison', 'horse', 'deer', 'bison2', 'hunters']);
+    boost(['bison', 'horse', 'deer', 'hunters']);
   } else if (kind === 'about') {
     eyebrow.textContent = 'The figure · Rabbit';
     title.textContent = CV.name;
@@ -1391,8 +1569,6 @@ function openPanel(kind, arg) {
       const tags = el('div', 'tags'); for (const s of g.skills) tags.append(el('span', 'tag', s));
       grp.append(tags); panelBody.append(grp);
     }
-    const ed = el('div', 'group'); ed.append(el('h4', null, 'Education'), el('p', null, `${CV.education.degree}, ${CV.education.institution}`), el('p', 'muted', CV.education.period));
-    panelBody.append(ed);
     boost(['self']);
   } else if (kind === 'project') {
     const p = CV.projects[arg];
@@ -1415,6 +1591,20 @@ function openPanel(kind, arg) {
     const links = el('div', 'linkrow');
     for (const [label, href] of [['GitHub', CV.github], ['LinkedIn', CV.linkedin]]) { const a = el('a', null, label); a.href = href; a.target = '_blank'; a.rel = 'noopener'; links.append(a); }
     panelBody.append(line, copy, links, el('p', 'muted', CV.location));
+  } else if (kind === 'education') {
+    eyebrow.textContent = 'Found behind the column · The owl';
+    title.textContent = 'Education';
+    panelBody.append(el('h3', null, CV.education.degree), el('p', null, CV.education.institution), el('p', 'muted', `${CV.education.period} · ${CV.education.note}`));
+  } else if (kind === 'certs') {
+    eyebrow.textContent = 'Found inside the crack · Six suns';
+    title.textContent = 'Certifications';
+    const ul = el('ul', 'list'); for (const c of CV.certifications.items) ul.append(el('li', null, c));
+    panelBody.append(el('p', 'muted', `Google Cloud · ${CV.certifications.year}`), ul);
+  } else if (kind === 'languages') {
+    eyebrow.textContent = 'Found inside the crack · Two speakers';
+    title.textContent = 'Languages';
+    const ul = el('ul', 'list'); for (const l of CV.languages) ul.append(el('li', null, `${l.language} · ${l.level}`));
+    panelBody.append(ul);
   }
   panel.hidden = false;
 }
@@ -1425,7 +1615,6 @@ function closePanel() {
   panelKind = null;
 }
 $('panel-close').addEventListener('click', closePanel);
-window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
 
 let clock = 0;
 function boost(ids) {
@@ -1435,6 +1624,194 @@ function boost(ids) {
     p.boostFrom = clock + i * 0.14;
     p.boostTo = clock + 2.4 + i * 0.14;
   });
+}
+
+let toastTimer = 0;
+function toast(text, seconds = 3.2) {
+  $('toast').textContent = text;
+  $('toast').hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => ($('toast').hidden = true), seconds * 1000);
+}
+
+// ---------------------------------------------------------------------------
+// Hidden things: found by leaning until they come into view
+// ---------------------------------------------------------------------------
+const owl = PAINTINGS.find((p) => p.id === 'owl');
+const SECRETS = [
+  { id: 'education', title: 'Education', where: 'behind the column', seen: 0, found: false,
+    points: () => [[0.5, 0.5], [0.3, 0.3], [0.7, 0.3], [0.3, 0.75], [0.7, 0.75]].map(([u, v]) => wallPoint((owl.x + u * owl.w) / ART_W, (owl.y + v * owl.h) / ART_H)) },
+  { id: 'certs', title: 'Certifications', where: 'inside the crack, on the right wall', seen: 0, found: false, decal: certsDecal,
+    points: () => [[0, 0], [-0.25, 0.2], [0.25, 0.2], [-0.25, -0.2], [0.25, -0.2]].map(([x, y]) => certsDecal.localToWorld(new THREE.Vector3(x, y, 0))) },
+  { id: 'languages', title: 'Languages', where: 'inside the crack, on the left wall', seen: 0, found: false, decal: langDecal,
+    points: () => [[0, 0], [-0.25, 0.2], [0.25, 0.2], [-0.25, -0.2], [0.25, -0.2]].map(([x, y]) => langDecal.localToWorld(new THREE.Vector3(x, y, 0))) },
+];
+const tmpV = new THREE.Vector3(), rayDir = new THREE.Vector3();
+// Cheap analytic occlusion: the column, the cave mouth, and the wall (with its crack).
+function blocked(from, to, targetOnWall) {
+  rayDir.copy(to).sub(from);
+  const len = rayDir.length();
+  rayDir.divideScalar(len);
+  // Column
+  const dxz = rayDir.x * rayDir.x + rayDir.z * rayDir.z;
+  if (dxz > 1e-6) {
+    const t = clamp(((COLUMN.x - from.x) * rayDir.x + (COLUMN.z - from.z) * rayDir.z) / dxz, 0, len);
+    const px = from.x + rayDir.x * t, py = from.y + rayDir.y * t, pz = from.z + rayDir.z * t;
+    if (py > COLUMN.bottom && py < COLUMN.bottom + COLUMN.height && Math.hypot(px - COLUMN.x, pz - COLUMN.z) < columnRadius(py) * 1.15) return true;
+  }
+  // Cave mouth (approximated by its plane)
+  if (mouthData && Math.abs(rayDir.z) > 1e-6) {
+    const t = (MOUTH_Z - from.z) / rayDir.z;
+    if (t > 0 && t < len) {
+      const x = from.x + rayDir.x * t, y = from.y + rayDir.y * t;
+      const u = (x - pan.x + mouthDims.W / 2) / mouthDims.W, v = (mouthDims.H / 2 - y) / mouthDims.H;
+      if (u >= 0 && u < 1 && v >= 0 && v < 1 && mouthData[(Math.floor(v * 512) * 512 + Math.floor(u * 512)) * 4] > 128) return true;
+    }
+  }
+  // Wall: march to the first crossing; only the crack lets a ray through.
+  const stop = targetOnWall ? len - 0.08 : len;
+  let prevT = 0, prevF = from.z - wallZ(from.x, from.y);
+  for (let i = 1; i <= 40; i++) {
+    const t = (i / 40) * stop;
+    tmpV.copy(from).addScaledVector(rayDir, t);
+    if (Math.abs(tmpV.x) > WALL_W / 2 || Math.abs(tmpV.y) > WALL_H / 2) { prevT = t; continue; }
+    const f = tmpV.z - wallZ(tmpV.x, tmpV.y);
+    if (f < 0 && prevF >= 0) {
+      const tc = prevT + (t - prevT) * (prevF / (prevF - f));
+      tmpV.copy(from).addScaledVector(rayDir, tc);
+      const ax = (tmpV.x / WALL_W + 0.5) * ART_W, ay = (0.5 - tmpV.y / WALL_H) * ART_H;
+      return !inCrack(ax, ay);
+    }
+    prevT = t; prevF = f;
+  }
+  return false;
+}
+function visibleFraction(s) {
+  const pts = s.points();
+  let vis = 0;
+  for (const p of pts) {
+    tmpV.copy(p).project(camera);
+    if (tmpV.z > 1 || Math.abs(tmpV.x) > 0.95 || Math.abs(tmpV.y) > 0.95) continue;
+    if (!blocked(camera.position, p, s.id === 'education')) vis++;
+  }
+  return vis / pts.length;
+}
+let secretTimer = 0;
+function updateSecrets(dt) {
+  secretTimer += dt;
+  // One discovery at a time: the next waits until its panel is closed.
+  if (secretTimer < 0.15 || mode === 'idle' || focus.active || panelKind) return;
+  const step = secretTimer; secretTimer = 0;
+  for (const s of SECRETS) {
+    if (s.found) continue;
+    s.seen = visibleFraction(s) >= 0.6 ? s.seen + step : 0;
+    if (s.seen >= 0.45) { discover(s); return; }
+  }
+}
+function discover(s) {
+  s.found = true;
+  s.foundAt = clock;
+  const n = SECRETS.filter((q) => q.found).length;
+  playChime('secret');
+  toast(`Found ${n} of 3 · ${s.title}, ${s.where}`);
+  if (s.id === 'education') boost(['owl']);
+  openPanel(s.id);
+}
+
+// ---------------------------------------------------------------------------
+// Zooming in to paint, and the ghost hand that finishes a painting
+// ---------------------------------------------------------------------------
+const focus = { active: false, t: 0, guide: null, target: { x: 0, y: 0, z: 0, s: 1 } };
+function startFocus(g) {
+  const P = wallPoint((g.x + g.w / 2) / ART_W, (g.y + g.h / 2) / ART_H);
+  // Close enough to fill the view with the shape, but never so close it doesn't fit (narrow phones).
+  const gw = (g.w / ART_W) * WALL_W, gh = (g.h / ART_H) * WALL_H;
+  const s = 0.42, dist = Math.max(1.9, (1.35 * gw * EYE_D) / screenW, (1.45 * gh * EYE_D) / SCREEN_H);
+  focus.target = { x: P.x, y: P.y + 0.06, z: P.z + dist - EYE_D * s, s };
+  focus.active = true; focus.guide = g;
+  $('step-back').hidden = false;
+  setGestureUI(`Trace ${g.title} with ${g.tool === 'charcoal' ? 'charcoal' : 'red ochre'}`, guideProgress(g) / 0.68);
+}
+function endFocus() {
+  focus.active = false;
+  $('step-back').hidden = true;
+  if (mode === 'mouse') setGestureUI(paintingHint(), 0);
+}
+$('step-back').addEventListener('click', () => { if (!finish.g) endFocus(); });
+
+const finish = { g: null, p: null, t: 0, plan: [], drawn: 0, outlined: 0, done: false, hand: null };
+function startFinish(g) {
+  if (finish.g) return;
+  g.done = true;
+  if (!focus.active || focus.guide !== g) startFocus(g);
+  const c = makeCanvas(g.w, g.h);
+  const p = { id: `g-${g.id}`, kind: 'traced', x: g.x, y: g.y, w: g.w, h: g.h, group: 'traced', guide: g, canvas: c, alpha: 1, g: 0, boostFrom: 0, boostTo: 0, glow: null };
+  PAINTINGS.push(p);
+  // The ghost hand dabs in rows, back and forth, the way you'd fill a shape with a finger.
+  const plan = [];
+  const probe = makeCanvas(1, 1).getContext('2d');
+  let row = 0;
+  for (let y = 6; y < g.h; y += 9, row++) {
+    const xs = [];
+    for (let x = 4; x < g.w; x += 8) if (probe.isPointInPath(g.localPath, x, y)) xs.push(x);
+    if (row % 2) xs.reverse();
+    for (const x of xs) plan.push([x, y]);
+  }
+  Object.assign(finish, { g, p, t: 0, plan, drawn: 0, outlined: 0, done: false, hand: null });
+}
+const FILL_T = 1.7, LINE_T = 0.7, HOLD_T = 0.9;
+function updateFinish(dt) {
+  if (!finish.g) return;
+  // Wait until the camera has arrived at the wall.
+  if (focus.t < 0.98 && finish.t === 0) return;
+  finish.t += dt;
+  const { g, p } = finish;
+  const pctx = p.canvas.getContext('2d');
+  // 1. Fill with ochre dabs, clipped to the shape.
+  const fillTo = Math.min(finish.plan.length, Math.floor((finish.t / FILL_T) * finish.plan.length));
+  if (fillTo > finish.drawn) {
+    pctx.save(); pctx.clip(g.localPath);
+    artCtx.save(); artCtx.clip(g.artPath);
+    for (let i = finish.drawn; i < fillTo; i++) {
+      const [x, y] = finish.plan[i];
+      dab(pctx, g.x + x, g.y + y, 8.5, g.fill, 0.95, 5000 + i, 'ochre', g.x, g.y);
+      dab(artCtx, g.x + x, g.y + y, 8.5, g.fill, 0.95, 5000 + i, 'ochre');
+    }
+    pctx.restore(); artCtx.restore();
+    finish.drawn = fillTo;
+    finish.hand = finish.plan[fillTo - 1];
+    artUploadPending = true;
+  }
+  // 2. Go round the outline in charcoal (or deep ochre for the hand).
+  if (finish.t > FILL_T) {
+    const k = Math.min(g.samples.length, Math.floor(((finish.t - FILL_T) / LINE_T) * g.samples.length));
+    for (let i = finish.outlined; i < k; i++) {
+      const a = g.samples[i], b = g.samples[(i + 1) % g.samples.length];
+      for (let s = 0; s <= 3; s++) {
+        const x = a[0] + ((b[0] - a[0]) * s) / 3, y = a[1] + ((b[1] - a[1]) * s) / 3;
+        dab(pctx, x, y, 4.5, g.line, 0.9, 7000 + i * 4 + s, 'charcoal', g.x, g.y);
+        dab(artCtx, x, y, 4.5, g.line, 0.9, 7000 + i * 4 + s, 'charcoal');
+      }
+      finish.hand = [a[0] - g.x, a[1] - g.y];
+    }
+    finish.outlined = k;
+    artUploadPending = true;
+  }
+  // 3. It comes alive, then the camera steps back and the section opens.
+  if (finish.t > FILL_T + LINE_T && !finish.done) {
+    finish.done = true;
+    finish.hand = null;
+    p.glow = makeGlowSprite(p.canvas, p.w / 2, p.h / 2);
+    boost([p.id]);
+    playChime(g.id);
+  }
+  if (finish.t > FILL_T + LINE_T + HOLD_T) {
+    const section = g.section;
+    finish.g = null;
+    artDirty = true;
+    endFocus();
+    setTimeout(() => openPanel(section), 500);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1448,15 +1825,15 @@ let lastVideoTime = -1, frameNo = 0;
 let hands = [];               // arrays of 21 mirrored normalized points (camera mode)
 let analyses = [];
 const eye = { x: 0, y: 0, z: EYE_D }, eyeTarget = { x: 0, y: 0, z: EYE_D };
-let headOn = true;
+let headOn = true, eyeLocked = false;
 let faceRef = null, faceCal = [], lastFaceAt = -10;
 const faceF = { cx: new OneEuro(0.5, 4), cy: new OneEuro(0.5, 4), fw: new OneEuro(0.4, 2) };
 const faceHeld = { cx: 0.5, cy: 0.5, fw: 0.2 };
 let shadowAlpha = 0;
-const pointer = { inside: false, ax: 1024, ay: 470, down: false, drawing: false, panning: false, lastX: 0, moved: 0 };
+const pointer = { inside: false, ax: 1024, ay: 470, down: false, drawing: false, panning: false, lastX: 0, moved: 0, lastT: 0, strokeLen: 0 };
 const G = { label: 'none', history: [], hold: 0, latched: null, wrist: [], dwell: { id: null, t: 0 } };
 const stats = { fps: 0, detectMs: 0, delegate: '—' };
-const lean = { shown: false, at: 0, done: false };
+let hintShown = false;
 
 function onFace(det, t) {
   const vw = video.videoWidth, vh = video.videoHeight;
@@ -1473,19 +1850,25 @@ function onFace(det, t) {
       const avg = (k) => faceCal.reduce((a, f) => a + f[k], 0) / faceCal.length;
       faceRef = { cx: avg('cx'), cy: avg('cy'), fw: avg('fw') };
       faceCal = [];
-      if (!lean.shown) showLeanHint();
+      showSecretsHint();
     }
     return;
   }
-  if (!headOn) return;
-  eyeTarget.x = (faceRef.cx - faceHeld.cx) * SCREEN_H * 2.0;
-  eyeTarget.y = (faceRef.cy - faceHeld.cy) * SCREEN_H * 1.6;
-  eyeTarget.z = EYE_D * clamp(faceRef.fw / faceHeld.fw, 0.65, 1.5);
+  if (!headOn || eyeLocked) return;
+  eyeTarget.x = clamp((faceRef.cx - faceHeld.cx) * SCREEN_H * HEAD_GAIN, -1.7, 1.7);
+  eyeTarget.y = clamp((faceRef.cy - faceHeld.cy) * SCREEN_H * HEAD_GAIN * 0.7, -0.9, 0.9);
+  eyeTarget.z = EYE_D * clamp(faceRef.fw / faceHeld.fw, 0.6, 1.6);
 }
-function showLeanHint() {
-  lean.shown = true; lean.at = clock;
-  $('lean-hint').textContent = 'Lean left and right. Your screen is a window into the cave.';
-  $('lean-hint').hidden = false;
+function showSecretsHint() {
+  if (hintShown) return;
+  hintShown = true;
+  toast(mode === 'camera'
+    ? 'Three things are hidden. Lean to peek behind the stone column, and lean left and right to look inside the glowing crack.'
+    : tiltOn
+      ? 'Three things are hidden. Drag along the wall, then tilt your phone to peek behind the column and into the glowing crack.'
+      : matchMedia('(pointer: coarse)').matches
+        ? 'Three things are hidden. Drag along the wall to look past the stone column and into the glowing crack.'
+        : 'Three things are hidden. Move to the edges of the screen to lean: peek behind the column and into the glowing crack.', 7);
 }
 
 // Light smoothing of hand landmarks so shadows don't shiver.
@@ -1580,7 +1963,7 @@ function updateGestures(dt, now) {
 let lastHint = '';
 function setGestureUI(text, progress) {
   if (text !== lastHint) { $('gesture-label').textContent = text; lastHint = text; }
-  $('ring-fill').style.strokeDashoffset = String(62.8 * (1 - progress));
+  $('ring-fill').style.strokeDashoffset = String(62.8 * (1 - clamp(progress, 0, 1)));
 }
 
 // pts: 21 points in shadow-canvas pixels.
@@ -1596,16 +1979,16 @@ function leaveHandprint(pts) {
 // Drawing the shadow + glow layers
 // ---------------------------------------------------------------------------
 let flickerNow = 0;
-function drawShadows(handPts) {
+function drawShadows(handPts, stick) {
   // Opaque black base: the alpha map reads brightness, so soft edges need real grey levels.
   shadowCtx.fillStyle = '#000';
   shadowCtx.fillRect(0, 0, SH_W, SH_H);
   if (handPts.length) {
     shadowTmpCtx.clearRect(0, 0, SH_W, SH_H);
     shadowTmpCtx.fillStyle = '#fff'; shadowTmpCtx.strokeStyle = '#fff';
-    for (const pts of handPts) drawHandSilhouette(shadowTmpCtx, pts, Math.hypot(pts[0].x - pts[9].x, pts[0].y - pts[9].y));
+    for (const pts of handPts) drawHandSilhouette(shadowTmpCtx, pts, Math.hypot(pts[0].x - pts[9].x, pts[0].y - pts[9].y), 2.6, 'rgba(255,255,255,0)', stick);
     if (supportsFilter) {
-      shadowCtx.filter = `blur(${(1.6 + Math.max(0, flickerNow) * 1.4).toFixed(1)}px)`;
+      shadowCtx.filter = `blur(${((1.6 + Math.max(0, flickerNow) * 1.4) * (1 - 0.55 * focus.t)).toFixed(1)}px)`;
       shadowCtx.drawImage(shadowTmp, 0, 0);
       shadowCtx.filter = 'none';
     } else {
@@ -1614,6 +1997,8 @@ function drawShadows(handPts) {
       shadowCtx.globalAlpha = 1;
     }
   }
+  shadowCtx.fillStyle = '#000';
+  shadowCtx.fill(crackPath);
   shadowTex.needsUpdate = true;
 }
 
@@ -1631,7 +2016,7 @@ function drawFx(handPts) {
   fxWasActive = active;
   fxCtx.clearRect(0, 0, SH_W, SH_H);
   for (const p of PAINTINGS) {
-    if (p.g <= 0.01 || p.alpha <= 0.01) continue;
+    if (!p.glow || p.g <= 0.01 || p.alpha <= 0.01) continue;
     fxCtx.globalAlpha = Math.min(1, p.g) * p.alpha;
     fxCtx.drawImage(p.glow, p.x / 2 - GLOW_PAD, p.y / 2 - GLOW_PAD);
     // A traced creature opens its eye while it glows.
@@ -1646,17 +2031,19 @@ function drawFx(handPts) {
   if (mode === 'mouse') {
     for (const g of GUIDES) {
       if (g.done) continue;
-      const breathe = 0.45 + 0.25 * Math.sin(clock * 2.2 + g.x) + g.hover * 0.35;
+      const focused = focus.active && focus.guide === g;
+      const breathe = (focused ? 0.75 : 0.45) + 0.25 * Math.sin(clock * 2.2 + g.x) + g.hover * 0.35;
       g.samples.forEach(([x, y], i) => {
         const lit = g.covered[i];
+        if (lit && focused) return;
         fxCtx.globalAlpha = lit ? 0.95 : clamp(breathe, 0, 1);
         fxCtx.fillStyle = lit ? 'rgb(255,190,110)' : 'rgb(230,130,60)';
-        fxCtx.beginPath(); fxCtx.arc(x / 2, y / 2, lit ? 2.6 : 1.7, 0, Math.PI * 2); fxCtx.fill();
+        fxCtx.beginPath(); fxCtx.arc(x / 2, y / 2, lit ? 2.2 : focused ? 1.2 : 1.7, 0, Math.PI * 2); fxCtx.fill();
       });
     }
-    if (pointer.inside) {
+    if (pointer.inside && !finish.g) {
       fxCtx.globalAlpha = pointer.drawing ? 1 : 0.7;
-      emberEye(pointer.ax / 2, pointer.ay / 2, pointer.drawing ? 2.4 : 1.6);
+      emberEye(pointer.ax / 2, pointer.ay / 2, pointer.drawing ? 1.6 : 1.2);
     }
   }
   fxCtx.globalAlpha = 1;
@@ -1715,7 +2102,24 @@ async function startCamera() {
     setTimeout(() => startMouse(), 1600);
   }
 }
-function startMouse() { mode = 'mouse'; startAudio(); enterScene(); }
+function startMouse() { mode = 'mouse'; startAudio(); startTilt(); enterScene(); setTimeout(showSecretsHint, 4000); }
+
+// Phones: tilting the phone leans, the way moving your head does with the camera on.
+let tiltRef = null, tiltOn = false;
+function startTilt() {
+  if (!('DeviceOrientationEvent' in window) || !matchMedia('(pointer: coarse)').matches) return;
+  const listen = () => window.addEventListener('deviceorientation', (e) => {
+    if (e.gamma == null || e.beta == null) return;
+    if (!tiltRef) tiltRef = { g: e.gamma, b: e.beta };
+    tiltOn = true;
+    if (eyeLocked || focus.active) return;
+    eyeTarget.x = clamp((e.gamma - tiltRef.g) / 18, -1, 1) * 1.5;
+    eyeTarget.y = -clamp((e.beta - tiltRef.b) / 25, -1, 1) * 0.5;
+  });
+  // iOS asks first, and only from inside a tap, which is where this runs.
+  if (typeof DeviceOrientationEvent.requestPermission === 'function') DeviceOrientationEvent.requestPermission().then((r) => r === 'granted' && listen()).catch(() => {});
+  else listen();
+}
 
 let fireTarget = 0.35, fireLevel = 0.35;
 function enterScene() {
@@ -1728,9 +2132,11 @@ function enterScene() {
   canvas.style.cursor = cam ? 'default' : 'none';
   if (params.has('debug') && cam) toggleDebug(true);
   if (!cam) setGestureUI(paintingHint(), 0);
+  // On a narrow screen the middle of the wall is the fire; start looking at the rabbit instead.
+  if (screenW < 1.6) pan.target = pan.x = 0.9;
   fireTarget = 1;
 }
-const paintingHint = () => (window.innerWidth <= 720 ? 'Paint a dotted shape · drag to look' : 'Paint over a dotted shape on the wall');
+const paintingHint = () => (window.innerWidth <= 720 ? 'Tap a dotted shape to paint it · drag to look' : 'Click a dotted shape to paint it');
 
 function detect(t) {
   if (mode !== 'camera' || !handLandmarker || video.readyState < 2) return;
@@ -1747,7 +2153,7 @@ function detect(t) {
 }
 
 // ---------------------------------------------------------------------------
-// Sound: a recorded fire, water dripping in a big cave, a chime when a painting wakes
+// Sound: a recorded fire, cave drips, chalk-on-stone scratching, chimes
 // ---------------------------------------------------------------------------
 let audio = null;
 function impulse(ac, seconds, decay) {
@@ -1775,7 +2181,14 @@ function startAudio() {
     master.gain.setTargetAtTime(audioOn() ? 0.9 : 0, ac.currentTime, 0.8);
     const verb = ac.createConvolver(); verb.buffer = impulse(ac, 3.2, 2.6);
     const wet = ac.createGain(); wet.gain.value = 0.6; verb.connect(wet).connect(master);
-    audio = { ac, master, verb, fire: false };
+    // Scratch: noise through a band-pass, its volume following how fast you paint.
+    const nb = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate), nd = nb.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    const scratchSrc = ac.createBufferSource(); scratchSrc.buffer = nb; scratchSrc.loop = true;
+    const scratchBp = ac.createBiquadFilter(); scratchBp.type = 'bandpass'; scratchBp.frequency.value = 2600; scratchBp.Q.value = 0.9;
+    const scratchGain = ac.createGain(); scratchGain.gain.value = 0;
+    scratchSrc.connect(scratchBp).connect(scratchGain).connect(master); scratchSrc.start();
+    audio = { ac, master, verb, fire: false, scratchGain, scratchBp };
     fetch('fire.mp3').then((r) => r.arrayBuffer()).then((b) => ac.decodeAudioData(b)).then((buf) => {
       const src = ac.createBufferSource(); src.buffer = seamlessLoop(ac, buf, 1.2); src.loop = true;
       const dry = ac.createGain(); dry.gain.value = 0.55;
@@ -1799,7 +2212,13 @@ function startAudio() {
     setTimeout(drip, 1800);
   } catch (e) { console.warn('Audio unavailable', e); }
 }
-const CHIME_ROOT = { wolf: 196, rabbit: 293.66, palm: 329.63, hand: 329.63, project: 246.94 };
+function setScratch(speed, tool) {
+  if (!audio) return;
+  const t = audio.ac.currentTime;
+  audio.scratchBp.frequency.setTargetAtTime(tool === 'charcoal' ? 2800 : 900, t, 0.05);
+  audio.scratchGain.gain.setTargetAtTime(audioOn() ? clamp(speed / 1.6, 0, 1) * (tool === 'charcoal' ? 0.16 : 0.22) : 0, t, 0.04);
+}
+const CHIME_ROOT = { wolf: 196, rabbit: 293.66, palm: 329.63, hand: 329.63, project: 246.94, secret: 392 };
 function playChime(kind) {
   if (!audio || !audioOn()) return;
   const { ac, master, verb } = audio;
@@ -1840,10 +2259,16 @@ for (const chip of document.querySelectorAll('.chip')) {
   chip.addEventListener('click', () => {
     const section = chip.dataset.section;
     const g = GUIDES.find((q) => q.section === section);
-    if (g && !g.done) completeGuide(g);
+    const secret = SECRETS.find((s) => s.id === section);
+    if (g && !g.done) startFinish(g);
+    else if (secret && !secret.found) discover(secret);
     else { playChime(section === 'experience' ? 'wolf' : section === 'about' ? 'rabbit' : 'palm'); openPanel(section); }
   });
 }
+window.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (focus.active && !finish.g) endFocus(); else closePanel();
+});
 let debugOn = false;
 function toggleDebug(force) {
   debugOn = force ?? !debugOn;
@@ -1890,24 +2315,42 @@ function wallHit(clientX, clientY) {
 }
 function paintingAt(ax, ay, filter) { return PAINTINGS.find((p) => filter(p) && ax > p.x && ax < p.x + p.w && ay > p.y && ay < p.y + p.h) || null; }
 function clickTarget(ax, ay) {
-  return paintingAt(ax, ay, (p) => p.project && stepOut.id !== p.id) || paintingAt(ax, ay, (p) => p.guide);
+  return paintingAt(ax, ay, (p) => p.project && stepOut.id !== p.id) || paintingAt(ax, ay, (p) => p.guide && p.glow);
 }
+// Edge-lean for the mouse: near a screen edge, the view leans that way.
+const edgeLean = (v) => Math.sign(v) * smooth(0.55, 1, Math.abs(v));
 canvas.addEventListener('pointerdown', (e) => {
-  if (mode === 'idle') return;
+  if (mode === 'idle' || finish.g) return;
   const hit = wallHit(e.clientX, e.clientY);
-  pointer.down = true; pointer.moved = 0; pointer.lastX = e.clientX;
+  pointer.down = true; pointer.moved = 0; pointer.lastX = e.clientX; pointer.lastT = performance.now();
   pointer.panning = false; pointer.drawing = false;
   if (mode !== 'mouse' || !hit) return;
+  const g = guideAt(hit[0], hit[1], 40);
+  // Away from the wall: clicking a shape walks you up to it first.
+  if (!focus.active && g && !g.done) { startFocus(g); pointer.down = false; return; }
   // On touch, a drag that doesn't start on a shape looks around instead of painting.
-  if (e.pointerType === 'touch' && !guideAt(hit[0], hit[1], 60) && !clickTarget(hit[0], hit[1])) { pointer.panning = true; return; }
+  if (!focus.active && e.pointerType === 'touch' && !g && !clickTarget(hit[0], hit[1])) { pointer.panning = true; return; }
+  if (focus.active && focus.t < 0.9) { pointer.down = false; return; }
   pointer.drawing = true;
-  pointer.inside = true; pointer.ax = hit[0]; pointer.ay = hit[1];
-  currentStroke = { pts: [hit], seed: (Math.random() * 1e6) | 0 };
-  traceGuides(hit[0], hit[1]);
+  pointer.inside = true; pointer.ax = hit[0]; pointer.ay = hit[1]; pointer.strokeLen = 0;
+  const fg = focus.active ? focus.guide : null;
+  const tool = fg ? fg.tool : 'ochre';
+  currentStroke = { pts: [], seed: (Math.random() * 1e6) | 0, tool, color: fg ? fg.line : PIG.red };
+  addStrokePoint(hit, 0);
   canvas.setPointerCapture?.(e.pointerId);
 });
+function addStrokePoint(p, speed) {
+  const T = TOOLS[currentStroke.tool];
+  const r = T.base * (1.3 - clamp(speed / 1.4, 0, 0.6));
+  const load = Math.max(0.3, 1 - pointer.strokeLen / 2200);
+  const pt = [p[0], p[1], r, load];
+  currentStroke.pts.push(pt);
+  dab(artCtx, pt[0], pt[1], pt[2], currentStroke.color, pt[3], currentStroke.seed + currentStroke.pts.length - 1, currentStroke.tool);
+  traceGuides(p[0], p[1]);
+}
 canvas.addEventListener('pointermove', (e) => {
   if (mode === 'idle') return;
+  const now = performance.now();
   const dx = e.clientX - pointer.lastX; pointer.lastX = e.clientX;
   if (pointer.down) pointer.moved += Math.abs(dx);
   if (pointer.panning) {
@@ -1922,37 +2365,44 @@ canvas.addEventListener('pointermove', (e) => {
   for (const g of GUIDES) g.hover = guideAt(hit[0], hit[1], 20) === g ? 1 : 0;
   if (!pointer.drawing) {
     canvas.style.cursor = clickTarget(hit[0], hit[1]) ? 'pointer' : 'none';
-    const g = guideAt(hit[0], hit[1], 20);
-    setGestureUI(g && !g.done ? `Paint over ${g.title} · opens ${SECTION_NAME[g.section]}` : paintingHint(), g && !g.done ? guideProgress(g) / 0.68 : 0);
-    // A gentle parallax from the mouse, frozen while painting so the wall holds still.
-    eyeTarget.x = (e.clientX / window.innerWidth - 0.5) * 0.25;
-    eyeTarget.y = -(e.clientY / window.innerHeight - 0.5) * 0.15;
+    if (!focus.active) {
+      const g = guideAt(hit[0], hit[1], 30);
+      setGestureUI(g && !g.done ? `Click to paint ${g.title} · opens ${SECTION_NAME[g.section]}` : paintingHint(), 0);
+      if (!eyeLocked) {
+        eyeTarget.x = -edgeLean((e.clientX / window.innerWidth - 0.5) * 2) * 1.5;
+        eyeTarget.y = edgeLean((e.clientY / window.innerHeight - 0.5) * 2) * 0.5;
+      }
+    }
+    pointer.lastT = now;
     return;
   }
   const prevPt = currentStroke.pts[currentStroke.pts.length - 1];
   const dist = Math.hypot(hit[0] - prevPt[0], hit[1] - prevPt[1]);
-  if (dist < 3) return;
-  const steps = Math.ceil(dist / 5);
+  if (dist < 2) return;
+  const speed = dist / Math.max(1, now - pointer.lastT);
+  pointer.lastT = now;
+  setScratch(speed, currentStroke.tool);
+  const steps = Math.ceil(dist / 2.5);
   for (let i = 1; i <= steps; i++) {
-    const p = [prevPt[0] + ((hit[0] - prevPt[0]) * i) / steps, prevPt[1] + ((hit[1] - prevPt[1]) * i) / steps];
-    paintSegment(artCtx, currentStroke.pts[currentStroke.pts.length - 1], p, currentStroke.seed + currentStroke.pts.length);
-    currentStroke.pts.push(p);
-    traceGuides(p[0], p[1]);
+    pointer.strokeLen += dist / steps;
+    addStrokePoint([prevPt[0] + ((hit[0] - prevPt[0]) * i) / steps, prevPt[1] + ((hit[1] - prevPt[1]) * i) / steps], speed);
   }
   artUploadPending = true;
-  const g = guideAt(hit[0], hit[1], 40);
-  if (g && !g.done) setGestureUI(`Painting ${g.title}`, guideProgress(g) / 0.68);
+  if (focus.active && focus.guide && !focus.guide.done) setGestureUI(`Tracing ${focus.guide.title}`, guideProgress(focus.guide) / 0.68);
   checkGuides(false);
 });
 function endPointer(e) {
   if (!pointer.down) return;
   pointer.down = false;
+  setScratch(0, 'ochre');
   if (pointer.drawing && currentStroke) {
     if (currentStroke.pts.length < 3 && pointer.moved < 8) {
-      // A click rather than a stroke: wake a project or reopen a traced creature.
-      const target = clickTarget(currentStroke.pts[0][0], currentStroke.pts[0][1]);
+      // A click rather than a stroke: wake a project or reopen a painted creature.
+      const [x, y] = currentStroke.pts[0];
+      const target = clickTarget(x, y);
       if (target?.project) startStepOut(target);
       else if (target?.guide) { boost([target.id]); playChime(target.guide.id); openPanel(target.guide.section); }
+      artDirty = true;
     } else {
       STROKES.push(currentStroke);
       checkGuides(true);
@@ -1966,7 +2416,11 @@ function endPointer(e) {
 }
 window.addEventListener('pointerup', endPointer);
 window.addEventListener('pointercancel', endPointer);
-canvas.addEventListener('pointerleave', () => { if (!pointer.drawing) pointer.inside = false; });
+canvas.addEventListener('pointerleave', () => {
+  if (pointer.drawing) return;
+  pointer.inside = false;
+  if (mode === 'mouse' && !eyeLocked) { eyeTarget.x = 0; eyeTarget.y = 0; }
+});
 
 $('start-cam').addEventListener('click', startCamera);
 $('start-mouse').addEventListener('click', startMouse);
@@ -1983,23 +2437,29 @@ function frame(now) {
   clock += dt;
   stats.fps = stats.fps * 0.95 + (1 / Math.max(dt, 1e-3)) * 0.05;
 
-  // Fire
+  // Fire. Up at the wall it's behind you: it dims and the lamp in your hand takes over.
   fireLevel += (fireTarget - fireLevel) * (1 - Math.exp(-dt * 0.9));
   const fl = 0.84 + 0.08 * Math.sin(clock * 7.3) + 0.05 * Math.sin(clock * 13.1 + 1.3) + 0.12 * (vnoise(clock * 9, 0.5, 5) - 0.5);
   flickerNow = fl - 0.84;
-  fireLight.intensity = 24 * fireLevel * fl;
-  fillLight.intensity = 5 * fireLevel * (0.9 + 0.2 * vnoise(clock * 14, 2.5, 9));
-  washLight.intensity = 5 * fireLevel * (0.94 + flickerNow * 0.5);
+  const behind = 1 - 0.78 * easeInOut(focus.t);
+  fireLight.intensity = 24 * fireLevel * fl * behind;
+  fillLight.intensity = 5 * fireLevel * (0.9 + 0.2 * vnoise(clock * 14, 2.5, 9)) * behind;
+  washLight.intensity = 5 * fireLevel * (0.94 + flickerNow * 0.5) * behind;
+  flames.visible = embers.visible = halo.visible = focus.t < 0.55;
+  bloom.strength = 0.6 * (0.45 + 0.55 * behind);
   fireLight.position.x = FIRE.x + (vnoise(clock * 3, 1, 3) - 0.5) * 0.08;
   halo.material.opacity = 0.55 * fireLevel * fl;
   logMat.emissiveIntensity = 0.35 * fireLevel * fl;
+  const lampFl = 0.85 + 0.25 * vnoise(clock * 6, 7.5, 13);
+  chamber.userData.lamp.intensity = 2.2 * lampFl;
+  chamber.userData.spill.material.opacity = 0.32 * lampFl;
   flameUniforms.uTime.value = clock;
   flameUniforms.uLevel.value = fireLevel;
   vignette.uniforms.uTime.value = clock;
 
   // Input → hand points in shadow-canvas pixels
   detect(now / 1000);
-  let handPts = [];
+  let handPts = [], stick = false;
   if (forcedPose && POSES[forcedPose]) {
     hands = [syntheticHand(forcedPose, parseFloat(params.get('px') || '0.5'), parseFloat(params.get('py') || '0.45'))];
     analyses = hands.map((N) => analyzeHand(N, camAspect));
@@ -2011,39 +2471,66 @@ function frame(now) {
     updateGestures(dt, clock);
   } else if (mode === 'mouse') {
     analyses = [];
-    // The cursor is a fingertip: a pointing hand's shadow follows it.
-    if (pointer.inside) handPts = [posePoints('point', pointer.ax / 2, pointer.ay / 2, 30, -0.35, 8)];
+    // The cursor is a fingertip, or a hand holding charcoal; while a painting is
+    // being finished, a ghost hand does the work.
+    const hs = 30 - 14 * easeInOut(focus.t);
+    if (finish.g && finish.hand) {
+      const [x, y] = finish.hand;
+      handPts = [posePoints('point', (finish.g.x + x) / 2, (finish.g.y + y) / 2, hs, -0.35 + Math.sin(clock * 9) * 0.06, 8)];
+      stick = finish.t > FILL_T;
+    } else if (pointer.inside) {
+      handPts = [posePoints('point', pointer.ax / 2, pointer.ay / 2, hs, -0.35, 8)];
+      stick = focus.active && focus.guide && focus.guide.tool === 'charcoal';
+    }
   }
 
   // Head → window
-  if (mode === 'camera' && faceDetector && clock - lastFaceAt > 1.2) { eyeTarget.x *= 0.98; eyeTarget.y *= 0.98; eyeTarget.z += (EYE_D - eyeTarget.z) * 0.02; }
-  if (pointer.drawing) { eyeTarget.x = eye.x; eyeTarget.y = eye.y; }
+  if (mode === 'camera' && faceDetector && clock - lastFaceAt > 1.2 && !eyeLocked) { eyeTarget.x *= 0.98; eyeTarget.y *= 0.98; eyeTarget.z += (EYE_D - eyeTarget.z) * 0.02; }
   const k = 1 - Math.exp(-dt * 5);
-  eye.x += (eyeTarget.x - eye.x) * k; eye.y += (eyeTarget.y - eye.y) * k; eye.z += (eyeTarget.z - eye.z) * k;
+  if (!pointer.drawing) { eye.x += (eyeTarget.x - eye.x) * k; eye.y += (eyeTarget.y - eye.y) * k; }
+  eye.z += (eyeTarget.z - eye.z) * k;
   eye.z = Math.max(1.6, eye.z);
   pan.x += (pan.target - pan.x) * k;
+  // Window: blend between standing back and being up at the wall.
+  focus.t = clamp(focus.t + (focus.active ? dt : -dt) / 0.9, 0, 1);
+  if (!focus.active && focus.t === 0) focus.guide = null;
+  const fe = easeInOut(focus.t), ft = focus.target;
+  win.x = THREE.MathUtils.lerp(pan.x, ft.x, fe);
+  win.y = THREE.MathUtils.lerp(0, ft.y, fe);
+  win.z = THREE.MathUtils.lerp(0, ft.z, fe);
+  win.s = THREE.MathUtils.lerp(1, ft.s, fe);
   applyWindowCamera(eye);
-  if (lean.shown && !lean.done) {
-    if (Math.abs(eye.x) > 0.3) { lean.done = true; $('lean-hint').textContent = 'That depth is the cave behind your screen.'; setTimeout(() => ($('lean-hint').hidden = true), 2200); }
-    else if (clock - lean.at > 9) { lean.done = true; $('lean-hint').hidden = true; }
-  }
+  stalactites.visible = column.visible = props.visible = fe < 0.5;
+  // The cave mouth frames the window, so it travels with you when you look along the wall.
+  if (mouth) { mouth.visible = fe < 0.5; mouth.position.x = pan.x; }
+  stalactites.position.x = pan.x;
+
+  // The oil lamp follows the painting hand while you're up at the wall.
+  const lampAt = finish.g && finish.hand ? [finish.g.x + finish.hand[0], finish.g.y + finish.hand[1]] : [pointer.ax, pointer.ay];
+  wallPoint(lampAt[0] / ART_W, lampAt[1] / ART_H, tmpV);
+  lampLight.position.set(tmpV.x + 0.35, tmpV.y + 0.3, tmpV.z + 0.55);
+  lampLight.intensity = fe * 3.2 * (0.9 + 0.2 * vnoise(clock * 11, 3.3, 17));
 
   // Shadows + glow
   const wantShadow = handPts.length ? (mode === 'mouse' ? 0.7 : 0.86) * (0.92 + flickerNow * 0.4) * (0.5 + 0.5 * fireLevel) : 0;
   shadowAlpha += (wantShadow - shadowAlpha) * (1 - Math.exp(-dt * 10));
   shadowMat.opacity = shadowAlpha;
-  if (handPts.length || shadowAlpha > 0.01) drawShadows(handPts);
+  if (handPts.length || shadowAlpha > 0.01) drawShadows(handPts, stick);
 
   for (const p of PAINTINGS) {
     let target = 0;
     if (clock >= p.boostFrom && clock <= p.boostTo) target = 0.85;
     else if ((panelKind === 'experience' && (p.group === 'herd' || p.group === 'hunt' || p.id === 'g-wolf')) || (panelKind === 'about' && (p.group === 'self' || p.id === 'g-rabbit'))) target = 0.3;
     if (G.dwell.id === p.id && stepOut.id !== p.id) target = Math.max(target, 0.2 + (G.dwell.t / HOLD_DWELL) * 0.75);
-    if (mode === 'mouse' && p.project && stepOut.id !== p.id) target = Math.max(target, 0.18 + 0.12 * Math.sin(clock * 2.2));
+    if (mode === 'mouse' && p.project && stepOut.id !== p.id && !focus.active) target = Math.max(target, 0.18 + 0.12 * Math.sin(clock * 2.2));
+    if (p.group === 'traced') target *= 0.5;   // a big, close painting needs less glow to read as alive
     p.g += (target - p.g) * (1 - Math.exp(-dt * 6));
   }
+  for (const s of SECRETS) if (s.decal) s.decal.material.emissiveIntensity = s.found ? 0.25 + 0.5 * Math.max(0, 1 - (clock - s.foundAt) / 2.5) : 0;
   drawFx(handPts);
 
+  updateFinish(dt);
+  updateSecrets(dt);
   updateStepOut(dt, clock);
   if (flakeAge < 3) {
     flakeAge += dt;
@@ -2065,11 +2552,14 @@ function frame(now) {
     $('dot-cam').classList.toggle('on', mode === 'camera');
     $('hud-cam').textContent = mode === 'camera' ? `camera on · ${stats.delegate}` : mode === 'mouse' ? 'painting mode' : 'camera off';
     const tracked = mode === 'camera' && headOn && faceRef && clock - lastFaceAt < 1.2;
-    $('headbox').classList.toggle('on', !!tracked);
-    $('head-dot').style.transform = `translate(${clamp(eye.x / 0.8, -1, 1) * 11}px, ${clamp(-eye.y / 0.6, -1, 1) * 6}px) scale(${clamp(EYE_D / eye.z, 0.6, 1.6).toFixed(2)})`;
-    $('hud-head').textContent = mode !== 'camera' ? 'head: mouse' : !headOn ? 'head: off' : !faceRef ? 'head: calibrating, look at the screen' : tracked ? 'head: tracked' : 'head: lost';
+    $('headbox').classList.toggle('on', !!tracked || (mode === 'mouse' && Math.abs(eye.x) > 0.2));
+    $('head-dot').style.transform = `translate(${clamp(eye.x / 1.2, -1, 1) * 11}px, ${clamp(-eye.y / 0.6, -1, 1) * 6}px) scale(${clamp(EYE_D / eye.z, 0.6, 1.6).toFixed(2)})`;
+    $('hud-head').textContent = mode !== 'camera' ? 'lean: screen edges' : !headOn ? 'head: off' : !faceRef ? 'head: calibrating, look at the screen' : tracked ? 'head: tracked' : 'head: lost';
     $('dot-hand').classList.toggle('on', mode === 'camera' ? hands.length > 0 : pointer.inside);
     $('hud-hand').textContent = mode === 'camera' ? (hands.length ? `hand: ${G.label}` : 'hand: none') : 'hand: your cursor';
+    const found = SECRETS.filter((s) => s.found).length;
+    $('dot-found').classList.toggle('on', found > 0);
+    $('hud-found').textContent = `hidden: ${found} / 3 found`;
     drawDebug();
   }
   requestAnimationFrame(frame);
@@ -2091,9 +2581,13 @@ window.__cave = {
   get stepOutState() { return stepOut.device ? { t: stepOut.t, dir: stepOut.dir, pos: stepOut.device.position.toArray().map((v) => +v.toFixed(2)) } : null; },
   get stats() { return { ...stats, eye: { ...eye }, faceRef, faceSamples: faceCal.length }; },
   get guides() { return GUIDES.map((g) => ({ id: g.id, done: g.done, progress: +guideProgress(g).toFixed(2), precision: g.inBox ? +(g.near / g.inBox).toFixed(2) : null })); },
+  get focus() { return { active: focus.active, t: +focus.t.toFixed(2), guide: focus.guide && focus.guide.id, finishing: !!finish.g }; },
+  get secrets() { return SECRETS.map((s) => ({ id: s.id, found: s.found, visible: +visibleFraction(s).toFixed(2) })); },
   get audio() { return audio ? { state: audio.ac.state, fire: audio.fire } : null; },
   get hint() { return lastHint; },
+  setEye: (x, y, z = EYE_D, snap = false) => { eyeLocked = true; eyeTarget.x = x; eyeTarget.y = y; eyeTarget.z = z; if (snap) Object.assign(eye, eyeTarget); },
   guidePath: (id) => GUIDES.find((g) => g.id === id).samples.map(([x, y]) => artToClient(x, y)),
+  guideCenter: (id) => { const g = GUIDES.find((q) => q.id === id); return artToClient(g.x + g.w / 2, g.y + g.h / 2); },
   analyzePose: (name) => analyzeHand(syntheticHand(name, 0.5, 0.5), camAspect).label,
   coachPose: (name) => { const c = coach(analyzeHand(syntheticHand(name, 0.5, 0.5), camAspect)); return c ? `${c.name}: ${c.miss[1]}` : null; },
   openPanel, startStepOut: (id) => startStepOut(PAINTINGS.find((p) => p.id === id)),
