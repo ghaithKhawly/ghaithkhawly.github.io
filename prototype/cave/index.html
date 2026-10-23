@@ -29,23 +29,22 @@
   button { font: inherit; color: inherit; cursor: pointer; }
   button:focus-visible, a:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
   [hidden] { display: none !important; }
+  canvas.thumb { width: 44px; height: 44px; border-radius: 50%; flex: none; display: block; }
 
   /* ---------- intro ---------- */
   #intro {
-    position: fixed; inset: 0; z-index: 30; display: grid; align-items: end;
+    position: fixed; inset: 0; z-index: 30; display: grid; align-items: end; overflow: auto;
     padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
     background: radial-gradient(120% 90% at 30% 100%, rgba(7,5,4,0.2), rgba(7,5,4,0.92) 70%);
   }
-  .intro-inner { max-width: 640px; margin-left: clamp(0px, 6vw, 96px); display: grid; gap: 18px; }
+  .intro-inner { max-width: 660px; margin-left: clamp(0px, 6vw, 96px); display: grid; gap: 18px; }
   .eyebrow { font: 500 12px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ochre); }
   #intro h1 { font: 700 clamp(40px, 7vw, 76px)/0.95 var(--display); margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
-  #intro p { margin: 0; color: var(--muted); max-width: 52ch; font-size: 17px; }
-  .gestures { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-  .gestures li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; font-size: 14px; color: var(--ink); }
+  #intro p { margin: 0; color: var(--muted); max-width: 54ch; font-size: 17px; }
+  .gestures { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .gestures li { display: flex; gap: 12px; align-items: center; font-size: 14px; }
   .gestures b { font-weight: 600; }
   .gestures span { color: var(--muted); display: block; font-size: 13px; }
-  .glyph { width: 30px; height: 30px; border-radius: 50%; background: rgba(200,116,58,0.16); display: grid; place-items: center; }
-  .glyph svg { width: 18px; height: 18px; fill: var(--ember); }
   .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
   .btn { border: 1px solid var(--ash); background: rgba(243,230,208,0.04); padding: 12px 18px; border-radius: 999px; font-weight: 600; }
   .btn.primary { background: var(--ember); color: #1b0f06; border-color: transparent; }
@@ -56,38 +55,58 @@
   /* ---------- HUD ---------- */
   #hud {
     position: fixed; z-index: 10; top: calc(env(safe-area-inset-top) + 14px); left: max(16px, env(safe-area-inset-left));
-    font: 500 11px/1.6 var(--mono); letter-spacing: 0.04em; color: var(--muted); pointer-events: none;
+    font: 500 11px/1.6 var(--mono); letter-spacing: 0.04em; color: var(--muted); pointer-events: none; display: grid; gap: 2px;
   }
   #hud .row { display: flex; gap: 8px; align-items: center; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: #5a4b3e; display: inline-block; }
   .dot.on { background: var(--ember); box-shadow: 0 0 8px var(--ember); }
+  .headbox { position: relative; width: 34px; height: 22px; border: 1px solid var(--ash); border-radius: 5px; }
+  .headbox i { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #5a4b3e; transition: background 0.3s; }
+  .headbox.on i { background: var(--ember); box-shadow: 0 0 6px var(--ember); }
   #tools {
     position: fixed; z-index: 10; top: calc(env(safe-area-inset-top) + 10px); right: max(16px, env(safe-area-inset-right));
-    display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 60vw;
+    display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 64vw;
   }
   .tool { border: 1px solid var(--ash); background: rgba(7,5,4,0.55); padding: 6px 11px; border-radius: 999px; font: 500 12px/1.2 var(--mono); color: var(--ink); backdrop-filter: blur(6px); }
   .tool[aria-pressed="true"] { border-color: var(--ember); color: var(--ember); }
+
+  #lean-hint {
+    position: fixed; z-index: 12; left: 50%; top: calc(env(safe-area-inset-top) + 64px); transform: translateX(-50%);
+    padding: 10px 16px; border-radius: 999px; background: rgba(7,5,4,0.7); border: 1px solid rgba(255,178,94,0.4);
+    font: 500 13px/1.3 var(--body); color: var(--ink); backdrop-filter: blur(8px); animation: rise-c 0.5s ease; max-width: calc(100vw - 32px); text-align: center;
+  }
 
   #gesture {
     position: fixed; z-index: 10; left: 50%; transform: translateX(-50%);
     bottom: calc(env(safe-area-inset-bottom) + 22px);
     display: flex; align-items: center; gap: 12px; padding: 9px 16px 9px 12px; border-radius: 999px;
     background: rgba(7,5,4,0.6); border: 1px solid var(--ash); backdrop-filter: blur(8px);
-    font: 500 13px/1.2 var(--mono); white-space: nowrap; transition: opacity 0.3s;
+    font: 500 13px/1.25 var(--mono); max-width: calc(100vw - 32px);
   }
-  #gesture .ring { width: 26px; height: 26px; }
+  #gesture .ring { width: 26px; height: 26px; flex: none; }
   #gesture .ring circle { fill: none; stroke-width: 3; }
   #gesture .ring .track { stroke: rgba(243,230,208,0.15); }
   #gesture .ring .fill { stroke: var(--ember); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 0.08s linear; }
-  #gesture small { color: var(--muted); }
+
+  /* Shape guide (camera mode) */
+  #shapes {
+    position: fixed; z-index: 10; left: max(16px, env(safe-area-inset-left)); bottom: calc(env(safe-area-inset-bottom) + 18px);
+    display: grid; gap: 6px; width: 236px; padding: 10px; border-radius: 16px;
+    background: rgba(7,5,4,0.62); border: 1px solid var(--ash); backdrop-filter: blur(8px);
+  }
+  #shapes h3 { margin: 0 4px 2px; font: 500 11px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .shape { display: flex; gap: 10px; align-items: center; padding: 6px; border-radius: 12px; border: 1px solid transparent; transition: border-color 0.2s, background 0.2s; }
+  .shape b { display: block; font: 600 13px/1.2 var(--body); }
+  .shape span { display: block; font-size: 12px; line-height: 1.35; color: var(--muted); }
+  .shape.near { border-color: rgba(255,178,94,0.3); }
+  .shape.active { border-color: var(--ember); background: rgba(255,178,94,0.1); }
 
   #chips {
     position: fixed; z-index: 10; left: 50%; transform: translateX(-50%);
     bottom: calc(env(safe-area-inset-bottom) + 74px);
     display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: min(560px, calc(100vw - 32px));
   }
-  .chip { border: 1px solid var(--ash); background: rgba(7,5,4,0.62); padding: 8px 14px; border-radius: 999px; font: 500 13px/1.2 var(--body); backdrop-filter: blur(6px); }
-  .chip em { font-style: normal; color: var(--muted); }
+  .chip { border: 1px solid var(--ash); background: rgba(7,5,4,0.7); padding: 8px 14px; border-radius: 999px; font: 500 13px/1.2 var(--body); backdrop-filter: blur(6px); }
 
   /* ---------- panel ---------- */
   #panel {
@@ -98,11 +117,12 @@
     animation: rise 0.45s cubic-bezier(.2,.8,.2,1);
   }
   @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes rise-c { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
   #panel header { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; margin-bottom: 14px; }
   #panel h2 { font: 700 30px/1.05 var(--display); margin: 6px 0 0; letter-spacing: -0.01em; text-wrap: balance; }
   #panel-close { border: 1px solid var(--ash); background: none; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; line-height: 1; }
   #panel-body { display: grid; gap: 16px; }
-  #panel p { margin: 0; color: var(--ink); }
+  #panel p { margin: 0; }
   .muted { color: var(--muted); }
   .role { display: grid; gap: 4px; padding-top: 14px; border-top: 1px solid var(--ash); }
   .role:first-child { border-top: 0; padding-top: 0; }
@@ -130,10 +150,14 @@
     #panel { top: auto; bottom: calc(env(safe-area-inset-bottom) + 12px); max-height: 58%; }
     #debug, #hud { display: none; }
     #tools { max-width: calc(100vw - 32px); }
-    #gesture { max-width: calc(100vw - 32px); font-size: 12px; }
+    #gesture { font-size: 12px; }
     #chips { bottom: calc(env(safe-area-inset-bottom) + 70px); }
+    #shapes { width: auto; right: max(16px, env(safe-area-inset-right)); bottom: calc(env(safe-area-inset-bottom) + 74px); grid-template-columns: repeat(3, 1fr); }
+    #shapes h3 { grid-column: 1 / -1; }
+    .shape { flex-direction: column; text-align: center; }
+    .shape span { display: none; }
   }
-  @media (prefers-reduced-motion: reduce) { #panel { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { #panel, #lean-hint { animation: none; } }
 </style>
 <script type="importmap">
 { "imports": {
@@ -152,41 +176,53 @@
     <h1 id="intro-title">Ghaith Khawly</h1>
     <p>Full-stack developer. This portfolio is a cave. Bring your hands into the firelight and cast shadows on the wall; the paintings answer.</p>
     <ul class="gestures">
-      <li><span class="glyph"><svg viewBox="0 0 24 24"><path d="M3 13l6-1 3-6 2 5 7 1-5 2-1 6-3-5-6 1z"/></svg></span><div><b>Wolf</b><span>Thumb up, three fingers out sideways. Opens Experience.</span></div></li>
-      <li><span class="glyph"><svg viewBox="0 0 24 24"><path d="M8 2h2v9H8zM14 2h2v9h-2zM6 11h12v6a6 6 0 0 1-12 0z"/></svg></span><div><b>Rabbit</b><span>Two fingers up, the rest folded. Opens About.</span></div></li>
-      <li><span class="glyph"><svg viewBox="0 0 24 24"><path d="M5 9h2v6H5zM8 4h2v10H8zM11 3h2v11h-2zM14 4h2v10h-2zM17 7h2v8h-2zM6 14h13v3a5 5 0 0 1-5 5h-3a6 6 0 0 1-5-5z"/></svg></span><div><b>Open palm, held still</b><span>Leaves your handprint. Opens Contact.</span></div></li>
-      <li><span class="glyph"><svg viewBox="0 0 24 24"><path d="M11 2h2v12h-2zM7 10h10v6a5 5 0 0 1-10 0z"/></svg></span><div><b>Touch a painting</b><span>Hold your shadow's fingertip on the phone or laptop. The project steps out.</span></div></li>
+      <li><canvas class="thumb" data-thumb="wolf" width="88" height="88"></canvas><div><b>Wolf</b><span>Hand sideways, thumb up, three fingers together. Experience.</span></div></li>
+      <li><canvas class="thumb" data-thumb="rabbit" width="88" height="88"></canvas><div><b>Rabbit</b><span>Two fingers up, the rest folded. About.</span></div></li>
+      <li><canvas class="thumb" data-thumb="palm" width="88" height="88"></canvas><div><b>Open palm, held still</b><span>Leaves your handprint. Contact.</span></div></li>
+      <li><canvas class="thumb" data-thumb="point" width="88" height="88"></canvas><div><b>Touch a painting</b><span>Rest your shadow's fingertip on the phone or laptop.</span></div></li>
     </ul>
     <div class="actions">
       <button class="btn primary" id="start-cam" type="button">Light the fire · use camera</button>
-      <button class="btn" id="start-mouse" type="button">Explore with mouse</button>
+      <button class="btn" id="start-mouse" type="button">No camera · paint with the mouse</button>
     </div>
     <div id="intro-status" role="status" aria-live="polite"></div>
-    <div class="note">Camera frames are processed on your device and never uploaded. Move your head: the screen is a window into the cave.</div>
+    <div class="note">Camera frames are processed on your device and never uploaded. With the camera on, lean left and right: the screen becomes a window into the cave.</div>
   </div>
 </section>
 
 <div id="hud" hidden aria-hidden="true">
   <div class="row"><span class="dot" id="dot-cam"></span><span id="hud-cam">camera off</span></div>
-  <div class="row"><span class="dot" id="dot-head"></span><span id="hud-head">head: mouse</span></div>
+  <div class="row"><span class="headbox" id="headbox"><i id="head-dot"></i></span><span id="hud-head">head</span></div>
   <div class="row"><span class="dot" id="dot-hand"></span><span id="hud-hand">hand: none</span></div>
 </div>
 
 <div id="tools" hidden>
   <button class="tool" id="t-sound" type="button" aria-pressed="true">Sound</button>
-  <button class="tool" id="t-debug" type="button" aria-pressed="false">Tracking view</button>
-  <button class="tool" id="t-recenter" type="button">Recenter</button>
+  <button class="tool" id="t-head" type="button" aria-pressed="true" hidden>Head tracking</button>
+  <button class="tool" id="t-shapes" type="button" aria-pressed="true" hidden>Shapes</button>
+  <button class="tool" id="t-shortcuts" type="button" aria-pressed="false" hidden>Shortcuts</button>
+  <button class="tool" id="t-debug" type="button" aria-pressed="false" hidden>Tracking view</button>
+  <button class="tool" id="t-recenter" type="button" hidden>Recenter</button>
 </div>
+
+<div id="lean-hint" hidden role="status"></div>
 
 <div id="gesture" hidden aria-live="polite">
   <svg class="ring" viewBox="0 0 26 26" aria-hidden="true"><circle class="track" cx="13" cy="13" r="10"/><circle class="fill" id="ring-fill" cx="13" cy="13" r="10" stroke-dasharray="62.8" stroke-dashoffset="62.8"/></svg>
   <span id="gesture-label">Raise a hand into the firelight</span>
 </div>
 
+<div id="shapes" hidden>
+  <h3>Shadow shapes</h3>
+  <div class="shape" data-shape="wolf"><canvas class="thumb" data-thumb="wolf" width="88" height="88"></canvas><div><b>Wolf · Experience</b><span>Hand sideways. Thumb up as the ear, three fingers together as the snout.</span></div></div>
+  <div class="shape" data-shape="rabbit"><canvas class="thumb" data-thumb="rabbit" width="88" height="88"></canvas><div><b>Rabbit · About</b><span>Index and middle finger up as ears. Fold the rest.</span></div></div>
+  <div class="shape" data-shape="palm"><canvas class="thumb" data-thumb="palm" width="88" height="88"></canvas><div><b>Open palm · Contact</b><span>Fingers up and spread. Hold still for a second.</span></div></div>
+</div>
+
 <div id="chips" hidden>
-  <button class="chip" type="button" data-pose="wolf">Wolf <em>· Experience</em></button>
-  <button class="chip" type="button" data-pose="rabbit">Rabbit <em>· About</em></button>
-  <button class="chip" type="button" data-pose="palm">Open palm <em>· Contact</em></button>
+  <button class="chip" type="button" data-section="experience">Experience</button>
+  <button class="chip" type="button" data-section="about">About</button>
+  <button class="chip" type="button" data-section="contact">Contact</button>
 </div>
 
 <aside id="panel" hidden aria-labelledby="panel-title">
@@ -252,8 +288,8 @@ const EYE_D = 3.5;             // default eye distance from the window
 const WALL_W = 10, WALL_H = 5, WALL_Z = -3.1;
 const FLOOR_Y = -1.35;
 const FIRE = new THREE.Vector3(0, FLOOR_Y + 0.02, -1.45);
-const ART_W = 2048, ART_H = 1024;   // painting layer, maps 1:1 onto the wall UVs
-const SH_W = 1024, SH_H = 512;      // shadow + glow layers
+const ART_W = 2048, ART_H = 1024;   // paint layer, maps 1:1 onto the wall UVs
+const SH_W = 1024, SH_H = 512;      // shadow + glow layers (half resolution)
 const SHADOW_MAG = 1.25;
 const HOLD_GESTURE = 0.9, HOLD_PALM = 1.0, HOLD_DWELL = 1.1;
 
@@ -261,7 +297,7 @@ const params = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
 
 // ---------------------------------------------------------------------------
-// Noise
+// Noise + small helpers
 // ---------------------------------------------------------------------------
 function hash2(x, y, s) {
   let h = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(s | 0, 1442695041);
@@ -298,9 +334,24 @@ function mulberry(seed) {
 }
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
-const easeInOut = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const makeCanvas = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; };
 const supportsFilter = 'filter' in makeCanvas(1, 1).getContext('2d');
+
+// One Euro filter: heavy smoothing while still, responsive while moving.
+class OneEuro {
+  constructor(minCutoff, beta, dCutoff = 1) { this.minCutoff = minCutoff; this.beta = beta; this.dCutoff = dCutoff; this.x = null; this.dx = 0; this.t = 0; }
+  reset() { this.x = null; this.dx = 0; }
+  filter(x, t) {
+    if (this.x === null) { this.x = x; this.t = t; return x; }
+    const dt = Math.max(1e-3, t - this.t); this.t = t;
+    const alpha = (c) => { const r = 2 * Math.PI * c * dt; return r / (r + 1); };
+    this.dx += alpha(this.dCutoff) * ((x - this.x) / dt - this.dx);
+    this.x += alpha(this.minCutoff + this.beta * Math.abs(this.dx)) * (x - this.x);
+    return this.x;
+  }
+}
+const deadzone = (prev, v, dz) => { const d = v - prev; return Math.abs(d) <= dz ? prev : v - Math.sign(d) * dz; };
 
 // ---------------------------------------------------------------------------
 // Rock textures (tileable colour + normal map, generated once)
@@ -426,12 +477,24 @@ function makeRock(radius, seed, flatten = 0.6) {
   for (let i = 0; i < p.count; i++) {
     v.fromBufferAttribute(p, i);
     const n = v.clone().normalize();
-    const d = (fbm(n.x * 2 + seed, n.y * 2 + n.z * 1.7, 4, seed) - 0.5) * radius * 0.9;
-    v.addScaledVector(n, d);
+    v.addScaledVector(n, (fbm(n.x * 2 + seed, n.y * 2 + n.z * 1.7, 4, seed) - 0.5) * radius * 0.9);
     v.y *= flatten;
     p.setXYZ(i, v.x, v.y, v.z);
   }
   g.computeVertexNormals();
+  return g;
+}
+function makeStalactite(len, rad, seed) {
+  const g = new THREE.ConeGeometry(rad, len, 9, 8, true);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const k = 1 + (fbm(x * 6 + seed, y * 4 + z * 6, 3, seed) - 0.5) * 0.7;
+    p.setXYZ(i, x * k, y, z * k);
+  }
+  g.computeVertexNormals();
+  g.rotateX(Math.PI);
+  g.translate(0, -len / 2, 0);
   return g;
 }
 
@@ -583,17 +646,18 @@ const PAINTERS = {
 };
 
 // ---------------------------------------------------------------------------
-// Hand silhouettes (live shadows, stencils, synthetic poses)
+// Hand silhouettes (live shadows, stencils, synthetic poses, thumbnails)
 // ---------------------------------------------------------------------------
 // Synthetic poses in hand units (wrist at 0,0; y down; wrist→middle knuckle ≈ 1).
 const POSES = {
   palm: [[0, 0], [-0.35, -0.15], [-0.6, -0.35], [-0.8, -0.55], [-0.95, -0.75], [-0.3, -0.9], [-0.38, -1.3], [-0.43, -1.55], [-0.47, -1.78], [0, -1.0], [0, -1.45], [0, -1.72], [0, -1.95], [0.27, -0.92], [0.33, -1.33], [0.37, -1.58], [0.4, -1.8], [0.5, -0.78], [0.62, -1.08], [0.7, -1.27], [0.77, -1.45]],
   rabbit: [[0, 0], [-0.3, -0.2], [-0.45, -0.45], [-0.35, -0.65], [-0.15, -0.75], [-0.25, -0.9], [-0.35, -1.35], [-0.42, -1.65], [-0.48, -1.92], [0, -0.98], [0.08, -1.45], [0.12, -1.75], [0.16, -2.0], [0.22, -0.9], [0.3, -1.1], [0.18, -0.95], [0.08, -0.85], [0.42, -0.78], [0.5, -0.95], [0.38, -0.86], [0.28, -0.78]],
   wolf: [[0, 0], [0.3, -0.3], [0.5, -0.6], [0.62, -0.85], [0.72, -1.08], [0.95, -0.3], [1.4, -0.32], [1.68, -0.32], [1.92, -0.3], [1.0, -0.08], [1.48, -0.1], [1.78, -0.1], [2.02, -0.08], [0.95, 0.12], [1.42, 0.12], [1.7, 0.13], [1.92, 0.14], [0.85, 0.3], [1.2, 0.48], [1.42, 0.58], [1.62, 0.66]],
+  point: [[0, 0], [-0.3, -0.2], [-0.45, -0.45], [-0.35, -0.66], [-0.15, -0.72], [-0.25, -0.9], [-0.3, -1.35], [-0.33, -1.65], [-0.36, -1.94], [0, -0.98], [0.07, -1.2], [-0.03, -1.04], [-0.1, -0.92], [0.22, -0.9], [0.29, -1.08], [0.19, -0.96], [0.1, -0.87], [0.42, -0.78], [0.49, -0.94], [0.39, -0.87], [0.3, -0.8]],
 };
 POSES.wolfOpen = POSES.wolf.map(([x, y], i) => (i >= 17 ? [x - 0.05 * (i - 17), y + 0.12 * (i - 16)] : [x, y]));
 
-function drawHandSilhouette(ctx, pts, s, armLength = 2.6) {
+function drawHandSilhouette(ctx, pts, s, armLength = 2.6, fadeTo = 'rgba(255,255,255,0)') {
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const w = pts[0], m = pts[9];
   let dx = w.x - m.x, dy = w.y - m.y;
@@ -602,9 +666,9 @@ function drawHandSilhouette(ctx, pts, s, armLength = 2.6) {
   if (armLength > 0) {
     // Forearm, fading out so it reads as an arm reaching in rather than a pillar.
     const far = { x: w.x + dx * s * armLength, y: w.y + dy * s * armLength };
-    const prevFill = ctx.fillStyle;
+    const solid = ctx.fillStyle;
     const grad = ctx.createLinearGradient(w.x, w.y, far.x, far.y);
-    grad.addColorStop(0, prevFill); grad.addColorStop(0.55, prevFill); grad.addColorStop(1, 'rgba(255,255,255,0)');
+    grad.addColorStop(0, solid); grad.addColorStop(0.55, solid); grad.addColorStop(1, fadeTo);
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.moveTo(w.x + nx * s * 0.36, w.y + ny * s * 0.36);
@@ -612,7 +676,7 @@ function drawHandSilhouette(ctx, pts, s, armLength = 2.6) {
     ctx.lineTo(far.x - nx * s * 0.46, far.y - ny * s * 0.46);
     ctx.lineTo(w.x - nx * s * 0.36, w.y - ny * s * 0.36);
     ctx.closePath(); ctx.fill();
-    ctx.fillStyle = prevFill;
+    ctx.fillStyle = solid;
   }
   ctx.beginPath();
   [0, 1, 2, 5, 9, 13, 17].forEach((i, k) => (k ? ctx.lineTo(pts[i].x, pts[i].y) : ctx.moveTo(pts[i].x, pts[i].y)));
@@ -653,18 +717,16 @@ function makeStencil(pts, s, color, seed, alpha = 1) {
   ctx.globalCompositeOperation = 'destination-out';
   ctx.fillStyle = '#000'; ctx.strokeStyle = '#000';
   const local = pts.map((p) => ({ x: p.x - ox, y: p.y - oy }));
-  // Stencils show only the hand and a short wrist stub.
-  const save = local[0];
-  local[0] = { x: save.x + (save.x - local[9].x) * 0.15, y: save.y + (save.y - local[9].y) * 0.15 };
+  local[0] = { x: local[0].x + (local[0].x - local[9].x) * 0.15, y: local[0].y + (local[0].y - local[9].y) * 0.15 };
   drawHandSilhouette(ctx, local, s * 0.92, 0);
   ctx.globalCompositeOperation = 'source-over';
   erode(c, seed + 3);
   return { canvas: c, x: ox, y: oy };
 }
 
-function posePoints(name, cx, cy, s, rot = 0) {
+function posePoints(name, cx, cy, s, rot = 0, anchor = 9) {
   const pose = POSES[name];
-  const [px, py] = pose[9];
+  const [px, py] = pose[anchor];
   const cr = Math.cos(rot), sr = Math.sin(rot);
   return pose.map(([x, y]) => {
     const dx = (x - px) * s, dy = (y - py) * s;
@@ -672,8 +734,29 @@ function posePoints(name, cx, cy, s, rot = 0) {
   });
 }
 
+// Little firelit discs showing each shape's shadow: the tip for "how do I make this?".
+function renderThumb(canvas, name) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const bg = ctx.createRadialGradient(W * 0.45, H * 0.6, 0, W / 2, H / 2, W * 0.62);
+  bg.addColorStop(0, '#e19a5a'); bg.addColorStop(0.55, '#a8592c'); bg.addColorStop(1, '#3a1b0d');
+  ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(W / 2, H / 2, W / 2, 0, Math.PI * 2); ctx.fill();
+  const pose = POSES[name === 'wolf' ? 'wolfOpen' : name];
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const [x, y] of pose) { minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); }
+  const s = Math.min((W * 0.62) / (maxX - minX + 0.5), (H * 0.62) / (maxY - minY + 0.5));
+  const cx = W / 2 - ((minX + maxX) / 2) * s, cy = H / 2 - ((minY + maxY) / 2) * s;
+  const pts = pose.map(([x, y]) => ({ x: cx + x * s, y: cy + y * s }));
+  ctx.save();
+  ctx.beginPath(); ctx.arc(W / 2, H / 2, W / 2, 0, Math.PI * 2); ctx.clip();
+  ctx.fillStyle = 'rgba(28,12,6,0.9)'; ctx.strokeStyle = 'rgba(28,12,6,0.9)';
+  drawHandSilhouette(ctx, pts, s, 1.6, 'rgba(28,12,6,0)');
+  ctx.restore();
+}
+for (const c of document.querySelectorAll('canvas[data-thumb]')) renderThumb(c, c.dataset.thumb);
+
 // ---------------------------------------------------------------------------
-// Gesture analysis
+// Gesture analysis + coaching
 // ---------------------------------------------------------------------------
 const FINGERS = { thumb: [1, 2, 3, 4], index: [5, 6, 7, 8], middle: [9, 10, 11, 12], ring: [13, 14, 15, 16], pinky: [17, 18, 19, 20] };
 // N: 21 points in mirrored, normalized camera space. aspect: camera width / height.
@@ -694,12 +777,25 @@ function analyzeHand(N, aspect) {
   const sideways = Math.abs(dir.x) > Math.abs(dir.y) * 1.1;
   const tipsTogether = Math.max(d(8, 12), d(12, 16), d(8, 16)) < 0.62 * scale;
   const spread = (d(8, 12) + d(12, 16) + d(16, 20)) / 3 / scale;
-  const jaw = d(16, 20) / scale;
   let label = 'hand';
   if (ext.index && ext.middle && ext.ring && ext.pinky && thumbOut && up && spread > 0.3) label = 'palm';
   else if (ext.index && ext.middle && ext.ring && thumbOut && sideways && tipsTogether) label = 'wolf';
   else if (ext.index && ext.middle && !ext.ring && !ext.pinky) label = 'rabbit';
-  return { label, scale, ext, str, thumbOut, up, sideways, tipsTogether, spread, jaw, N };
+  return { label, scale, ext, str, thumbOut, up, sideways, tipsTogether, spread, N };
+}
+// Which shape is the hand closest to, and what single change would get it there?
+function coach(a) {
+  const checks = {
+    wolf: [[a.ext.index && a.ext.middle && a.ext.ring, 'stretch three fingers out'], [a.thumbOut, 'lift your thumb like an ear'], [a.sideways, 'turn your hand sideways'], [a.tipsTogether, 'keep those three fingers together']],
+    rabbit: [[a.ext.index && a.ext.middle, 'raise two fingers'], [!a.ext.ring && !a.ext.pinky, 'fold your ring and little fingers']],
+    palm: [[a.ext.index && a.ext.middle && a.ext.ring && a.ext.pinky, 'open all your fingers'], [a.thumbOut, 'open your thumb'], [a.up, 'point your fingers up'], [a.spread > 0.3, 'spread your fingers']],
+  };
+  let best = null;
+  for (const [name, cs] of Object.entries(checks)) {
+    const ok = cs.filter((c) => c[0]).length / cs.length;
+    if (!best || ok > best.ok) best = { name, ok, miss: cs.find((c) => !c[0]) };
+  }
+  return best && best.ok >= 0.5 && best.miss ? best : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -725,12 +821,10 @@ scene.add(wall);
 
 const floorMap = rock.map.clone(); floorMap.repeat.set(4, 2.4); floorMap.needsUpdate = true;
 const floorNormal = rock.normal.clone(); floorNormal.repeat.set(4, 2.4); floorNormal.needsUpdate = true;
-const floor = new THREE.Mesh(makeFloor(), new THREE.MeshStandardMaterial({ map: floorMap, normalMap: floorNormal, roughness: 1, color: 0x9a8a78 }));
-scene.add(floor);
+scene.add(new THREE.Mesh(makeFloor(), new THREE.MeshStandardMaterial({ map: floorMap, normalMap: floorNormal, roughness: 1, color: 0x9a8a78 })));
 
 const rockPieceMat = new THREE.MeshStandardMaterial({ map: rock.map, normalMap: rock.normal, roughness: 0.95, color: 0xb9a996 });
-const rocks = [[-2.4, -1.0, 0.55, 3], [2.2, -0.8, 0.45, 5], [-1.3, -0.4, 0.22, 9], [1.4, -0.3, 0.26, 12], [-3.0, -2.2, 0.7, 14], [2.9, -2.4, 0.6, 18], [0.8, -2.6, 0.3, 21]];
-for (const [x, z, rad, seed] of rocks) {
+for (const [x, z, rad, seed] of [[-2.4, -1.0, 0.55, 3], [2.2, -0.8, 0.45, 5], [-1.3, -0.4, 0.22, 9], [1.4, -0.3, 0.26, 12], [-3.0, -2.2, 0.7, 14], [2.9, -2.4, 0.6, 18], [0.8, -2.6, 0.3, 21]]) {
   const m = new THREE.Mesh(makeRock(rad, seed), rockPieceMat);
   m.position.set(x, FLOOR_Y + rad * 0.25, z);
   m.rotation.y = seed;
@@ -755,7 +849,7 @@ for (let i = 0; i < 3; i++) {
 }
 
 const flameUniforms = { uTime: { value: 0 }, uProj: { value: 500 }, uLevel: { value: 0.4 } };
-function makeParticles(count, spread, seedBase, vertexMain, fragment, sizeBase) {
+function makeParticles(count, spread, seedBase, vertexMain, fragment) {
   const g = new THREE.BufferGeometry();
   const pos = new Float32Array(count * 3), seed = new Float32Array(count);
   const r = mulberry(seedBase);
@@ -846,15 +940,81 @@ scene.add(washLight);
 scene.add(new THREE.HemisphereLight(0x22324a, 0x0b0705, 0.6));
 
 // ---------------------------------------------------------------------------
-// Wall layers: paint (lit), shadow (multiply-ish), glow (additive)
+// Foreground: the cave mouth and stalactites, close to the screen.
+// Near and far layers moving differently is what makes head tracking read as depth.
+// ---------------------------------------------------------------------------
+const MOUTH_Z = -0.4;
+const mouthMask = makeCanvas(512, 512);
+const mouthMaskTex = new THREE.CanvasTexture(mouthMask);
+const mouthMap = rock.map.clone(); mouthMap.repeat.set(1.1, 1.1); mouthMap.needsUpdate = true;
+const mouthNormal = rock.normal.clone(); mouthNormal.repeat.set(1.1, 1.1); mouthNormal.needsUpdate = true;
+const mouthMat = new THREE.MeshStandardMaterial({ map: mouthMap, normalMap: mouthNormal, alphaMap: mouthMaskTex, alphaTest: 0.5, alphaToCoverage: true, color: 0x6e5d50, roughness: 1, side: THREE.DoubleSide });
+let mouth = null;
+const stalactites = new THREE.Group();
+scene.add(stalactites);
+const stalMat = new THREE.MeshStandardMaterial({ map: rock.map, normalMap: rock.normal, color: 0x9d8b79, roughness: 0.9 });
+for (let i = 0; i < 7; i++) {
+  const m = new THREE.Mesh(makeStalactite(0.35 + (i % 3) * 0.18, 0.05 + (i % 2) * 0.03, 70 + i), stalMat);
+  m.userData = { fx: [-0.42, -0.3, -0.16, 0.05, 0.2, 0.33, 0.44][i], z: [-0.9, -1.4, -0.75, -1.8, -1.1, -0.85, -1.5][i] };
+  stalactites.add(m);
+}
+function buildMouth() {
+  if (mouth) { scene.remove(mouth); mouth.geometry.dispose(); }
+  const sc = (EYE_D - MOUTH_Z) / EYE_D;
+  const hw = (screenW / 2) * sc, hh = (SCREEN_H / 2) * sc;
+  const O = 1.6;
+  const W = hw * O * 2, H = hh * O * 2;
+  const ix = hw * 0.93, iy = hh * 1.02, yo = -hh * 0.12;
+  // Opening outline: an irregular arch, open at the bottom so the fire stays visible.
+  const outline = [];
+  const N = 120;
+  for (let i = 0; i <= N; i++) {
+    const th = -0.12 * Math.PI + (i / N) * 1.24 * Math.PI;
+    const rx = ix * (1 + (fbm(th * 2.2, 0.5, 3, 61) - 0.5) * 0.2);
+    const ry = iy * (1 + (fbm(th * 2.2, 3.5, 3, 62) - 0.5) * 0.24);
+    let x = Math.cos(th) * rx, y = yo + Math.sin(th) * ry;
+    const top = Math.sin(th);
+    if (top > 0.5) y -= Math.pow(Math.max(0, Math.sin(th * 23 + 1.3)), 6) * hh * 0.16 * top;
+    if (i === 0 || i === N) y = -hh * O - 0.1;
+    outline.push([x, y]);
+  }
+  const mctx = mouthMask.getContext('2d');
+  const toPx = ([x, y]) => [((x + W / 2) / W) * 512, ((H / 2 - y) / H) * 512];
+  mctx.fillStyle = '#fff'; mctx.fillRect(0, 0, 512, 512);
+  if (supportsFilter) mctx.filter = 'blur(2px)';
+  mctx.fillStyle = '#000';
+  mctx.beginPath();
+  outline.forEach((p, i) => { const [x, y] = toPx(p); i ? mctx.lineTo(x, y) : mctx.moveTo(x, y); });
+  mctx.closePath(); mctx.fill();
+  mctx.filter = 'none';
+  mouthMaskTex.needsUpdate = true;
+  const g = new THREE.PlaneGeometry(W, H, 90, 90);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i);
+    const r = Math.hypot(x / ix, (y - yo) / iy);
+    // The rock bulges toward the viewer away from the opening, so the edge has real depth.
+    p.setZ(i, MOUTH_Z + clamp(r - 1, 0, 0.8) * 0.55 + (fbm(x * 1.4 + 7, y * 1.4, 4, 63) - 0.5) * 0.3);
+  }
+  g.computeVertexNormals();
+  mouth = new THREE.Mesh(g, mouthMat);
+  scene.add(mouth);
+  for (const m of stalactites.children) {
+    const z = m.userData.z;
+    const s2 = (EYE_D - z) / EYE_D;
+    m.position.set(m.userData.fx * screenW * s2, (SCREEN_H / 2) * s2 + 0.05, z);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Wall layers: paint (lit), shadow, glow (additive)
 // ---------------------------------------------------------------------------
 const artCanvas = makeCanvas(ART_W, ART_H);
 const artCtx = artCanvas.getContext('2d');
 const artTex = new THREE.CanvasTexture(artCanvas);
 artTex.colorSpace = THREE.SRGBColorSpace; artTex.anisotropy = 4;
 const artMat = new THREE.MeshStandardMaterial({ map: artTex, normalMap: rock.normal, transparent: true, roughness: 0.95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
-const artMesh = new THREE.Mesh(offsetGeometry(wallGeo, 0.006), artMat);
-scene.add(artMesh);
+scene.add(new THREE.Mesh(offsetGeometry(wallGeo, 0.006), artMat));
 
 const shadowCanvas = makeCanvas(SH_W, SH_H);
 const shadowCtx = shadowCanvas.getContext('2d');
@@ -862,16 +1022,14 @@ const shadowTmp = makeCanvas(SH_W, SH_H);
 const shadowTmpCtx = shadowTmp.getContext('2d');
 const shadowTex = new THREE.CanvasTexture(shadowCanvas);
 const shadowMat = new THREE.MeshBasicMaterial({ color: 0x040201, alphaMap: shadowTex, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
-const shadowMesh = new THREE.Mesh(offsetGeometry(wallGeo, 0.012), shadowMat);
-scene.add(shadowMesh);
+scene.add(new THREE.Mesh(offsetGeometry(wallGeo, 0.012), shadowMat));
 
 const fxCanvas = makeCanvas(SH_W, SH_H);
 const fxCtx = fxCanvas.getContext('2d');
 const fxTex = new THREE.CanvasTexture(fxCanvas);
 fxTex.colorSpace = THREE.SRGBColorSpace;
 const fxMat = new THREE.MeshBasicMaterial({ map: fxTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -6 });
-const fxMesh = new THREE.Mesh(offsetGeometry(wallGeo, 0.018), fxMat);
-scene.add(fxMesh);
+scene.add(new THREE.Mesh(offsetGeometry(wallGeo, 0.018), fxMat));
 
 // Painting layout in art-canvas pixels. The visible wall spans roughly x 390–1660, y 110–790.
 const PAINTINGS = [
@@ -883,20 +1041,11 @@ const PAINTINGS = [
   { id: 'self', kind: 'self', x: 990, y: 380, w: 150, h: 170, group: 'self', seed: 16 },
   { id: 'phone', kind: 'phone', x: 1215, y: 450, w: 110, h: 190, group: 'project', project: 'phone', seed: 17 },
   { id: 'laptop', kind: 'laptop', x: 450, y: 520, w: 210, h: 150, group: 'project', project: 'laptop', seed: 18 },
-  { id: 'dots', kind: 'dots', x: 720, y: 640, w: 230, h: 46, group: 'sign', seed: 19 },
-  { id: 'tally', kind: 'tally', x: 1360, y: 660, w: 120, h: 70, group: 'sign', seed: 20 },
+  { id: 'dots', kind: 'dots', x: 420, y: 130, w: 200, h: 40, group: 'sign', seed: 19 },
+  { id: 'tally', kind: 'tally', x: 1530, y: 140, w: 110, h: 60, group: 'sign', seed: 20 },
 ];
 const GLOW_PAD = 26;
-const glowRGB = 'rgb(255,176,96)';
-for (const p of PAINTINGS) {
-  const c = makeCanvas(p.w, p.h);
-  const ctx = c.getContext('2d');
-  PAINTERS[p.kind](ctx, p.w, p.h, mulberry(p.seed));
-  erode(c, p.seed);
-  p.canvas = c;
-  p.alpha = 1; p.g = 0; p.boostFrom = 0; p.boostTo = 0;
-  p.glow = makeGlowSprite(c, p.w / 2, p.h / 2);
-}
+const glowRGB = 'rgb(255,128,48)';
 function makeGlowSprite(src, w, h) {
   const tint = makeCanvas(w, h);
   const t = tint.getContext('2d');
@@ -906,25 +1055,119 @@ function makeGlowSprite(src, w, h) {
   const g = makeCanvas(w + GLOW_PAD * 2, h + GLOW_PAD * 2);
   const gc = g.getContext('2d');
   if (supportsFilter) { gc.filter = 'blur(9px)'; gc.drawImage(tint, GLOW_PAD, GLOW_PAD); gc.filter = 'none'; }
-  gc.globalAlpha = 0.8;
+  gc.globalAlpha = 0.45;
   gc.drawImage(tint, GLOW_PAD, GLOW_PAD);
   return g;
+}
+function addPaintingState(p) { p.alpha = 1; p.g = 0; p.boostFrom = 0; p.boostTo = 0; p.glow = makeGlowSprite(p.canvas, p.w / 2, p.h / 2); }
+for (const p of PAINTINGS) {
+  p.canvas = makeCanvas(p.w, p.h);
+  PAINTERS[p.kind](p.canvas.getContext('2d'), p.w, p.h, mulberry(p.seed));
+  erode(p.canvas, p.seed);
+  addPaintingState(p);
 }
 
 // Ancient handprints, sprayed long before the visitor arrived.
 const STENCILS = [];
 {
   const r = mulberry(77);
-  const spots = [[1530, 600], [1600, 520], [1490, 720], [1630, 690], [1560, 820], [430, 720], [500, 790], [360, 640], [1680, 600], [1420, 790], [600, 760]];
+  const spots = [[1570, 600], [1640, 520], [1610, 745], [1665, 675], [1545, 830], [430, 720], [500, 790], [360, 640], [600, 775], [1430, 835]];
   spots.forEach(([x, y], i) => {
     const s = 26 + r() * 10;
     const pts = posePoints('palm', x, y, s, (r() - 0.5) * 0.9);
     const st = makeStencil(pts, s, r() < 0.6 ? PIG.red : PIG.yellow, 100 + i, 0.75 + r() * 0.25);
-    STENCILS.push({ ...st, alpha: 1, glowUntil: 0, born: 0, ancient: true });
+    STENCILS.push({ ...st, alpha: 1, glowUntil: 0, born: 0 });
   });
 }
 
-let artDirty = true;
+// ---------------------------------------------------------------------------
+// Tracing guides (painting mode): dotted outlines waiting to be painted in
+// ---------------------------------------------------------------------------
+const GUIDES = [
+  { id: 'wolf', section: 'experience', title: 'the wolf', x: 690, y: 590, w: 210, h: 170, color: PIG.char, eye: [0.6, 0.38],
+    pts: [[0.05, 1.0], [0.1, 0.62], [0.16, 0.42], [0.22, 0.12], [0.3, 0.0], [0.36, 0.22], [0.42, 0.3], [0.5, 0.32], [0.62, 0.36], [0.78, 0.42], [0.96, 0.5], [1.0, 0.58], [0.92, 0.62], [0.78, 0.6], [0.9, 0.7], [0.82, 0.76], [0.62, 0.74], [0.45, 0.82], [0.36, 1.0]] },
+  { id: 'rabbit', section: 'about', title: 'the rabbit', x: 965, y: 570, w: 170, h: 195, color: PIG.yellow, eye: [0.74, 0.46],
+    pts: [[0.12, 1.0], [0.02, 0.82], [0.04, 0.6], [0.18, 0.46], [0.36, 0.42], [0.5, 0.42], [0.47, 0.2], [0.5, 0.02], [0.57, 0.02], [0.6, 0.3], [0.64, 0.14], [0.7, 0.02], [0.76, 0.06], [0.7, 0.36], [0.8, 0.42], [0.86, 0.54], [0.78, 0.62], [0.68, 0.66], [0.72, 0.94], [0.6, 1.0]] },
+  { id: 'hand', section: 'contact', title: 'the hand', x: 1350, y: 565, w: 150, h: 190, color: PIG.red,
+    pts: [[0.28, 1.0], [0.14, 0.72], [0.0, 0.54], [0.02, 0.44], [0.12, 0.48], [0.22, 0.6], [0.22, 0.32], [0.24, 0.06], [0.32, 0.05], [0.34, 0.33], [0.38, 0.28], [0.42, 0.0], [0.5, 0.0], [0.52, 0.29], [0.56, 0.32], [0.6, 0.06], [0.68, 0.08], [0.68, 0.38], [0.72, 0.44], [0.78, 0.22], [0.86, 0.24], [0.84, 0.55], [0.82, 0.8], [0.72, 1.0]] },
+];
+const SECTION_NAME = { experience: 'Experience', about: 'About', contact: 'Contact' };
+const TRACE_TOL = 22;
+for (const g of GUIDES) {
+  // Resample the closed outline evenly so coverage is measured fairly along its length.
+  const raw = g.pts.map(([u, v]) => [g.x + u * g.w, g.y + v * g.h]);
+  raw.push(raw[0]);
+  let total = 0;
+  const segs = [];
+  for (let i = 1; i < raw.length; i++) { const L = Math.hypot(raw[i][0] - raw[i - 1][0], raw[i][1] - raw[i - 1][1]); segs.push(L); total += L; }
+  const n = 80, samples = [];
+  for (let k = 0; k < n; k++) {
+    let dist = (k / n) * total, i = 0;
+    while (i < segs.length - 1 && dist > segs[i]) { dist -= segs[i]; i++; }
+    const t = Math.min(1, dist / segs[i]);
+    samples.push([raw[i][0] + (raw[i + 1][0] - raw[i][0]) * t, raw[i][1] + (raw[i + 1][1] - raw[i][1]) * t]);
+  }
+  Object.assign(g, { samples, covered: new Uint8Array(n), near: 0, inBox: 0, done: false, hover: 0 });
+}
+function guideAt(ax, ay, pad = 30) { return GUIDES.find((g) => ax > g.x - pad && ax < g.x + g.w + pad && ay > g.y - pad && ay < g.y + g.h + pad) || null; }
+function guideProgress(g) { let c = 0; for (const v of g.covered) c += v; return c / g.covered.length; }
+function traceGuides(ax, ay) {
+  for (const g of GUIDES) {
+    if (g.done || ax < g.x - 40 || ax > g.x + g.w + 40 || ay < g.y - 40 || ay > g.y + g.h + 40) continue;
+    g.inBox++;
+    let nearAny = false;
+    g.samples.forEach(([sx, sy], i) => {
+      const d = Math.hypot(sx - ax, sy - ay);
+      if (d < TRACE_TOL) g.covered[i] = 1;
+      if (d < TRACE_TOL * 1.8) nearAny = true;
+    });
+    if (nearAny) g.near++;
+  }
+}
+function checkGuides(final) {
+  for (const g of GUIDES) {
+    if (g.done || !g.inBox) continue;
+    const cov = guideProgress(g), prec = g.near / g.inBox;
+    if ((final && cov >= 0.68 && prec >= 0.55) || cov >= 0.9) completeGuide(g);
+  }
+}
+function completeGuide(g) {
+  g.done = true;
+  const c = makeCanvas(g.w, g.h);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = g.color;
+  smoothClosed(ctx, g.pts, g.w, g.h);
+  ctx.fill();
+  erode(c, 900 + g.id.length);
+  const p = { id: `g-${g.id}`, kind: 'traced', x: g.x, y: g.y, w: g.w, h: g.h, group: 'traced', guide: g, canvas: c };
+  addPaintingState(p);
+  PAINTINGS.push(p);
+  artDirty = true;
+  boost([p.id]);
+  playChime(g.id);
+  openPanel(g.section);
+}
+
+// Visitor strokes, finger-painted in ochre.
+const STROKES = [];
+let currentStroke = null;
+function paintSegment(ctx, a, b, seed) {
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = PIG.red;
+  ctx.globalAlpha = 0.85; ctx.lineWidth = 10;
+  ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+  // A few dry flecks along the edge, so it reads as pigment rather than a pen line.
+  const r = mulberry(seed);
+  ctx.fillStyle = PIG.deep;
+  ctx.globalAlpha = 0.5;
+  for (let i = 0; i < 2; i++) {
+    const t = r();
+    ctx.beginPath(); ctx.arc(a[0] + (b[0] - a[0]) * t + (r() - 0.5) * 12, a[1] + (b[1] - a[1]) * t + (r() - 0.5) * 12, 0.8 + r() * 1.6, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+let artDirty = true, artUploadAt = 0, artUploadPending = false;
 function redrawArt() {
   artCtx.clearRect(0, 0, ART_W, ART_H);
   for (const s of STENCILS) { artCtx.globalAlpha = s.alpha; artCtx.drawImage(s.canvas, s.x, s.y); }
@@ -934,6 +1177,7 @@ function redrawArt() {
     artCtx.drawImage(p.canvas, p.x, p.y);
   }
   artCtx.globalAlpha = 1;
+  for (const s of STROKES) for (let i = 1; i < s.pts.length; i++) paintSegment(artCtx, s.pts[i - 1], s.pts[i], s.seed + i);
   artTex.needsUpdate = true;
   artDirty = false;
 }
@@ -943,8 +1187,7 @@ function redrawArt() {
 // ---------------------------------------------------------------------------
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.7, 0.82);
-composer.addPass(bloom);
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.7, 0.82));
 const vignette = new ShaderPass({
   uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uStrength: { value: 0.88 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
@@ -964,14 +1207,14 @@ composer.addPass(vignette);
 composer.addPass(new OutputPass());
 
 let screenW = SCREEN_H;
-const pan = { x: 0, target: 0 };   // sideways look-around, used where the window is narrow (phones)
+const pan = { x: 0, target: 0 };   // sideways look-around where the window is narrow (phones)
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
   renderer.setSize(w, h, false);
   composer.setSize(w, h);
   screenW = SCREEN_H * (w / h);
-  const bufH = h * renderer.getPixelRatio();
-  flameUniforms.uProj.value = (bufH * EYE_D) / SCREEN_H;
+  flameUniforms.uProj.value = (h * renderer.getPixelRatio() * EYE_D) / SCREEN_H;
+  buildMouth();
 }
 window.addEventListener('resize', resize);
 resize();
@@ -1009,8 +1252,7 @@ function makePhone() {
     ctx.fillStyle = '#6fa58c'; ctx.font = '500 18px system-ui, sans-serif'; ctx.fillText('Goal: new laptop · 62%', 28, 162);
     ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(28, 182, w - 56, 14);
     ctx.fillStyle = '#5ee0a0'; ctx.fillRect(28, 182, (w - 56) * 0.62, 14);
-    const bars = [0.4, 0.7, 0.55, 0.9, 0.62, 0.8, 0.5];
-    bars.forEach((b, i) => { ctx.fillStyle = i === 3 ? '#5ee0a0' : 'rgba(94,224,160,0.35)'; const bw = (w - 56) / 7 - 10; ctx.fillRect(28 + i * (bw + 10), 420 - b * 170, bw, b * 170); });
+    [0.4, 0.7, 0.55, 0.9, 0.62, 0.8, 0.5].forEach((b, i) => { ctx.fillStyle = i === 3 ? '#5ee0a0' : 'rgba(94,224,160,0.35)'; const bw = (w - 56) / 7 - 10; ctx.fillRect(28 + i * (bw + 10), 420 - b * 170, bw, b * 170); });
     ctx.fillStyle = '#6fa58c'; ctx.font = '500 16px system-ui, sans-serif'; ctx.fillText('This week', 28, 450);
     for (let i = 0; i < 3; i++) {
       const y = 490 + i * 72;
@@ -1026,8 +1268,7 @@ function makePhone() {
 }
 function makeLaptop() {
   const g = new THREE.Group();
-  const base = new THREE.Mesh(new RoundedBoxGeometry(0.9, 0.03, 0.6, 3, 0.012), deviceMat);
-  g.add(base);
+  g.add(new THREE.Mesh(new RoundedBoxGeometry(0.9, 0.03, 0.6, 3, 0.012), deviceMat));
   const lid = new THREE.Group();
   lid.position.set(0, 0.015, -0.3);
   lid.rotation.x = -0.22;
@@ -1037,8 +1278,7 @@ function makeLaptop() {
   const tex = screenTexture((ctx, w, h) => {
     ctx.fillStyle = '#0e1320'; ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = '#7aa2ff'; ctx.font = '600 24px ui-monospace, monospace'; ctx.fillText('Medical API · v1', 30, 50);
-    const rows = [['GET', '/patients', '#5ee0a0'], ['POST', '/patients', '#ffcf66'], ['GET', '/appointments/{id}', '#5ee0a0'], ['PUT', '/records/{id}', '#7aa2ff'], ['DELETE', '/sessions', '#ff7a7a']];
-    rows.forEach(([m, path, c], i) => {
+    [['GET', '/patients', '#5ee0a0'], ['POST', '/patients', '#ffcf66'], ['GET', '/appointments/{id}', '#5ee0a0'], ['PUT', '/records/{id}', '#7aa2ff'], ['DELETE', '/sessions', '#ff7a7a']].forEach(([m, path, c], i) => {
       const y = 92 + i * 52;
       ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(24, y - 30, w - 48, 42);
       ctx.fillStyle = c; ctx.font = '700 18px ui-monospace, monospace'; ctx.fillText(m, 40, y);
@@ -1087,11 +1327,12 @@ function startStepOut(painting) {
   stepOut.from.z += 0.05;
   const worldW = (painting.w / ART_W) * WALL_W, worldH = (painting.h / ART_H) * WALL_H;
   const narrow = window.innerWidth <= 720;
-  stepOut.to.set(pan.x - screenW * (narrow ? 0.05 : 0.19), (narrow ? 0.5 : 0) + (painting.project === 'phone' ? 0.0 : -0.2), narrow ? -0.9 : -0.45);
+  stepOut.to.set(pan.x - screenW * (narrow ? 0.05 : 0.19), (narrow ? 0.5 : 0) + (painting.project === 'phone' ? 0.0 : -0.2), narrow ? -0.9 : -0.75);
   stepOut.id = painting.id; stepOut.painting = painting; stepOut.device = dvc; stepOut.t = 0; stepOut.dir = 1;
   stepOut.startScale = painting.project === 'phone' ? worldH / 0.68 : worldW / 0.9;
   dvc.visible = true;
   burstFlakes(stepOut.from, worldW, worldH);
+  playChime('project');
   openPanel('project', painting.project);
 }
 function returnStepOut() { if (stepOut.id) stepOut.dir = -1; }
@@ -1160,7 +1401,7 @@ function openPanel(kind, arg) {
     const tags = el('div', 'tags'); for (const t of p.technologies) tags.append(el('span', 'tag', t));
     panelBody.append(el('p', null, p.description), tags, el('p', 'muted', 'Prototype note: the device screen is an illustration, not a real screenshot.'));
   } else if (kind === 'contact') {
-    eyebrow.textContent = 'Your handprint · Open palm';
+    eyebrow.textContent = 'Your handprint';
     title.textContent = 'Leave a mark';
     panelBody.append(el('p', null, 'Your handprint is on the wall now, next to everyone who came before. Write to me:'));
     const line = el('div', 'contact-line');
@@ -1204,33 +1445,58 @@ let handLandmarker = null, faceDetector = null;
 const video = $('cam');
 let camAspect = 4 / 3;
 let lastVideoTime = -1, frameNo = 0;
-let hands = [];               // arrays of 21 mirrored normalized points
+let hands = [];               // arrays of 21 mirrored normalized points (camera mode)
 let analyses = [];
 const eye = { x: 0, y: 0, z: EYE_D }, eyeTarget = { x: 0, y: 0, z: EYE_D };
+let headOn = true;
 let faceRef = null, faceCal = [], lastFaceAt = -10;
+const faceF = { cx: new OneEuro(0.5, 4), cy: new OneEuro(0.5, 4), fw: new OneEuro(0.4, 2) };
+const faceHeld = { cx: 0.5, cy: 0.5, fw: 0.2 };
 let shadowAlpha = 0;
-const mouse = { nx: 0.5, ny: 0.45, inside: false, pose: 'wolf', u: 0.5, v: 0.44 };
+const pointer = { inside: false, ax: 1024, ay: 470, down: false, drawing: false, panning: false, lastX: 0, moved: 0 };
 const G = { label: 'none', history: [], hold: 0, latched: null, wrist: [], dwell: { id: null, t: 0 } };
 const stats = { fps: 0, detectMs: 0, delegate: '—' };
+const lean = { shown: false, at: 0, done: false };
 
-function onFace(det, now) {
+function onFace(det, t) {
   const vw = video.videoWidth, vh = video.videoHeight;
   const b = det.boundingBox;
-  const cx = (b.originX + b.width / 2) / vw, cy = (b.originY + b.height / 2) / vh, fw = b.width / vw;
+  const rcx = (b.originX + b.width / 2) / vw, rcy = (b.originY + b.height / 2) / vh, rfw = b.width / vw;
+  // Filter, then ignore movements smaller than detection noise.
+  faceHeld.cx = deadzone(faceHeld.cx, faceF.cx.filter(rcx, t), 0.004);
+  faceHeld.cy = deadzone(faceHeld.cy, faceF.cy.filter(rcy, t), 0.004);
+  faceHeld.fw = deadzone(faceHeld.fw, faceF.fw.filter(rfw, t), 0.003);
+  lastFaceAt = t;
   if (!faceRef) {
-    faceCal.push({ cx, cy, fw });
+    faceCal.push({ ...faceHeld });
     if (faceCal.length >= 12) {
       const avg = (k) => faceCal.reduce((a, f) => a + f[k], 0) / faceCal.length;
       faceRef = { cx: avg('cx'), cy: avg('cy'), fw: avg('fw') };
       faceCal = [];
+      if (!lean.shown) showLeanHint();
     }
-    lastFaceAt = now;
     return;
   }
-  eyeTarget.x = (faceRef.cx - cx) * SCREEN_H * 2.0;
-  eyeTarget.y = (faceRef.cy - cy) * SCREEN_H * 1.6;
-  eyeTarget.z = EYE_D * clamp(faceRef.fw / fw, 0.65, 1.5);
-  lastFaceAt = now;
+  if (!headOn) return;
+  eyeTarget.x = (faceRef.cx - faceHeld.cx) * SCREEN_H * 2.0;
+  eyeTarget.y = (faceRef.cy - faceHeld.cy) * SCREEN_H * 1.6;
+  eyeTarget.z = EYE_D * clamp(faceRef.fw / faceHeld.fw, 0.65, 1.5);
+}
+function showLeanHint() {
+  lean.shown = true; lean.at = clock;
+  $('lean-hint').textContent = 'Lean left and right. Your screen is a window into the cave.';
+  $('lean-hint').hidden = false;
+}
+
+// Light smoothing of hand landmarks so shadows don't shiver.
+let smoothHands = [];
+function smoothLandmarks(next) {
+  const out = next.map((h) => {
+    const prev = smoothHands.find((p) => Math.hypot(p[0].x - h[0].x, p[0].y - h[0].y) < 0.15);
+    return prev ? h.map((pt, i) => ({ x: prev[i].x + (pt.x - prev[i].x) * 0.6, y: prev[i].y + (pt.y - prev[i].y) * 0.6 })) : h;
+  });
+  smoothHands = out;
+  return out;
 }
 
 function toShadowPoints(N) {
@@ -1274,18 +1540,22 @@ function updateGestures(dt, now) {
   const lastW = G.wrist[G.wrist.length - 1];
   const still = G.wrist.length > 5 && G.wrist.every((w) => Math.hypot(w.x - lastW.x, w.y - lastW.y) < 0.03);
 
-  let progress = 0, hint = mode === 'mouse' ? 'Pick a shape below, or click the phone or laptop' : 'Raise a hand into the firelight';
+  let progress = 0, hint = 'Raise a hand into the firelight', near = null;
   if (G.label === 'wolf') { progress = G.hold / HOLD_GESTURE; hint = 'Wolf · Experience'; }
   else if (G.label === 'rabbit') { progress = G.hold / HOLD_GESTURE; hint = 'Rabbit · About'; }
   else if (G.label === 'palm') { progress = still ? G.hold / HOLD_PALM : 0; hint = still ? 'Open palm · hold still' : 'Open palm · hold still to leave a print'; }
-  else if (G.label === 'hand') hint = 'Make a wolf, a rabbit, or an open palm';
+  else if (G.label === 'hand' && main) {
+    const c = coach(main);
+    if (c) { near = c.name; hint = `Almost a ${c.name} · ${c.miss[1]}`; }
+    else hint = 'Make a wolf, a rabbit, or an open palm';
+  }
 
   if (G.latched !== G.label) {
-    if (G.label === 'wolf' && G.hold >= HOLD_GESTURE) { G.latched = 'wolf'; openPanel('experience'); }
-    else if (G.label === 'rabbit' && G.hold >= HOLD_GESTURE) { G.latched = 'rabbit'; openPanel('about'); }
-    else if (G.label === 'palm' && G.hold >= HOLD_PALM && still && main) { G.latched = 'palm'; leaveHandprint(main.N); openPanel('contact'); }
+    if (G.label === 'wolf' && G.hold >= HOLD_GESTURE) { G.latched = 'wolf'; playChime('wolf'); openPanel('experience'); }
+    else if (G.label === 'rabbit' && G.hold >= HOLD_GESTURE) { G.latched = 'rabbit'; playChime('rabbit'); openPanel('about'); }
+    else if (G.label === 'palm' && G.hold >= HOLD_PALM && still && main) { G.latched = 'palm'; leaveHandprint(toShadowPoints(main.N)); playChime('palm'); openPanel('contact'); }
   }
-  if (G.latched === G.label && G.label !== 'hand' && G.label !== 'none') { progress = 1; }
+  if (G.latched === G.label && G.label !== 'hand' && G.label !== 'none') progress = 1;
 
   // Dwell: the shadow's index fingertip touching a project painting.
   let dwellTarget = null;
@@ -1301,6 +1571,10 @@ function updateGestures(dt, now) {
     if (G.dwell.t >= HOLD_DWELL) startStepOut(dwellTarget);
   }
   setGestureUI(hint, clamp(progress, 0, 1));
+  for (const node of document.querySelectorAll('.shape')) {
+    node.classList.toggle('active', node.dataset.shape === G.label);
+    node.classList.toggle('near', node.dataset.shape === near);
+  }
 }
 
 let lastHint = '';
@@ -1309,13 +1583,13 @@ function setGestureUI(text, progress) {
   $('ring-fill').style.strokeDashoffset = String(62.8 * (1 - progress));
 }
 
-function leaveHandprint(N) {
-  const pts = toShadowPoints(N).map((p) => ({ x: p.x * (ART_W / SH_W), y: p.y * (ART_H / SH_H) }));
-  const s = Math.hypot(pts[0].x - pts[9].x, pts[0].y - pts[9].y) * 0.95;
-  const st = makeStencil(pts, s, PIG.red, (Math.random() * 1e6) | 0, 1);
+// pts: 21 points in shadow-canvas pixels.
+function leaveHandprint(pts) {
+  const art = pts.map((p) => ({ x: p.x * (ART_W / SH_W), y: p.y * (ART_H / SH_H) }));
+  const s = Math.hypot(art[0].x - art[9].x, art[0].y - art[9].y) * 0.95;
+  const st = makeStencil(art, s, PIG.red, (Math.random() * 1e6) | 0, 1);
   STENCILS.push({ ...st, alpha: 1, glowUntil: clock + 4, born: clock, glow: makeGlowSprite(st.canvas, st.canvas.width / 2, st.canvas.height / 2) });
   artDirty = true;
-  boost([]);
 }
 
 // ---------------------------------------------------------------------------
@@ -1323,31 +1597,36 @@ function leaveHandprint(N) {
 // ---------------------------------------------------------------------------
 let flickerNow = 0;
 function drawShadows(handPts) {
-  shadowCtx.clearRect(0, 0, SH_W, SH_H);
-  if (!handPts.length) { shadowTex.needsUpdate = true; return; }
-  shadowTmpCtx.clearRect(0, 0, SH_W, SH_H);
-  shadowTmpCtx.fillStyle = '#fff'; shadowTmpCtx.strokeStyle = '#fff';
-  for (const pts of handPts) {
-    const s = Math.hypot(pts[0].x - pts[9].x, pts[0].y - pts[9].y);
-    drawHandSilhouette(shadowTmpCtx, pts, s);
-  }
-  const blur = 1.6 + Math.max(0, flickerNow) * 1.4;
-  if (supportsFilter) {
-    shadowCtx.filter = `blur(${blur.toFixed(1)}px)`;
-    shadowCtx.drawImage(shadowTmp, 0, 0);
-    shadowCtx.filter = 'none';
-  } else {
-    shadowCtx.globalAlpha = 0.25;
-    for (const [ox, oy] of [[-1.5, 0], [1.5, 0], [0, -1.5], [0, 1.5]]) shadowCtx.drawImage(shadowTmp, ox, oy);
-    shadowCtx.globalAlpha = 1;
+  // Opaque black base: the alpha map reads brightness, so soft edges need real grey levels.
+  shadowCtx.fillStyle = '#000';
+  shadowCtx.fillRect(0, 0, SH_W, SH_H);
+  if (handPts.length) {
+    shadowTmpCtx.clearRect(0, 0, SH_W, SH_H);
+    shadowTmpCtx.fillStyle = '#fff'; shadowTmpCtx.strokeStyle = '#fff';
+    for (const pts of handPts) drawHandSilhouette(shadowTmpCtx, pts, Math.hypot(pts[0].x - pts[9].x, pts[0].y - pts[9].y));
+    if (supportsFilter) {
+      shadowCtx.filter = `blur(${(1.6 + Math.max(0, flickerNow) * 1.4).toFixed(1)}px)`;
+      shadowCtx.drawImage(shadowTmp, 0, 0);
+      shadowCtx.filter = 'none';
+    } else {
+      shadowCtx.globalAlpha = 0.25;
+      for (const [ox, oy] of [[-1.5, 0], [1.5, 0], [0, -1.5], [0, 1.5]]) shadowCtx.drawImage(shadowTmp, ox, oy);
+      shadowCtx.globalAlpha = 1;
+    }
   }
   shadowTex.needsUpdate = true;
 }
 
+function emberEye(x, y, R) {
+  const grd = fxCtx.createRadialGradient(x, y, 0, x, y, R * 3);
+  grd.addColorStop(0, 'rgba(255,220,150,1)'); grd.addColorStop(0.25, 'rgba(255,140,50,0.8)'); grd.addColorStop(1, 'rgba(255,80,20,0)');
+  fxCtx.fillStyle = grd;
+  fxCtx.beginPath(); fxCtx.arc(x, y, R * 3, 0, Math.PI * 2); fxCtx.fill();
+}
 let fxWasActive = true;
 function drawFx(handPts) {
-  const eyesOpen = (G.label === 'wolf' || G.label === 'rabbit') && analyses.some((a) => a.label === G.label);
-  const active = eyesOpen || PAINTINGS.some((p) => p.g > 0.01 && p.alpha > 0.01) || STENCILS.some((st) => st.glow && clock <= st.glowUntil);
+  const eyesOpen = mode === 'camera' && (G.label === 'wolf' || G.label === 'rabbit') && analyses.some((a) => a.label === G.label);
+  const active = mode === 'mouse' || eyesOpen || PAINTINGS.some((p) => p.g > 0.01 && p.alpha > 0.01) || STENCILS.some((st) => st.glow && clock <= st.glowUntil);
   if (!active && !fxWasActive) return;
   fxWasActive = active;
   fxCtx.clearRect(0, 0, SH_W, SH_H);
@@ -1355,38 +1634,43 @@ function drawFx(handPts) {
     if (p.g <= 0.01 || p.alpha <= 0.01) continue;
     fxCtx.globalAlpha = Math.min(1, p.g) * p.alpha;
     fxCtx.drawImage(p.glow, p.x / 2 - GLOW_PAD, p.y / 2 - GLOW_PAD);
-    if (p.g > 1) { fxCtx.globalAlpha = (p.g - 1) * p.alpha; fxCtx.drawImage(p.glow, p.x / 2 - GLOW_PAD, p.y / 2 - GLOW_PAD); }
+    // A traced creature opens its eye while it glows.
+    if (p.guide && p.guide.eye && p.g > 0.4) { fxCtx.globalAlpha = clamp((p.g - 0.4) * 2.5, 0, 1); emberEye((p.x + p.guide.eye[0] * p.w) / 2, (p.y + p.guide.eye[1] * p.h) / 2, 3.2); }
   }
   for (const s of STENCILS) {
     if (!s.glow || clock > s.glowUntil) continue;
-    const k = 1 - (clock - s.born) / (s.glowUntil - s.born);
-    fxCtx.globalAlpha = clamp(k * 1.3, 0, 1);
+    fxCtx.globalAlpha = clamp((1 - (clock - s.born) / (s.glowUntil - s.born)) * 1.3, 0, 1);
     fxCtx.drawImage(s.glow, s.x / 2 - GLOW_PAD, s.y / 2 - GLOW_PAD);
+  }
+  // Tracing guides: dotted ochre outlines that breathe, brighter where already traced.
+  if (mode === 'mouse') {
+    for (const g of GUIDES) {
+      if (g.done) continue;
+      const breathe = 0.45 + 0.25 * Math.sin(clock * 2.2 + g.x) + g.hover * 0.35;
+      g.samples.forEach(([x, y], i) => {
+        const lit = g.covered[i];
+        fxCtx.globalAlpha = lit ? 0.95 : clamp(breathe, 0, 1);
+        fxCtx.fillStyle = lit ? 'rgb(255,190,110)' : 'rgb(230,130,60)';
+        fxCtx.beginPath(); fxCtx.arc(x / 2, y / 2, lit ? 2.6 : 1.7, 0, Math.PI * 2); fxCtx.fill();
+      });
+    }
+    if (pointer.inside) {
+      fxCtx.globalAlpha = pointer.drawing ? 1 : 0.7;
+      emberEye(pointer.ax / 2, pointer.ay / 2, pointer.drawing ? 2.4 : 1.6);
+    }
   }
   fxCtx.globalAlpha = 1;
   // Living shadows: an ember eye opens in a wolf or rabbit.
-  const main = analyses.find((a) => a.label === 'wolf' || a.label === 'rabbit');
-  if (main && (G.label === 'wolf' || G.label === 'rabbit')) {
-    const idx = analyses.indexOf(main);
+  if (eyesOpen) {
+    const idx = analyses.findIndex((a) => a.label === G.label);
     const pts = handPts[idx];
     if (pts) {
       const s = Math.hypot(pts[0].x - pts[9].x, pts[0].y - pts[9].y);
       let ex, ey;
-      if (G.label === 'wolf') {
-        const a = pts[6], th = pts[2];
-        ex = a.x + (th.x - a.x) * 0.3; ey = a.y + (th.y - a.y) * 0.3 - s * 0.08;
-      } else {
-        const a = pts[5], b = pts[9];
-        ex = (a.x + b.x) / 2 + (pts[0].x - b.x) * 0.15; ey = (a.y + b.y) / 2 + (pts[0].y - b.y) * 0.15;
-      }
-      const open = clamp(G.hold / 0.5, 0, 1);
-      const R = s * 0.13 * open;
-      if (R > 0.5) {
-        const grd = fxCtx.createRadialGradient(ex, ey, 0, ex, ey, R * 3);
-        grd.addColorStop(0, 'rgba(255,220,150,1)'); grd.addColorStop(0.25, 'rgba(255,140,50,0.8)'); grd.addColorStop(1, 'rgba(255,80,20,0)');
-        fxCtx.fillStyle = grd;
-        fxCtx.beginPath(); fxCtx.arc(ex, ey, R * 3, 0, Math.PI * 2); fxCtx.fill();
-      }
+      if (G.label === 'wolf') { const a = pts[6], th = pts[2]; ex = a.x + (th.x - a.x) * 0.3; ey = a.y + (th.y - a.y) * 0.3 - s * 0.08; }
+      else { const a = pts[5], b = pts[9]; ex = (a.x + b.x) / 2 + (pts[0].x - b.x) * 0.15; ey = (a.y + b.y) / 2 + (pts[0].y - b.y) * 0.15; }
+      const R = s * 0.055 * clamp(G.hold / 0.5, 0, 1);
+      if (R > 0.4) emberEye(ex, ey, R);
     }
   }
   fxTex.needsUpdate = true;
@@ -1398,11 +1682,12 @@ function drawFx(handPts) {
 async function startCamera() {
   const status = $('intro-status');
   if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
-    status.textContent = 'This page needs https or localhost to use the camera. Switching to mouse mode.';
+    status.textContent = 'This page needs https or localhost to use the camera. Switching to painting mode.';
     setTimeout(() => startMouse(), 1400);
     return;
   }
   $('start-cam').disabled = true; $('start-mouse').disabled = true;
+  startAudio();
   try {
     status.textContent = 'Asking for your camera…';
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
@@ -1419,89 +1704,146 @@ async function startCamera() {
     handLandmarker = await make(mp.HandLandmarker, { baseOptions: { modelAssetPath: HAND_MODEL }, runningMode: 'VIDEO', numHands: 2, minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5 });
     status.textContent = 'Loading head tracking…';
     try { faceDetector = await make(mp.FaceDetector, { baseOptions: { modelAssetPath: FACE_MODEL }, runningMode: 'VIDEO', minDetectionConfidence: 0.5 }); }
-    catch (e) { console.warn('Face detector failed; the window effect will follow the mouse.', e); }
+    catch (e) { console.warn('Face detector failed; the window effect stays off.', e); }
     mode = 'camera';
     enterScene();
   } catch (err) {
     console.error(err);
     status.textContent = err && err.name === 'NotAllowedError'
-      ? 'Camera permission was declined. Switching to mouse mode.'
-      : `Camera or tracking failed (${err && err.message ? err.message : err}). Switching to mouse mode.`;
+      ? 'Camera permission was declined. Switching to painting mode.'
+      : `Camera or tracking failed (${err && err.message ? err.message : err}). Switching to painting mode.`;
     setTimeout(() => startMouse(), 1600);
   }
 }
-function startMouse() { mode = 'mouse'; enterScene(); }
+function startMouse() { mode = 'mouse'; startAudio(); enterScene(); }
 
 let fireTarget = 0.35, fireLevel = 0.35;
 function enterScene() {
   $('intro').hidden = true;
   $('hud').hidden = false; $('tools').hidden = false; $('gesture').hidden = false;
-  $('chips').hidden = mode !== 'mouse';
-  if (params.has('debug') && mode === 'camera') toggleDebug(true);
+  const cam = mode === 'camera';
+  $('shapes').hidden = !cam;
+  for (const id of ['t-head', 't-shapes', 't-debug', 't-recenter']) $(id).hidden = !cam;
+  $('t-shortcuts').hidden = cam;
+  canvas.style.cursor = cam ? 'default' : 'none';
+  if (params.has('debug') && cam) toggleDebug(true);
+  if (!cam) setGestureUI(paintingHint(), 0);
   fireTarget = 1;
-  startAudio();
 }
+const paintingHint = () => (window.innerWidth <= 720 ? 'Paint a dotted shape · drag to look' : 'Paint over a dotted shape on the wall');
 
-function detect(now) {
+function detect(t) {
   if (mode !== 'camera' || !handLandmarker || video.readyState < 2) return;
   if (video.currentTime === lastVideoTime) return;
   lastVideoTime = video.currentTime;
   const ts = performance.now();
-  const t0 = performance.now();
   const res = handLandmarker.detectForVideo(video, ts);
-  stats.detectMs = stats.detectMs * 0.9 + (performance.now() - t0) * 0.1;
-  hands = (res.landmarks || []).map((lm) => lm.map((p) => ({ x: 1 - p.x, y: p.y })));
-  if (faceDetector && frameNo++ % 3 === 0) {
+  stats.detectMs = stats.detectMs * 0.9 + (performance.now() - ts) * 0.1;
+  hands = smoothLandmarks((res.landmarks || []).map((lm) => lm.map((p) => ({ x: 1 - p.x, y: p.y }))));
+  if (faceDetector && frameNo++ % 2 === 0) {
     const fr = faceDetector.detectForVideo(video, ts + 0.5);
-    if (fr.detections && fr.detections.length) {
-      const bestFace = fr.detections.reduce((a, b) => (b.boundingBox.width > a.boundingBox.width ? b : a));
-      onFace(bestFace, now);
-    }
+    if (fr.detections && fr.detections.length) onFace(fr.detections.reduce((a, b) => (b.boundingBox.width > a.boundingBox.width ? b : a)), t);
   }
 }
 
 // ---------------------------------------------------------------------------
-// Audio: a synthesized fire (no files)
+// Sound: a recorded fire, water dripping in a big cave, a chime when a painting wakes
 // ---------------------------------------------------------------------------
 let audio = null;
+function impulse(ac, seconds, decay) {
+  const len = Math.floor(ac.sampleRate * seconds), b = ac.createBuffer(2, len, ac.sampleRate);
+  for (let ch = 0; ch < 2; ch++) { const d = b.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay); }
+  return b;
+}
+// Cross-fade the end of the recording into its start so the loop has no seam.
+function seamlessLoop(ac, buf, fadeSec) {
+  const F = Math.floor(fadeSec * buf.sampleRate), N = buf.length;
+  const out = ac.createBuffer(buf.numberOfChannels, N - F, buf.sampleRate);
+  for (let ch = 0; ch < buf.numberOfChannels; ch++) {
+    const i = buf.getChannelData(ch), o = out.getChannelData(ch);
+    o.set(i.subarray(0, N - F));
+    for (let k = 0; k < F; k++) { const t = k / F; o[k] = i[k] * Math.sqrt(t) + i[N - F + k] * Math.sqrt(1 - t); }
+  }
+  return out;
+}
+function audioOn() { return $('t-sound').getAttribute('aria-pressed') === 'true'; }
 function startAudio() {
   if (audio) return;
   try {
     const ac = new (window.AudioContext || window.webkitAudioContext)();
     const master = ac.createGain(); master.gain.value = 0; master.connect(ac.destination);
-    master.gain.linearRampToValueAtTime(0.45, ac.currentTime + 2.5);
-    const len = ac.sampleRate * 4, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
-    let last = 0;
-    for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; }
-    const src = ac.createBufferSource(); src.buffer = buf; src.loop = true;
-    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 650;
-    const g = ac.createGain(); g.gain.value = 0.7;
-    src.connect(lp).connect(g).connect(master); src.start();
-    const nb = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.05), ac.sampleRate), nd = nb.getChannelData(0);
-    for (let i = 0; i < nd.length; i++) nd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / nd.length, 3);
-    const crackle = () => {
+    master.gain.setTargetAtTime(audioOn() ? 0.9 : 0, ac.currentTime, 0.8);
+    const verb = ac.createConvolver(); verb.buffer = impulse(ac, 3.2, 2.6);
+    const wet = ac.createGain(); wet.gain.value = 0.6; verb.connect(wet).connect(master);
+    audio = { ac, master, verb, fire: false };
+    fetch('fire.mp3').then((r) => r.arrayBuffer()).then((b) => ac.decodeAudioData(b)).then((buf) => {
+      const src = ac.createBufferSource(); src.buffer = seamlessLoop(ac, buf, 1.2); src.loop = true;
+      const dry = ac.createGain(); dry.gain.value = 0.55;
+      const send = ac.createGain(); send.gain.value = 0.08;
+      src.connect(dry).connect(master); src.connect(send).connect(verb);
+      src.start();
+      audio.fire = true;
+    }).catch((e) => console.warn('Fire recording unavailable.', e));
+    const drip = () => {
       if (!audio) return;
-      const s = ac.createBufferSource(); s.buffer = nb;
-      const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1400 + Math.random() * 3600; bp.Q.value = 0.8;
-      const cg = ac.createGain(); cg.gain.value = 0.04 + Math.random() * 0.45;
-      s.playbackRate.value = 0.6 + Math.random() * 1.2;
-      s.connect(bp).connect(cg).connect(master); s.start();
-      setTimeout(crackle, 35 + Math.random() * (Math.random() < 0.2 ? 650 : 170));
+      const t = ac.currentTime + 0.02;
+      const o = ac.createOscillator(); o.type = 'sine';
+      const f = 900 + Math.random() * 1100;
+      o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.5, t + 0.09);
+      const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.09, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+      const p = ac.createStereoPanner ? ac.createStereoPanner() : null;
+      if (p) { p.pan.value = Math.random() * 1.6 - 0.8; o.connect(g).connect(p).connect(verb); } else o.connect(g).connect(verb);
+      o.start(t); o.stop(t + 0.25);
+      setTimeout(drip, 2500 + Math.random() * 6000);
     };
-    audio = { ac, master, on: true };
-    crackle();
+    setTimeout(drip, 1800);
   } catch (e) { console.warn('Audio unavailable', e); }
 }
+const CHIME_ROOT = { wolf: 196, rabbit: 293.66, palm: 329.63, hand: 329.63, project: 246.94 };
+function playChime(kind) {
+  if (!audio || !audioOn()) return;
+  const { ac, master, verb } = audio;
+  const t = ac.currentTime + 0.02, f = CHIME_ROOT[kind] || 261.6;
+  for (const [mult, amp] of [[1, 0.16], [1.5, 0.07], [2, 0.06], [3.01, 0.025]]) {
+    const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = f * mult;
+    const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(amp, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.6);
+    o.connect(g); g.connect(master); g.connect(verb);
+    o.start(t); o.stop(t + 2.7);
+  }
+}
 $('t-sound').addEventListener('click', (e) => {
-  if (!audio) { startAudio(); e.currentTarget.setAttribute('aria-pressed', 'true'); return; }
-  audio.on = !audio.on;
-  audio.master.gain.setTargetAtTime(audio.on ? 0.45 : 0, audio.ac.currentTime, 0.2);
-  e.currentTarget.setAttribute('aria-pressed', String(audio.on));
+  const on = !audioOn();
+  e.currentTarget.setAttribute('aria-pressed', String(on));
+  if (!audio) startAudio();
+  else audio.master.gain.setTargetAtTime(on ? 0.9 : 0, audio.ac.currentTime, 0.2);
 });
 
 // ---------------------------------------------------------------------------
-// Tracking view (debug)
+// Tools: head tracking, shapes, tracking view, shortcuts
 // ---------------------------------------------------------------------------
+$('t-head').addEventListener('click', (e) => {
+  headOn = !headOn;
+  e.currentTarget.setAttribute('aria-pressed', String(headOn));
+  if (!headOn) { eyeTarget.x = 0; eyeTarget.y = 0; eyeTarget.z = EYE_D; }
+});
+$('t-shapes').addEventListener('click', (e) => {
+  const show = $('shapes').hidden;
+  $('shapes').hidden = !show;
+  e.currentTarget.setAttribute('aria-pressed', String(show));
+});
+$('t-shortcuts').addEventListener('click', (e) => {
+  const show = $('chips').hidden;
+  $('chips').hidden = !show;
+  e.currentTarget.setAttribute('aria-pressed', String(show));
+});
+for (const chip of document.querySelectorAll('.chip')) {
+  chip.addEventListener('click', () => {
+    const section = chip.dataset.section;
+    const g = GUIDES.find((q) => q.section === section);
+    if (g && !g.done) completeGuide(g);
+    else { playChime(section === 'experience' ? 'wolf' : section === 'about' ? 'rabbit' : 'palm'); openPanel(section); }
+  });
+}
 let debugOn = false;
 function toggleDebug(force) {
   debugOn = force ?? !debugOn;
@@ -1509,7 +1851,7 @@ function toggleDebug(force) {
   $('t-debug').setAttribute('aria-pressed', String(debugOn));
 }
 $('t-debug').addEventListener('click', () => toggleDebug());
-$('t-recenter').addEventListener('click', () => { faceRef = null; faceCal = []; });
+$('t-recenter').addEventListener('click', () => { faceRef = null; faceCal = []; for (const f of Object.values(faceF)) f.reset(); });
 const dbgCtx = $('debug-cam').getContext('2d');
 function drawDebug() {
   if (!debugOn) return;
@@ -1527,7 +1869,7 @@ function drawDebug() {
   const f = (v) => (v ? '●' : '○');
   $('debug-text').textContent = [
     `fps ${stats.fps.toFixed(0)} · detect ${stats.detectMs.toFixed(1)}ms · ${stats.delegate}`,
-    `head ${faceRef ? 'tracked' : mode === 'camera' ? 'calibrating' : 'mouse'} · eye ${eye.x.toFixed(2)}, ${eye.y.toFixed(2)}, ${eye.z.toFixed(2)}`,
+    `head ${faceRef ? (headOn ? 'tracked' : 'off') : 'calibrating'} · eye ${eye.x.toFixed(2)}, ${eye.y.toFixed(2)}, ${eye.z.toFixed(2)}`,
     a ? `raw ${a.label} · stable ${G.label} ${G.hold.toFixed(1)}s` : 'no hand',
     a ? `ext  I${f(a.ext.index)} M${f(a.ext.middle)} R${f(a.ext.ring)} P${f(a.ext.pinky)} T${f(a.thumbOut)}` : '',
     a ? `str  ${['index', 'middle', 'ring', 'pinky'].map((k) => a.str[k].toFixed(2)).join(' ')}` : '',
@@ -1536,7 +1878,7 @@ function drawDebug() {
 }
 
 // ---------------------------------------------------------------------------
-// Mouse fallback
+// Painting mode input (mouse, pen or touch)
 // ---------------------------------------------------------------------------
 const raycaster = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
@@ -1544,50 +1886,87 @@ function wallHit(clientX, clientY) {
   ndc.set((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
   const hit = raycaster.intersectObject(wall, false)[0];
-  return hit ? hit.uv : null;
+  return hit ? [hit.uv.x * ART_W, (1 - hit.uv.y) * ART_H] : null;
 }
-function paintingAt(uv) {
-  if (!uv) return null;
-  const ax = uv.x * ART_W, ay = (1 - uv.y) * ART_H;
-  return PAINTINGS.find((p) => p.project && ax > p.x && ax < p.x + p.w && ay > p.y && ay < p.y + p.h) || null;
+function paintingAt(ax, ay, filter) { return PAINTINGS.find((p) => filter(p) && ax > p.x && ax < p.x + p.w && ay > p.y && ay < p.y + p.h) || null; }
+function clickTarget(ax, ay) {
+  return paintingAt(ax, ay, (p) => p.project && stepOut.id !== p.id) || paintingAt(ax, ay, (p) => p.guide);
 }
+canvas.addEventListener('pointerdown', (e) => {
+  if (mode === 'idle') return;
+  const hit = wallHit(e.clientX, e.clientY);
+  pointer.down = true; pointer.moved = 0; pointer.lastX = e.clientX;
+  pointer.panning = false; pointer.drawing = false;
+  if (mode !== 'mouse' || !hit) return;
+  // On touch, a drag that doesn't start on a shape looks around instead of painting.
+  if (e.pointerType === 'touch' && !guideAt(hit[0], hit[1], 60) && !clickTarget(hit[0], hit[1])) { pointer.panning = true; return; }
+  pointer.drawing = true;
+  pointer.inside = true; pointer.ax = hit[0]; pointer.ay = hit[1];
+  currentStroke = { pts: [hit], seed: (Math.random() * 1e6) | 0 };
+  traceGuides(hit[0], hit[1]);
+  canvas.setPointerCapture?.(e.pointerId);
+});
 canvas.addEventListener('pointermove', (e) => {
-  mouse.inside = true;
+  if (mode === 'idle') return;
+  const dx = e.clientX - pointer.lastX; pointer.lastX = e.clientX;
+  if (pointer.down) pointer.moved += Math.abs(dx);
+  if (pointer.panning) {
+    const limit = Math.max(0, 3.0 - screenW / 2);
+    pan.target = clamp(pan.target - (dx / window.innerWidth) * screenW * 1.4, -limit, limit);
+    return;
+  }
   if (mode !== 'mouse') return;
-  const uv = wallHit(e.clientX, e.clientY);
-  if (uv) { mouse.u = uv.x; mouse.v = 1 - uv.y; }
-  canvas.style.cursor = paintingAt(uv) ? 'pointer' : 'default';
-  eyeTarget.x = (e.clientX / window.innerWidth - 0.5) * 0.6;
-  eyeTarget.y = -(e.clientY / window.innerHeight - 0.5) * 0.4;
+  const hit = wallHit(e.clientX, e.clientY);
+  if (!hit) return;
+  pointer.inside = true; pointer.ax = hit[0]; pointer.ay = hit[1];
+  for (const g of GUIDES) g.hover = guideAt(hit[0], hit[1], 20) === g ? 1 : 0;
+  if (!pointer.drawing) {
+    canvas.style.cursor = clickTarget(hit[0], hit[1]) ? 'pointer' : 'none';
+    const g = guideAt(hit[0], hit[1], 20);
+    setGestureUI(g && !g.done ? `Paint over ${g.title} · opens ${SECTION_NAME[g.section]}` : paintingHint(), g && !g.done ? guideProgress(g) / 0.68 : 0);
+    // A gentle parallax from the mouse, frozen while painting so the wall holds still.
+    eyeTarget.x = (e.clientX / window.innerWidth - 0.5) * 0.25;
+    eyeTarget.y = -(e.clientY / window.innerHeight - 0.5) * 0.15;
+    return;
+  }
+  const prevPt = currentStroke.pts[currentStroke.pts.length - 1];
+  const dist = Math.hypot(hit[0] - prevPt[0], hit[1] - prevPt[1]);
+  if (dist < 3) return;
+  const steps = Math.ceil(dist / 5);
+  for (let i = 1; i <= steps; i++) {
+    const p = [prevPt[0] + ((hit[0] - prevPt[0]) * i) / steps, prevPt[1] + ((hit[1] - prevPt[1]) * i) / steps];
+    paintSegment(artCtx, currentStroke.pts[currentStroke.pts.length - 1], p, currentStroke.seed + currentStroke.pts.length);
+    currentStroke.pts.push(p);
+    traceGuides(p[0], p[1]);
+  }
+  artUploadPending = true;
+  const g = guideAt(hit[0], hit[1], 40);
+  if (g && !g.done) setGestureUI(`Painting ${g.title}`, guideProgress(g) / 0.68);
+  checkGuides(false);
 });
-canvas.addEventListener('pointerleave', () => { mouse.inside = false; });
-let drag = null;
-canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, moved: 0 }; });
-window.addEventListener('pointerup', () => { setTimeout(() => (drag = null), 0); });
-canvas.addEventListener('pointermove', (e) => {
-  if (!drag || e.pointerType !== 'touch') return;
-  const dx = e.clientX - drag.x; drag.x = e.clientX; drag.moved += Math.abs(dx);
-  const limit = Math.max(0, 3.0 - screenW / 2);
-  pan.target = clamp(pan.target - (dx / window.innerWidth) * screenW * 1.4, -limit, limit);
-});
-canvas.addEventListener('click', (e) => {
-  if (mode === 'idle' || (drag && drag.moved > 12)) return;
-  const p = paintingAt(wallHit(e.clientX, e.clientY));
-  if (p) startStepOut(p);
-});
-for (const chip of document.querySelectorAll('.chip')) {
-  chip.addEventListener('click', () => {
-    mouse.pose = chip.dataset.pose;
-    mouse.inside = true;
-    mouseTrigger = { pose: chip.dataset.pose, at: performance.now() / 1000 + 0.9 };
-  });
+function endPointer(e) {
+  if (!pointer.down) return;
+  pointer.down = false;
+  if (pointer.drawing && currentStroke) {
+    if (currentStroke.pts.length < 3 && pointer.moved < 8) {
+      // A click rather than a stroke: wake a project or reopen a traced creature.
+      const target = clickTarget(currentStroke.pts[0][0], currentStroke.pts[0][1]);
+      if (target?.project) startStepOut(target);
+      else if (target?.guide) { boost([target.id]); playChime(target.guide.id); openPanel(target.guide.section); }
+    } else {
+      STROKES.push(currentStroke);
+      checkGuides(true);
+    }
+  } else if (mode === 'camera' && pointer.moved < 8 && e) {
+    const hit = wallHit(e.clientX, e.clientY);
+    const target = hit && clickTarget(hit[0], hit[1]);
+    if (target?.project) startStepOut(target);
+  }
+  currentStroke = null; pointer.drawing = false; pointer.panning = false;
 }
-let mouseTrigger = null;
-window.addEventListener('keydown', (e) => {
-  if (mode !== 'mouse') return;
-  const map = { 1: 'wolf', 2: 'rabbit', 3: 'palm' };
-  if (map[e.key]) { mouse.pose = map[e.key]; mouseTrigger = { pose: map[e.key], at: performance.now() / 1000 + 0.9 }; }
-});
+window.addEventListener('pointerup', endPointer);
+window.addEventListener('pointercancel', endPointer);
+canvas.addEventListener('pointerleave', () => { if (!pointer.drawing) pointer.inside = false; });
 
 $('start-cam').addEventListener('click', startCamera);
 $('start-mouse').addEventListener('click', startMouse);
@@ -1618,52 +1997,48 @@ function frame(now) {
   flameUniforms.uLevel.value = fireLevel;
   vignette.uniforms.uTime.value = clock;
 
-  // Input
+  // Input → hand points in shadow-canvas pixels
   detect(now / 1000);
-  if (mode === 'mouse' || forcedPose) {
-    hands = [];
-    if (forcedPose && POSES[forcedPose]) {
-      hands = [syntheticHand(forcedPose, parseFloat(params.get('px') || '0.5'), parseFloat(params.get('py') || '0.45'))];
-    } else if (mouse.inside) {
-      const nx = 0.5 + (mouse.u - 0.5) / 0.66, ny = 0.5 + (mouse.v - 0.44) / 0.7;
-      const pose = mouse.pose === 'wolf' && Math.sin(clock * 3) > 0.6 ? 'wolfOpen' : mouse.pose;
-      hands = [syntheticHand(pose, nx, ny)];
-    }
+  let handPts = [];
+  if (forcedPose && POSES[forcedPose]) {
+    hands = [syntheticHand(forcedPose, parseFloat(params.get('px') || '0.5'), parseFloat(params.get('py') || '0.45'))];
+    analyses = hands.map((N) => analyzeHand(N, camAspect));
+    handPts = hands.map(toShadowPoints);
+    G.label = analyses[0].label; G.hold += dt;
+  } else if (mode === 'camera') {
+    analyses = hands.map((N) => analyzeHand(N, camAspect));
+    handPts = hands.map(toShadowPoints);
+    updateGestures(dt, clock);
+  } else if (mode === 'mouse') {
+    analyses = [];
+    // The cursor is a fingertip: a pointing hand's shadow follows it.
+    if (pointer.inside) handPts = [posePoints('point', pointer.ax / 2, pointer.ay / 2, 30, -0.35, 8)];
   }
-  analyses = hands.map((N) => analyzeHand(N, camAspect));
-  if (mode === 'mouse') {
-    // In mouse mode the chosen shape is shown; chips and keys trigger sections directly.
-    const shown = hands.length ? analyses[0].label : 'none';
-    if (shown === G.label) G.hold += dt; else { G.label = shown; G.hold = 0; }
-    setGestureUI(window.innerWidth <= 720 ? 'Drag to look · tap the phone or laptop' : 'Pick a shape below, or click the phone or laptop', 0);
-    if (mouseTrigger && now / 1000 >= mouseTrigger.at) {
-      const p = mouseTrigger.pose; mouseTrigger = null;
-      if (p === 'wolf') openPanel('experience');
-      else if (p === 'rabbit') openPanel('about');
-      else if (p === 'palm' && hands.length) { leaveHandprint(hands[0]); openPanel('contact'); }
-    }
-  } else if (mode === 'camera') updateGestures(dt, clock);
 
   // Head → window
   if (mode === 'camera' && faceDetector && clock - lastFaceAt > 1.2) { eyeTarget.x *= 0.98; eyeTarget.y *= 0.98; eyeTarget.z += (EYE_D - eyeTarget.z) * 0.02; }
-  const k = 1 - Math.exp(-dt * 7);
+  if (pointer.drawing) { eyeTarget.x = eye.x; eyeTarget.y = eye.y; }
+  const k = 1 - Math.exp(-dt * 5);
   eye.x += (eyeTarget.x - eye.x) * k; eye.y += (eyeTarget.y - eye.y) * k; eye.z += (eyeTarget.z - eye.z) * k;
   eye.z = Math.max(1.6, eye.z);
   pan.x += (pan.target - pan.x) * k;
   applyWindowCamera(eye);
+  if (lean.shown && !lean.done) {
+    if (Math.abs(eye.x) > 0.3) { lean.done = true; $('lean-hint').textContent = 'That depth is the cave behind your screen.'; setTimeout(() => ($('lean-hint').hidden = true), 2200); }
+    else if (clock - lean.at > 9) { lean.done = true; $('lean-hint').hidden = true; }
+  }
 
   // Shadows + glow
-  const handPts = hands.map(toShadowPoints);
-  const wantShadow = handPts.length ? 0.86 * (0.92 + flickerNow * 0.4) * (0.5 + 0.5 * fireLevel) : 0;
+  const wantShadow = handPts.length ? (mode === 'mouse' ? 0.7 : 0.86) * (0.92 + flickerNow * 0.4) * (0.5 + 0.5 * fireLevel) : 0;
   shadowAlpha += (wantShadow - shadowAlpha) * (1 - Math.exp(-dt * 10));
   shadowMat.opacity = shadowAlpha;
   if (handPts.length || shadowAlpha > 0.01) drawShadows(handPts);
 
   for (const p of PAINTINGS) {
     let target = 0;
-    if (clock >= p.boostFrom && clock <= p.boostTo) target = 1.35;
-    else if ((panelKind === 'experience' && (p.group === 'herd' || p.group === 'hunt')) || (panelKind === 'about' && p.group === 'self')) target = 0.3;
-    if (G.dwell.id === p.id && stepOut.id !== p.id) target = Math.max(target, 0.25 + (G.dwell.t / HOLD_DWELL) * 1.1);
+    if (clock >= p.boostFrom && clock <= p.boostTo) target = 0.85;
+    else if ((panelKind === 'experience' && (p.group === 'herd' || p.group === 'hunt' || p.id === 'g-wolf')) || (panelKind === 'about' && (p.group === 'self' || p.id === 'g-rabbit'))) target = 0.3;
+    if (G.dwell.id === p.id && stepOut.id !== p.id) target = Math.max(target, 0.2 + (G.dwell.t / HOLD_DWELL) * 0.75);
     if (mode === 'mouse' && p.project && stepOut.id !== p.id) target = Math.max(target, 0.18 + 0.12 * Math.sin(clock * 2.2));
     p.g += (target - p.g) * (1 - Math.exp(-dt * 6));
   }
@@ -1680,19 +2055,21 @@ function frame(now) {
     flakes.material.opacity = clamp(1 - flakeAge / 2.2, 0, 1);
   }
   if (artDirty) redrawArt();
+  else if (artUploadPending && now - artUploadAt > 40) { artTex.needsUpdate = true; artUploadPending = false; artUploadAt = now; }
 
   composer.render();
 
   hudTimer += dt;
-  if (hudTimer > 0.15) {
+  if (hudTimer > 0.12) {
     hudTimer = 0;
     $('dot-cam').classList.toggle('on', mode === 'camera');
-    $('hud-cam').textContent = mode === 'camera' ? `camera on · ${stats.delegate}` : mode === 'mouse' ? 'mouse mode' : 'camera off';
-    const headOn = mode === 'camera' && faceRef && clock - lastFaceAt < 1.2;
-    $('dot-head').classList.toggle('on', !!headOn);
-    $('hud-head').textContent = mode === 'camera' ? (faceRef ? (headOn ? 'head: tracked' : 'head: lost') : 'head: calibrating, look at the screen') : 'head: follows mouse';
-    $('dot-hand').classList.toggle('on', hands.length > 0);
-    $('hud-hand').textContent = hands.length ? `hand: ${G.label}` : 'hand: none';
+    $('hud-cam').textContent = mode === 'camera' ? `camera on · ${stats.delegate}` : mode === 'mouse' ? 'painting mode' : 'camera off';
+    const tracked = mode === 'camera' && headOn && faceRef && clock - lastFaceAt < 1.2;
+    $('headbox').classList.toggle('on', !!tracked);
+    $('head-dot').style.transform = `translate(${clamp(eye.x / 0.8, -1, 1) * 11}px, ${clamp(-eye.y / 0.6, -1, 1) * 6}px) scale(${clamp(EYE_D / eye.z, 0.6, 1.6).toFixed(2)})`;
+    $('hud-head').textContent = mode !== 'camera' ? 'head: mouse' : !headOn ? 'head: off' : !faceRef ? 'head: calibrating, look at the screen' : tracked ? 'head: tracked' : 'head: lost';
+    $('dot-hand').classList.toggle('on', mode === 'camera' ? hands.length > 0 : pointer.inside);
+    $('hud-hand').textContent = mode === 'camera' ? (hands.length ? `hand: ${G.label}` : 'hand: none') : 'hand: your cursor';
     drawDebug();
   }
   requestAnimationFrame(frame);
@@ -1701,16 +2078,24 @@ redrawArt();
 requestAnimationFrame(frame);
 
 // Test hooks (used by the automated check; harmless for visitors).
+function artToClient(ax, ay) {
+  const v = wallPoint(ax / ART_W, ay / ART_H).project(camera);
+  return [((v.x + 1) / 2) * window.innerWidth, ((1 - v.y) / 2) * window.innerHeight];
+}
 window.__cave = {
   get mode() { return mode; },
   get label() { return G.label; },
   get analyses() { return analyses.map((a) => ({ label: a.label, ext: a.ext, thumbOut: a.thumbOut, up: a.up, sideways: a.sideways, tipsTogether: a.tipsTogether, spread: a.spread })); },
   get panel() { return panelKind; },
   get stepOut() { return stepOut.id; },
-  get stepOutState() { return stepOut.device ? { t: stepOut.t, dir: stepOut.dir, pos: stepOut.device.position.toArray().map((v) => +v.toFixed(2)), from: stepOut.from.toArray().map((v) => +v.toFixed(2)) } : null; },
+  get stepOutState() { return stepOut.device ? { t: stepOut.t, dir: stepOut.dir, pos: stepOut.device.position.toArray().map((v) => +v.toFixed(2)) } : null; },
   get stats() { return { ...stats, eye: { ...eye }, faceRef, faceSamples: faceCal.length }; },
+  get guides() { return GUIDES.map((g) => ({ id: g.id, done: g.done, progress: +guideProgress(g).toFixed(2), precision: g.inBox ? +(g.near / g.inBox).toFixed(2) : null })); },
+  get audio() { return audio ? { state: audio.ac.state, fire: audio.fire } : null; },
+  get hint() { return lastHint; },
+  guidePath: (id) => GUIDES.find((g) => g.id === id).samples.map(([x, y]) => artToClient(x, y)),
   analyzePose: (name) => analyzeHand(syntheticHand(name, 0.5, 0.5), camAspect).label,
-  start: (m) => (m === 'mouse' ? startMouse() : startCamera()),
+  coachPose: (name) => { const c = coach(analyzeHand(syntheticHand(name, 0.5, 0.5), camAspect)); return c ? `${c.name}: ${c.miss[1]}` : null; },
   openPanel, startStepOut: (id) => startStepOut(PAINTINGS.find((p) => p.id === id)),
 };
 if (params.get('start') === 'mouse') startMouse();
