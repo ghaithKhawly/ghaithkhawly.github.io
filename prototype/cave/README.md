@@ -38,30 +38,65 @@ sideways".
 
 ## Without a camera: painting mode
 
-Three dotted outlines wait on the wall: a wolf, a rabbit and a hand.
+Three shapes are scratched into the rock, with embers along the lines: a
+wolf, a hare and a hand, drawn the way Ice Age painters drew them.
 
 1. Click one. You walk up to the wall: the view zooms in, the fire falls
    behind you, and an oil lamp follows your hand, raking across the rock.
-2. Trace the outline. The wolf and rabbit take charcoal, the hand takes red
+   Embers glow along the parts of the engraving still to trace.
+2. Trace the outline. The wolf and hare take charcoal, the hand takes red
    ochre. Pigment catches on the bumps of the rock, thins as the stroke runs
    dry, and scratches louder the faster you draw. Your hand's shadow holds the
    charcoal stick.
-3. When most of the outline is covered, a ghost hand takes over: it fills
-   the shape with ochre in rows, goes round the outline in charcoal, the eye
-   opens, you step back, and the section opens.
+3. When most of the outline is covered, a ghost hand finishes it the way a
+   cave painter would:
+   - **Wolf and hare:** ochre rubbed in row by row (red for the wolf, yellow
+     for the hare), then a charcoal contour that swells and tapers, an eye,
+     and a few strokes of fur.
+   - **Hand:** a stencil. The ghost presses its hand flat to the rock and
+     blows red ochre round it, leaving the hand bare, like the negative hands
+     at Chauvet and Cueva de las Manos.
 
-| Outline | Opens |
+   Then the eye opens, you step back, and the section opens.
+
+| Shape | Opens |
 |---|---|
 | Wolf | Experience |
-| Rabbit | About |
+| Hare | About |
 | Hand | Contact |
 
 Scribbling at random doesn't count; you have to follow the outline.
 **Step back from the wall** (or Esc) leaves without painting. Click the phone
 or laptop to make it step out. **Shortcuts** (top right) opens any section; on
 a shape you haven't painted, it lets you watch the ghost hand paint it. On a
-phone, the view starts on the rabbit; drag anywhere that isn't a shape to
-look along the wall.
+phone, the view starts on the hare; drag anywhere that isn't a shape to look
+along the wall.
+
+## The paintings
+
+Everything on the wall is generated in code, built from the marks real cave
+painters made rather than flat shapes:
+
+- **Ochre washes**: rubbed in unevenly, darker in a band inside the contour
+  and where the form turns (the Altamira bison's hump and belly, the Lascaux
+  horse's back), feathered at the edge, sometimes with a halo of blown
+  pigment.
+- **Charcoal and ochre lines** that swell and taper, skip over the grain of
+  the rock, and thin out towards hooves and tails.
+- **Finger dots** with a darker rim, **flint engravings** (a pale groove with
+  a dark lip), and **negative hands** sprayed round a hand.
+- **Age**: uneven fading, pits where the pigment never took, flakes where the
+  rock spalled off, and a patchy white calcite veil over the old paintings.
+- **The rock shows through**: a shader tints every mark by the rock texture
+  under it, so pigment looks soaked into the stone.
+- **Older layers underneath**: faded figures half covered by later ones,
+  finger flutings, an engraved mammoth, red dots and a sign near the crack.
+
+The figures follow real sites: an Altamira bison, a Lascaux horse and stag,
+Levantine hunters, and an owl for Education, after the one at Chauvet.
+Paintings are rendered at twice the wall layer's resolution on their own
+decals, so they stay sharp up close. The work takes about a second in all, so
+it runs in the background while the intro is up.
 
 ## Hidden things
 
@@ -110,12 +145,13 @@ images), and with scripted mouse input:
 - open palm → **palm**, handprint sprayed, Contact opens
 - face detection calibrates head tracking and shows the lean hint
 - clicking the wolf zooms in to the wall; tracing it in charcoal starts the
-  ghost hand, which fills and outlines it, then steps back and opens
-  Experience; the Shortcuts chips paint all three shapes the same way
+  ghost hand, which rubs in the ochre, outlines it, then steps back and opens
+  Experience; the Shortcuts chips paint the hare the same way and stencil the
+  hand
 - each hidden thing is out of sight straight on and found by leaning:
   the owl at a right lean, Languages at a right lean, Certifications at a
   left lean, one at a time
-- on a phone: the view starts on the rabbit, the zoom fits the shape on the
+- on a phone: the view starts on the hare, the zoom fits the shape on the
   narrow screen, panning reveals the owl, and panning plus a lean reveals
   both sides of the crack
 - the fire recording loads and loops; no page errors

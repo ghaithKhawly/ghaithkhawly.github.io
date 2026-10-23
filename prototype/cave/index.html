@@ -329,9 +329,10 @@ function vnoise(x, y, s, period = 0) {
   const xi = Math.floor(x), yi = Math.floor(y);
   const xf = x - xi, yf = y - yi;
   const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
-  const w = period ? (a) => ((a % period) + period) % period : (a) => a;
-  const a = hash2(w(xi), w(yi), s), b = hash2(w(xi + 1), w(yi), s);
-  const c = hash2(w(xi), w(yi + 1), s), d = hash2(w(xi + 1), w(yi + 1), s);
+  let x0 = xi, y0 = yi, x1 = xi + 1, y1 = yi + 1;
+  if (period) { x0 = ((x0 % period) + period) % period; y0 = ((y0 % period) + period) % period; x1 = ((x1 % period) + period) % period; y1 = ((y1 % period) + period) % period; }
+  const a = hash2(x0, y0, s), b = hash2(x1, y0, s);
+  const c = hash2(x0, y1, s), d = hash2(x1, y1, s);
   return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
 }
 function fbm(x, y, oct, s, period = 0) {
@@ -357,6 +358,19 @@ const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t
 const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const makeCanvas = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; };
 const supportsFilter = 'filter' in makeCanvas(1, 1).getContext('2d');
+// Pigment work is slow (about a second in all), so it runs in the background, a piece at
+// a time, while the intro is up: the paintings on the wall first.
+const paintQueue = [];
+function queuePaint(prio, fn) { paintQueue.push({ prio, fn }); }
+function runPaintQueue() {
+  const t0 = performance.now();
+  while (paintQueue.length && performance.now() - t0 < 12) {
+    let k = 0;
+    for (let i = 1; i < paintQueue.length; i++) if (paintQueue[i].prio < paintQueue[k].prio) k = i;
+    paintQueue.splice(k, 1)[0].fn();
+  }
+  if (paintQueue.length) setTimeout(runPaintQueue, 0);
+}
 
 // One Euro filter: heavy smoothing while still, responsive while moving.
 class OneEuro {
@@ -424,34 +438,6 @@ function makeRockTextures(N = ROCK_N) {
   const normal = new THREE.CanvasTexture(nrm);
   for (const t of [map, normal]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; }
   return { map, normal, height: H };
-}
-
-// Grain used to erode pigment so paint looks dabbed onto stone.
-function makeGrain(N = 256) {
-  const c = makeCanvas(N, N);
-  const ctx = c.getContext('2d');
-  const img = ctx.createImageData(N, N);
-  const r = mulberry(31);
-  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-    const n = fbm((i / N) * 8, (j / N) * 8, 4, 41, 8);
-    const a = clamp(0.25 + n * 0.95 + (r() - 0.5) * 0.35, 0, 1);
-    const k = (j * N + i) * 4;
-    img.data[k] = img.data[k + 1] = img.data[k + 2] = 255; img.data[k + 3] = a * 255;
-  }
-  ctx.putImageData(img, 0, 0);
-  return c;
-}
-const GRAIN = makeGrain();
-function erode(canvas, seed) {
-  const ctx = canvas.getContext('2d');
-  const r = mulberry(seed);
-  ctx.save();
-  ctx.globalCompositeOperation = 'destination-in';
-  const pat = ctx.createPattern(GRAIN, 'repeat');
-  ctx.translate(-r() * 256, -r() * 256);
-  ctx.fillStyle = pat;
-  ctx.fillRect(0, 0, canvas.width + 256, canvas.height + 256);
-  ctx.restore();
 }
 
 // ---------------------------------------------------------------------------
@@ -538,6 +524,13 @@ function makeColumn() {
 // Paintings
 // ---------------------------------------------------------------------------
 const PIG = { red: 'rgb(150,52,31)', deep: 'rgb(108,36,23)', yellow: 'rgb(196,136,58)', char: 'rgb(32,25,22)' };
+// Each pigment as [light, dark]; washes and lines shade between the two.
+const OCHRE = {
+  red: [[178, 72, 42], [108, 34, 20]],
+  brown: [[142, 76, 46], [78, 38, 24]],
+  yellow: [[214, 156, 76], [146, 88, 36]],
+  black: [[52, 41, 35], [16, 12, 10]],
+};
 
 function shapePath(pts, w, h, ox = 0, oy = 0) {
   const P = pts.map(([x, y]) => [ox + x * w, oy + y * h]);
@@ -551,172 +544,336 @@ function shapePath(pts, w, h, ox = 0, oy = 0) {
   path.closePath();
   return path;
 }
-function smoothOpen(ctx, pts, w, h) {
-  ctx.beginPath();
-  ctx.moveTo(pts[0][0] * w, pts[0][1] * h);
-  for (let i = 1; i < pts.length - 1; i++) {
-    const p = pts[i], q = pts[i + 1];
-    ctx.quadraticCurveTo(p[0] * w, p[1] * h, ((p[0] + q[0]) / 2) * w, ((p[1] + q[1]) / 2) * h);
-  }
-  const last = pts[pts.length - 1];
-  ctx.lineTo(last[0] * w, last[1] * h);
-}
-function limb(ctx, x1, y1, x2, y2, w1, w2) {
-  const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
-  ctx.beginPath();
-  ctx.moveTo(x1 + nx * w1, y1 + ny * w1);
-  ctx.lineTo(x2 + nx * w2, y2 + ny * w2);
-  ctx.arc(x2, y2, w2, Math.atan2(ny, nx), Math.atan2(-ny, -nx));
-  ctx.lineTo(x1 - nx * w1, y1 - ny * w1);
-  ctx.closePath();
-  ctx.fill();
-}
 const jit = (pts, r, a) => pts.map(([x, y]) => [x + (r() - 0.5) * a, y + (r() - 0.5) * a]);
 const fillShape = (ctx, pts, w, h) => ctx.fill(shapePath(pts, w, h));
+const seedOf = (r) => (r() * 9973) | 0;
+
+// ---------------------------------------------------------------------------
+// Stone-age pigment. Paintings are built from the marks cave painters made:
+// ochre rubbed or blown into the rock, charcoal contours that swell and taper,
+// finger dots, and lines scratched with a flint. Rendered once, per pixel.
+// ---------------------------------------------------------------------------
+// Pixels per paint-layer pixel for whatever is being painted right now. Paintings are
+// rendered denser than the wall's paint layer so they stay crisp up close; callers
+// always work in paint-layer pixels.
+let RES = 1;
+function atRes(k, fn) { const prev = RES; RES = k; try { return fn(); } finally { RES = prev; } }
+// Smooth points about 1 px apart through control points (scaled by w, h).
+function curve(pts, w, h, closed = false) {
+  const P = pts.map(([x, y]) => [x * w, y * h]);
+  const n = P.length, out = [];
+  const at = (i) => (closed ? P[(i + n) % n] : P[clamp(i, 0, n - 1)]);
+  for (let i = 0; i < (closed ? n : n - 1); i++) {
+    const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+    const steps = Math.max(1, Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1])));
+    for (let k = 0; k < steps; k++) {
+      const t = k / steps, t2 = t * t, t3 = t2 * t;
+      const f = (a, b, c, d) => 0.5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (3 * b - a - 3 * c + d) * t3);
+      out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]);
+    }
+  }
+  if (!closed) out.push(P[n - 1]);
+  return out;
+}
+// The alpha of a drawing, as floats.
+function maskOf(w, h, draw) {
+  const c = makeCanvas(w, h), x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.strokeStyle = '#fff'; x.lineCap = 'round'; x.lineJoin = 'round';
+  x.scale(RES, RES);
+  draw(x);
+  const d = x.getImageData(0, 0, w, h).data, m = new Float32Array(w * h);
+  for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3] / 255;
+  return m;
+}
+// Three box blurs make a gaussian; done in JS so it works without canvas filters.
+function blurMask(m, w, h, r) {
+  r = Math.max(1, Math.round(r));
+  const a = Float32Array.from(m), b = new Float32Array(m.length), k = 1 / (2 * r + 1);
+  for (let pass = 0; pass < 3; pass++) {
+    for (let j = 0; j < h; j++) {
+      const row = j * w;
+      let acc = 0;
+      for (let i = -r; i <= r; i++) acc += a[row + clamp(i, 0, w - 1)];
+      for (let i = 0; i < w; i++) { b[row + i] = acc * k; acc += a[row + Math.min(w - 1, i + r + 1)] - a[row + Math.max(0, i - r)]; }
+    }
+    for (let i = 0; i < w; i++) {
+      let acc = 0;
+      for (let j = -r; j <= r; j++) acc += b[clamp(j, 0, h - 1) * w + i];
+      for (let j = 0; j < h; j++) { a[j * w + i] = acc * k; acc += b[Math.min(h - 1, j + r + 1) * w + i] - b[Math.max(0, j - r) * w + i]; }
+    }
+  }
+  return a;
+}
+function blit(ctx, img) { const t = makeCanvas(img.width, img.height); t.getContext('2d').putImageData(img, 0, 0); ctx.drawImage(t, 0, 0); }
+const tone = (out, k, col, dk, al) => {
+  const [L, D] = col;
+  out[k] = L[0] + (D[0] - L[0]) * dk; out[k + 1] = L[1] + (D[1] - L[1]) * dk; out[k + 2] = L[2] + (D[2] - L[2]) * dk;
+  out[k + 3] = clamp(al, 0, 1) * 255;
+};
+
+// Ochre rubbed into the rock: blotchy, darker in a band inside the contour (and
+// wherever `shade` models the form), feathered at the edge. `spray` adds the fine
+// halo of pigment blown through a tube.
+function wash(ctx, draw, o = {}) {
+  const { width: w, height: h } = ctx.canvas;
+  const col = OCHRE[o.col || 'red'], seed = o.seed || 1;
+  const A = blurMask(maskOf(w, h, draw), w, h, (o.soft ?? 1) * RES);
+  const B = blurMask(A, w, h, (o.depth ?? Math.max(3, (Math.min(w, h) / RES) * 0.07)) * RES);
+  const img = ctx.createImageData(w, h), out = img.data;
+  const f = 1 / ((o.scale ?? 14) * RES), fq = 0.45 / RES, rimK = o.rim ?? 0.6, alphaK = o.alpha ?? 0.95, spray = o.spray || 0;
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const p = j * w + i, a = A[p], b = B[p];
+    let al = 0, dk = 0;
+    if (a > 0.004) {
+      const blot = smooth(0.28, 0.75, fbm(i * f, j * f, 3, seed));
+      const rim = clamp((a - b) * 2.4, 0, 1);
+      dk = clamp(rim * rimK + (o.shade ? o.shade(i / w, j / h) : 0) + (1 - blot) * 0.3, 0, 1);
+      al = a * alphaK * (0.62 + 0.38 * blot) * (0.82 + 0.36 * vnoise(i * fq, j * fq, seed + 5)) * (0.9 + 0.2 * hash2(i, j, seed + 7)) + rim * a * 0.12;
+    }
+    if (spray && a < 0.5 && b > 0.01 && hash2((i / RES) | 0, (j / RES) | 0, seed + 9) < smooth(0, 0.4, b) * (1 - 2 * a) * spray) {
+      al = Math.max(al, 0.3 + 0.45 * hash2(j, i, seed + 11)); dk = Math.max(dk, 0.3);
+    }
+    if (al > 0.002) tone(out, p * 4, col, dk, al);
+  }
+  blit(ctx, img);
+}
+
+// Charcoal, or a finger loaded with ochre: one or more lines that swell and taper,
+// with the stick skipping over the grain of the rock. `profile: 'down'` thins
+// towards the end, for legs, tails and hair.
+function line(ctx, strokes, o = {}) {
+  const { width: w, height: h } = ctx.canvas;
+  if (typeof strokes[0][0] === 'number') strokes = [strokes];
+  const col = OCHRE[o.col || 'black'], seed = o.seed || 1, W = o.w ?? 3;
+  const sx = o.px ? 1 : w / RES, sy = o.px ? 1 : h / RES;
+  let x0 = w, y0 = h, x1 = 0, y1 = 0;
+  const M = maskOf(w, h, (x) => strokes.forEach((st, si) => {
+    const P = curve(st, sx, sy, o.closed), n = P.length;
+    P.forEach(([cx, cy], k) => {
+      const t = n > 1 ? k / (n - 1) : 0.5;
+      const prof = o.closed ? 1 : o.profile === 'down' ? 1 - 0.75 * t : Math.pow(Math.sin(Math.PI * (0.06 + 0.88 * t)), 0.55);
+      const R = Math.max(0.45, (W / 2) * prof * (0.72 + 0.56 * vnoise(k * 0.04, si * 3.1, seed)));
+      x.beginPath(); x.arc(cx, cy, R, 0, Math.PI * 2); x.fill();
+      x0 = Math.min(x0, (cx - R) * RES); y0 = Math.min(y0, (cy - R) * RES); x1 = Math.max(x1, (cx + R) * RES); y1 = Math.max(y1, (cy + R) * RES);
+    });
+  }));
+  const A = o.soft ? blurMask(M, w, h, o.soft * RES) : M;
+  const grain = o.grain ?? (o.col && o.col !== 'black' ? 0.3 : 0.55), alphaK = o.alpha ?? 0.92;
+  const img = ctx.createImageData(w, h), out = img.data;
+  const pad = ((o.soft || 0) * 3 + 2) * RES, gq = 0.55 / RES, cq = 0.2 / RES;
+  for (let j = Math.max(0, Math.floor(y0 - pad)); j < Math.min(h, Math.ceil(y1 + pad)); j++) {
+    for (let i = Math.max(0, Math.floor(x0 - pad)); i < Math.min(w, Math.ceil(x1 + pad)); i++) {
+      const p = j * w + i, a = A[p];
+      if (a < 0.004) continue;
+      // Grains of charcoal: clumps at paint-layer scale, plus single grains at full resolution.
+      const g = smooth(0.18, 0.6, 0.45 * vnoise(i * gq, j * gq, seed + 3) + 0.25 * hash2((i / RES) | 0, (j / RES) | 0, seed + 4) + 0.3 * hash2(i, j, seed + 8));
+      tone(out, p * 4, col, 0.35 + 0.65 * vnoise(i * cq, j * cq, seed + 6), a * alphaK * (1 - grain + grain * g));
+    }
+  }
+  blit(ctx, img);
+}
+
+// Finger dots: [u, v, radius in px]. Ochre gathers at the rim of a fingertip.
+function fingerDots(ctx, list, o = {}) {
+  const w = ctx.canvas.width / RES, h = ctx.canvas.height / RES, seed = o.seed || 1;
+  wash(ctx, (x) => list.forEach(([u, v, R], d) => {
+    x.beginPath();
+    for (let k = 0; k < 12; k++) {
+      const a = (k / 12) * Math.PI * 2, rr = R * (0.8 + 0.35 * hash2(k, d, seed));
+      const px = u * w + Math.cos(a) * rr, py = v * h + Math.sin(a) * rr;
+      k ? x.lineTo(px, py) : x.moveTo(px, py);
+    }
+    x.closePath(); x.fill();
+  }), { col: o.col || 'red', seed, depth: 2, rim: 0.8, soft: 1, alpha: o.alpha ?? 0.9, scale: 6 });
+}
+
+// A line scratched with a flint: a pale groove with a dark lip on one side.
+function engrave(ctx, pts, o = {}) {
+  const w = ctx.canvas.width / RES, h = ctx.canvas.height / RES, r = mulberry(o.seed || 1);
+  const P = curve(pts, o.px ? 1 : w, o.px ? 1 : h, o.closed), a = o.alpha ?? 0.5, lw = o.width ?? 1.1;
+  const pass = (d, col, wd) => {
+    ctx.strokeStyle = col; ctx.lineWidth = wd;
+    ctx.beginPath();
+    P.forEach(([x, y], i) => { const jx = x + d + (r() - 0.5) * 0.6, jy = y + d + (r() - 0.5) * 0.6; i ? ctx.lineTo(jx, jy) : ctx.moveTo(jx, jy); });
+    if (o.closed) ctx.closePath();
+    ctx.stroke();
+  };
+  ctx.save(); ctx.scale(RES, RES); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  pass(0.5 + lw * 0.4, `rgba(30,20,14,${a * 0.6})`, lw + 0.6);
+  pass(0, `rgba(246,234,214,${a})`, lw);
+  ctx.restore();
+}
+
+// Age: uneven fading, pits where the pigment never took, and flakes where the
+// rock surface spalled off and took the paint with it.
+function weather(canvas, seed, o = {}) {
+  const ctx = canvas.getContext('2d'), w = canvas.width, h = canvas.height;
+  const img = ctx.getImageData(0, 0, w, h), D = img.data;
+  const fade = o.fade ?? 0.3, pits = o.pits ?? 0.025;
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const k = (j * w + i) * 4;
+    if (!D[k + 3]) continue;
+    D[k + 3] *= (1 - fade + fade * smooth(0.25, 0.7, fbm(i / (45 * RES) + 3, j / (45 * RES), 3, seed + 21))) * (hash2((i / RES) | 0, (j / RES) | 0, seed + 23) < pits ? 0.55 : 1);
+  }
+  ctx.putImageData(img, 0, 0);
+  const r = mulberry(seed + 29);
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.globalAlpha = 0.85;
+  for (let n = 0; n < (o.flakes ?? 2); n++) {
+    const cx = r() * w, cy = r() * h, R = 3 + r() * Math.min(w, h) * 0.06;
+    ctx.beginPath();
+    for (let k = 0; k < 9; k++) { const a = (k / 9) * Math.PI * 2, rr = R * (0.5 + r() * 0.7); k ? ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr) : ctx.moveTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); }
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+}
+
+// Negative hands: pigment blown around a hand pressed to the rock leaves the hand
+// bare. Thickest right at the hand's edge, thinning out with the breath.
+function sprayAround(lw, lh, drawShape, col, seed, o = {}) {
+  const w = Math.ceil(lw * RES), h = Math.ceil(lh * RES);
+  const c = makeCanvas(w, h), ctx = c.getContext('2d');
+  const M = blurMask(maskOf(w, h, drawShape), w, h, (o.soft ?? 1.2) * RES);
+  const B = blurMask(M, w, h, (o.reach ?? 12) * RES);
+  const img = ctx.createImageData(w, h), out = img.data, C = OCHRE[col];
+  const cx = w / 2, cy = h / 2, R = Math.hypot(cx, cy);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const p = j * w + i, bare = M[p];
+    if (bare > 0.98) continue;
+    const cone = clamp(1 - Math.hypot(i - cx, j - cy) / R, 0, 1);
+    const dens = clamp(smooth(0, 0.45, B[p]) * 1.1 + cone * cone * 0.55, 0, 1);
+    const al = dens * (hash2(i, j, seed) < dens ? 1 : 0.3) * (0.55 + 0.45 * vnoise(i * 0.25 / RES, j * 0.25 / RES, seed + 1)) * (1 - bare) * (o.alpha ?? 1) * 0.88;
+    if (al > 0.01) tone(out, p * 4, C, 0.25 + 0.5 * vnoise(i * 0.08 / RES, j * 0.08 / RES, seed + 2), al);
+  }
+  ctx.putImageData(img, 0, 0);
+  return c;
+}
 
 const PAINTERS = {
+  // Altamira: red ochre body, black head, beard and hump, a charcoal contour.
   bison(ctx, w, h, r) {
-    ctx.fillStyle = PIG.red;
-    fillShape(ctx, jit([[0.08, 0.56], [0.1, 0.36], [0.2, 0.22], [0.33, 0.1], [0.45, 0.04], [0.56, 0.13], [0.72, 0.17], [0.88, 0.26], [0.96, 0.42], [0.9, 0.6], [0.75, 0.66], [0.5, 0.66], [0.3, 0.7], [0.16, 0.68]], r, 0.025), w, h);
-    ctx.fillStyle = PIG.char; ctx.globalAlpha = 0.85;
-    fillShape(ctx, jit([[0.1, 0.52], [0.12, 0.34], [0.22, 0.2], [0.36, 0.08], [0.47, 0.04], [0.55, 0.14], [0.48, 0.24], [0.35, 0.32], [0.26, 0.44], [0.18, 0.56]], r, 0.02), w, h);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = PIG.deep;
-    for (const [x1, y1, x2, y2] of [[0.27, 0.6, 0.25, 0.95], [0.37, 0.62, 0.4, 0.94], [0.72, 0.6, 0.74, 0.95], [0.83, 0.58, 0.88, 0.92]]) limb(ctx, x1 * w, y1 * h, x2 * w, y2 * h, h * 0.06, h * 0.028);
-    ctx.strokeStyle = PIG.char; ctx.lineCap = 'round'; ctx.lineWidth = h * 0.035;
-    smoothOpen(ctx, [[0.2, 0.26], [0.16, 0.14], [0.2, 0.06]], w, h); ctx.stroke();
-    ctx.lineWidth = h * 0.025;
-    smoothOpen(ctx, [[0.94, 0.4], [1.0, 0.5], [0.97, 0.66]], w, h); ctx.stroke();
-    ctx.globalAlpha = 0.7;
-    smoothOpen(ctx, [[0.56, 0.13], [0.72, 0.16], [0.88, 0.25], [0.96, 0.42]], w, h); ctx.stroke();
-    ctx.globalAlpha = 1;
+    const s = seedOf(r);
+    wash(ctx, (x) => fillShape(x, jit([[0.14, 0.42], [0.2, 0.22], [0.32, 0.08], [0.44, 0.06], [0.56, 0.16], [0.72, 0.2], [0.86, 0.26], [0.94, 0.38], [0.93, 0.55], [0.84, 0.66], [0.66, 0.68], [0.46, 0.7], [0.3, 0.72], [0.18, 0.66], [0.1, 0.56]], r, 0.02), w, h),
+      { col: 'red', seed: s, shade: (u, v) => smooth(0.55, 0.75, v) * 0.4 + smooth(0.3, 0.08, v) * 0.3 });
+    wash(ctx, (x) => { fillShape(x, [[0.02, 0.42], [0.06, 0.29], [0.15, 0.26], [0.22, 0.36], [0.21, 0.56], [0.12, 0.66], [0.04, 0.62]], w, h); fillShape(x, [[0.07, 0.6], [0.17, 0.6], [0.12, 0.82]], w, h); },
+      { col: 'black', seed: s + 1, alpha: 0.9 });
+    wash(ctx, (x) => fillShape(x, [[0.2, 0.24], [0.31, 0.09], [0.44, 0.05], [0.52, 0.14], [0.42, 0.26], [0.31, 0.36], [0.23, 0.42]], w, h), { col: 'black', seed: s + 2, alpha: 0.5, rim: 0.2 });
+    line(ctx, [
+      [[0.16, 0.27], [0.3, 0.09], [0.44, 0.05], [0.58, 0.15], [0.74, 0.19], [0.88, 0.26], [0.95, 0.4]],
+      [[0.94, 0.38], [0.99, 0.5], [0.96, 0.66]],
+      [[0.11, 0.3], [0.08, 0.19], [0.14, 0.11]],
+      [[0.17, 0.29], [0.19, 0.18], [0.26, 0.13]],
+    ], { w: 3.4, seed: s + 3 });
+    line(ctx, [[0.2, 0.68], [0.44, 0.72], [0.66, 0.69], [0.86, 0.65]], { w: 2.4, seed: s + 4, alpha: 0.65 });
+    line(ctx, [[[0.24, 0.64], [0.22, 0.8], [0.25, 0.95]], [[0.34, 0.68], [0.35, 0.82], [0.37, 0.94]], [[0.76, 0.62], [0.78, 0.8], [0.76, 0.95]]], { w: 6.5, profile: 'down', seed: s + 5 });
+    line(ctx, [[0.86, 0.6], [0.9, 0.76], [0.9, 0.88]], { w: 6, profile: 'down', seed: s + 6, alpha: 0.5 });
   },
+  // Lascaux: a yellow horse, darker along the back, with black mane, head and legs.
   horse(ctx, w, h, r) {
-    ctx.fillStyle = PIG.yellow;
-    fillShape(ctx, jit([[0.1, 0.44], [0.2, 0.33], [0.45, 0.3], [0.62, 0.26], [0.72, 0.12], [0.83, 0.05], [0.94, 0.12], [0.96, 0.22], [0.86, 0.25], [0.8, 0.36], [0.78, 0.5], [0.65, 0.6], [0.35, 0.62], [0.15, 0.58]], r, 0.02), w, h);
-    ctx.fillStyle = PIG.char; ctx.globalAlpha = 0.9;
-    fillShape(ctx, jit([[0.74, 0.12], [0.84, 0.05], [0.95, 0.12], [0.96, 0.22], [0.86, 0.25], [0.8, 0.22]], r, 0.015), w, h);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = PIG.deep;
-    for (const [x1, y1, x2, y2] of [[0.2, 0.55, 0.15, 0.95], [0.3, 0.58, 0.33, 0.95], [0.62, 0.56, 0.6, 0.95], [0.71, 0.53, 0.78, 0.93]]) limb(ctx, x1 * w, y1 * h, x2 * w, y2 * h, h * 0.05, h * 0.024);
-    ctx.strokeStyle = PIG.char; ctx.lineCap = 'round';
-    ctx.lineWidth = h * 0.045;
-    smoothOpen(ctx, [[0.6, 0.27], [0.7, 0.14], [0.8, 0.05]], w, h); ctx.stroke();
-    ctx.lineWidth = h * 0.04;
-    smoothOpen(ctx, [[0.11, 0.42], [0.03, 0.55], [0.04, 0.72]], w, h); ctx.stroke();
+    const s = seedOf(r);
+    wash(ctx, (x) => fillShape(x, jit([[0.12, 0.44], [0.24, 0.33], [0.46, 0.3], [0.62, 0.27], [0.7, 0.18], [0.78, 0.08], [0.88, 0.06], [0.96, 0.14], [0.95, 0.24], [0.86, 0.26], [0.8, 0.36], [0.78, 0.52], [0.64, 0.62], [0.4, 0.64], [0.2, 0.6], [0.1, 0.52]], r, 0.015), w, h),
+      { col: 'yellow', seed: s, rim: 0.45, shade: (u, v) => smooth(0.45, 0.22, v) * 0.5 });
+    wash(ctx, (x) => fillShape(x, [[0.78, 0.08], [0.88, 0.05], [0.97, 0.13], [0.96, 0.24], [0.88, 0.26], [0.83, 0.2]], w, h), { col: 'black', seed: s + 1, alpha: 0.85 });
+    const mane = [];
+    for (let i = 0; i < 11; i++) { const t = i / 10, bx = 0.6 + t * 0.2, by = 0.28 - t * 0.21; mane.push([[bx, by], [bx - 0.025, by - 0.08]]); }
+    line(ctx, mane, { w: 3.2, profile: 'down', seed: s + 2 });
+    line(ctx, [[0.12, 0.42], [0.25, 0.31], [0.46, 0.29], [0.62, 0.26]], { w: 2.6, seed: s + 3, alpha: 0.75 });
+    line(ctx, [[0.12, 0.43], [0.05, 0.54], [0.03, 0.74]], { w: 8, profile: 'down', seed: s + 4 });
+    line(ctx, [[[0.2, 0.56], [0.16, 0.76], [0.14, 0.95]], [[0.3, 0.6], [0.32, 0.78], [0.33, 0.94]], [[0.64, 0.58], [0.62, 0.78], [0.6, 0.94]], [[0.72, 0.54], [0.77, 0.74], [0.79, 0.92]]], { w: 5.5, profile: 'down', seed: s + 5 });
   },
+  // A Lascaux stag: red body and neck, a darker head, a crown of charcoal antlers.
   deer(ctx, w, h, r) {
-    ctx.fillStyle = PIG.red;
-    fillShape(ctx, jit([[0.22, 0.52], [0.32, 0.44], [0.6, 0.43], [0.78, 0.46], [0.86, 0.55], [0.78, 0.66], [0.5, 0.68], [0.3, 0.66], [0.23, 0.6]], r, 0.02), w, h);
-    limb(ctx, 0.3 * w, 0.5 * h, 0.17 * w, 0.27 * h, h * 0.07, h * 0.045);
-    fillShape(ctx, jit([[0.06, 0.26], [0.13, 0.18], [0.22, 0.21], [0.21, 0.31], [0.12, 0.32]], r, 0.015), w, h);
-    ctx.fillStyle = PIG.deep;
-    for (const [x1, y1, x2, y2] of [[0.32, 0.63, 0.28, 0.98], [0.4, 0.64, 0.43, 0.98], [0.72, 0.62, 0.7, 0.98], [0.8, 0.6, 0.86, 0.97]]) limb(ctx, x1 * w, y1 * h, x2 * w, y2 * h, h * 0.035, h * 0.016);
-    ctx.strokeStyle = PIG.char; ctx.lineCap = 'round'; ctx.lineWidth = h * 0.022;
-    for (const branch of [[[0.16, 0.19], [0.13, 0.08], [0.18, 0.0]], [[0.14, 0.12], [0.06, 0.06]], [[0.19, 0.18], [0.27, 0.06], [0.33, 0.02]], [[0.24, 0.1], [0.24, 0.0]]]) { smoothOpen(ctx, branch, w, h); ctx.stroke(); }
+    const s = seedOf(r);
+    wash(ctx, (x) => { fillShape(x, jit([[0.22, 0.52], [0.32, 0.44], [0.6, 0.43], [0.78, 0.46], [0.86, 0.55], [0.78, 0.66], [0.5, 0.68], [0.3, 0.66], [0.23, 0.6]], r, 0.015), w, h); fillShape(x, [[0.24, 0.53], [0.13, 0.3], [0.2, 0.24], [0.36, 0.47]], w, h); },
+      { col: 'red', seed: s, shade: (u, v) => smooth(0.52, 0.68, v) * 0.35 });
+    wash(ctx, (x) => fillShape(x, [[0.04, 0.27], [0.12, 0.18], [0.22, 0.21], [0.22, 0.31], [0.11, 0.33]], w, h), { col: 'brown', seed: s + 1 });
+    line(ctx, [[[0.16, 0.19], [0.13, 0.08], [0.18, 0.0]], [[0.14, 0.12], [0.06, 0.06]], [[0.19, 0.18], [0.27, 0.06], [0.33, 0.02]], [[0.24, 0.1], [0.24, 0.0]], [[0.29, 0.05], [0.36, 0.08]]], { w: 2.6, seed: s + 2 });
+    line(ctx, [[0.2, 0.25], [0.3, 0.42], [0.6, 0.42], [0.8, 0.46]], { w: 2.2, seed: s + 3, alpha: 0.7 });
+    line(ctx, [[[0.32, 0.63], [0.28, 0.8], [0.28, 0.98]], [[0.4, 0.64], [0.43, 0.8], [0.43, 0.98]], [[0.72, 0.62], [0.7, 0.8], [0.7, 0.98]], [[0.8, 0.6], [0.86, 0.78], [0.86, 0.97]]], { w: 3.8, profile: 'down', seed: s + 4 });
+    fingerDots(ctx, [[0.1, 0.24, 1.6]], { col: 'black', seed: s + 5 });
   },
+  // Levantine hunters: long-legged figures in mid-stride with spears.
   hunters(ctx, w, h, r) {
-    ctx.strokeStyle = PIG.char; ctx.fillStyle = PIG.char; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const s = seedOf(r), bodies = [], limbs = [], spears = [], heads = [];
     for (let k = 0; k < 3; k++) {
-      const ox = 0.08 + k * 0.3 + (r() - 0.5) * 0.04, s = 0.9 + r() * 0.2;
-      const X = (v) => (ox + v * 0.28 * s) * w, Y = (v) => v * h;
-      ctx.lineWidth = h * 0.05;
-      ctx.beginPath(); ctx.arc(X(0.5), Y(0.14), h * 0.07, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(X(0.5), Y(0.22)); ctx.lineTo(X(0.46), Y(0.6)); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(X(0.46), Y(0.6)); ctx.lineTo(X(0.28), Y(0.95)); ctx.moveTo(X(0.46), Y(0.6)); ctx.lineTo(X(0.66), Y(0.94)); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(X(0.49), Y(0.32)); ctx.lineTo(X(0.82), Y(0.36)); ctx.moveTo(X(0.49), Y(0.32)); ctx.lineTo(X(0.22), Y(0.45)); ctx.stroke();
-      ctx.lineWidth = h * 0.025;
-      ctx.beginPath(); ctx.moveTo(X(0.12), Y(0.5)); ctx.lineTo(X(1.15), Y(0.18)); ctx.stroke();
+      const ox = 0.08 + k * 0.3 + (r() - 0.5) * 0.04, sc = 0.9 + r() * 0.2;
+      const P = (x, y) => [ox + x * 0.28 * sc, y];
+      heads.push([...P(0.5, 0.13), h * 0.065]);
+      bodies.push([P(0.5, 0.22), P(0.47, 0.42), P(0.46, 0.6)]);
+      limbs.push([P(0.46, 0.6), P(0.36, 0.78), P(0.28, 0.95)], [P(0.46, 0.6), P(0.58, 0.76), P(0.66, 0.94)], [P(0.49, 0.32), P(0.66, 0.38), P(0.82, 0.36)], [P(0.49, 0.32), P(0.34, 0.4), P(0.22, 0.45)]);
+      spears.push([P(0.12, 0.5), P(1.15, 0.18)]);
     }
+    line(ctx, bodies, { w: h * 0.06, profile: 'down', seed: s });
+    line(ctx, limbs, { w: h * 0.04, profile: 'down', seed: s + 1 });
+    line(ctx, spears, { w: 1.8, seed: s + 2, alpha: 0.8 });
+    fingerDots(ctx, heads, { col: 'black', seed: s + 3 });
   },
+  // An orant figure in red ochre, arms raised, under an arc of yellow finger dots.
   self(ctx, w, h, r) {
-    ctx.strokeStyle = PIG.red; ctx.fillStyle = PIG.red; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.lineWidth = w * 0.07;
-    ctx.beginPath(); ctx.arc(w * 0.5, h * 0.3, w * 0.09, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(w * 0.5, h * 0.4); ctx.lineTo(w * 0.5, h * 0.7); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(w * 0.5, h * 0.47); ctx.lineTo(w * 0.24, h * 0.3); ctx.lineTo(w * 0.2, h * 0.14); ctx.moveTo(w * 0.5, h * 0.47); ctx.lineTo(w * 0.76, h * 0.3); ctx.lineTo(w * 0.8, h * 0.14); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(w * 0.5, h * 0.7); ctx.lineTo(w * 0.34, h * 0.97); ctx.moveTo(w * 0.5, h * 0.7); ctx.lineTo(w * 0.66, h * 0.97); ctx.stroke();
-    ctx.fillStyle = PIG.yellow;
-    for (let i = 0; i < 14; i++) {
-      const a = Math.PI * (1.05 + (i / 13) * 0.9), R = w * (0.42 + r() * 0.04);
-      ctx.beginPath(); ctx.arc(w * 0.5 + Math.cos(a) * R, h * 0.32 + Math.sin(a) * R * 0.75, w * 0.03, 0, Math.PI * 2); ctx.fill();
-    }
+    const s = seedOf(r), arc = [];
+    line(ctx, [[[0.5, 0.4], [0.5, 0.55], [0.5, 0.7]], [[0.5, 0.47], [0.3, 0.36], [0.24, 0.3], [0.2, 0.14]], [[0.5, 0.47], [0.7, 0.36], [0.76, 0.3], [0.8, 0.14]], [[0.5, 0.7], [0.42, 0.84], [0.34, 0.97]], [[0.5, 0.7], [0.58, 0.84], [0.66, 0.97]]],
+      { col: 'red', w: w * 0.075, grain: 0.25, soft: 0.8, seed: s });
+    fingerDots(ctx, [[0.5, 0.3, w * 0.09]], { col: 'red', seed: s + 1 });
+    for (let i = 0; i < 14; i++) { const a = Math.PI * (1.05 + (i / 13) * 0.9), R = 0.42 + r() * 0.04; arc.push([0.5 + Math.cos(a) * R, 0.32 + (Math.sin(a) * R * 0.75 * w) / h, w * 0.032]); }
+    fingerDots(ctx, arc, { col: 'yellow', seed: s + 2 });
   },
   phone(ctx, w, h, r) {
-    ctx.strokeStyle = PIG.red; ctx.fillStyle = PIG.red; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.lineWidth = w * 0.09;
-    ctx.stroke(shapePath(jit([[0.14, 0.06], [0.86, 0.05], [0.9, 0.5], [0.87, 0.95], [0.13, 0.95], [0.1, 0.5]], r, 0.03), w, h));
-    for (let row = 0; row < 4; row++) for (let col = 0; col < 3; col++) {
-      ctx.beginPath(); ctx.arc(w * (0.3 + col * 0.2 + (r() - 0.5) * 0.03), h * (0.2 + row * 0.13 + (r() - 0.5) * 0.02), w * 0.055, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.beginPath(); ctx.arc(w * 0.5, h * 0.84, w * 0.07, 0, Math.PI * 2); ctx.lineWidth = w * 0.05; ctx.stroke();
+    const s = seedOf(r), d = [], ring = [];
+    line(ctx, jit([[0.14, 0.06], [0.5, 0.05], [0.86, 0.05], [0.9, 0.5], [0.87, 0.95], [0.5, 0.96], [0.13, 0.95], [0.1, 0.5]], r, 0.025), { col: 'red', w: w * 0.1, closed: true, grain: 0.25, soft: 0.8, seed: s });
+    for (let row = 0; row < 4; row++) for (let col = 0; col < 3; col++) d.push([0.3 + col * 0.2 + (r() - 0.5) * 0.03, 0.2 + row * 0.13 + (r() - 0.5) * 0.02, w * 0.055]);
+    fingerDots(ctx, d, { col: 'red', seed: s + 1 });
+    for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; ring.push([0.5 + Math.cos(a) * 0.07, 0.84 + (Math.sin(a) * 0.07 * w) / h]); }
+    line(ctx, ring, { col: 'red', w: w * 0.05, closed: true, grain: 0.25, seed: s + 2 });
   },
   laptop(ctx, w, h, r) {
-    ctx.strokeStyle = PIG.red; ctx.fillStyle = PIG.red; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.lineWidth = h * 0.06;
-    ctx.stroke(shapePath(jit([[0.2, 0.05], [0.8, 0.06], [0.81, 0.6], [0.19, 0.6]], r, 0.02), w, h));
-    ctx.beginPath(); ctx.moveTo(w * 0.12, h * 0.68); ctx.lineTo(w * 0.88, h * 0.68); ctx.lineTo(w * 0.98, h * 0.9); ctx.lineTo(w * 0.02, h * 0.9); ctx.closePath(); ctx.fill();
-    ctx.lineWidth = h * 0.035; ctx.strokeStyle = PIG.char;
-    for (let i = 0; i < 4; i++) {
-      const y = 0.16 + i * 0.1, len = 0.25 + r() * 0.3, ind = i % 2 ? 0.08 : 0;
-      ctx.beginPath(); ctx.moveTo(w * (0.28 + ind), h * y); ctx.lineTo(w * (0.28 + ind + len), h * y); ctx.stroke();
-    }
+    const s = seedOf(r), rows = [];
+    line(ctx, jit([[0.2, 0.05], [0.5, 0.055], [0.8, 0.06], [0.805, 0.33], [0.81, 0.6], [0.5, 0.6], [0.19, 0.6], [0.195, 0.33]], r, 0.015), { col: 'red', w: h * 0.065, closed: true, grain: 0.25, soft: 0.8, seed: s });
+    wash(ctx, (x) => { x.beginPath(); x.moveTo(w * 0.12, h * 0.68); x.lineTo(w * 0.88, h * 0.68); x.lineTo(w * 0.98, h * 0.9); x.lineTo(w * 0.02, h * 0.9); x.closePath(); x.fill(); }, { col: 'red', seed: s + 1 });
+    for (let i = 0; i < 4; i++) { const y = 0.16 + i * 0.1, len = 0.25 + r() * 0.3, ind = i % 2 ? 0.08 : 0; rows.push([[0.28 + ind, y], [0.28 + ind + len, y + (r() - 0.5) * 0.02]]); }
+    line(ctx, rows, { w: h * 0.04, seed: s + 2 });
   },
   dots(ctx, w, h, r) {
-    ctx.fillStyle = PIG.red;
-    for (let row = 0; row < 2; row++) for (let i = 0; i < 9; i++) {
-      ctx.beginPath(); ctx.arc(w * (0.06 + i * 0.11 + (r() - 0.5) * 0.02), h * (0.3 + row * 0.4 + (r() - 0.5) * 0.08), h * 0.13, 0, Math.PI * 2); ctx.fill();
-    }
+    const d = [];
+    for (let row = 0; row < 2; row++) for (let i = 0; i < 9; i++) d.push([0.06 + i * 0.11 + (r() - 0.5) * 0.02, 0.3 + row * 0.4 + (r() - 0.5) * 0.08, h * 0.13]);
+    fingerDots(ctx, d, { col: 'red', seed: seedOf(r) });
   },
   tally(ctx, w, h, r) {
-    ctx.strokeStyle = PIG.char; ctx.lineCap = 'round'; ctx.lineWidth = w * 0.04;
-    for (let i = 0; i < 9; i++) {
-      const x = w * (0.08 + i * 0.105);
-      ctx.beginPath(); ctx.moveTo(x + (r() - 0.5) * 6, h * 0.1); ctx.lineTo(x + (r() - 0.5) * 6, h * 0.9); ctx.stroke();
-    }
+    const marks = [];
+    for (let i = 0; i < 9; i++) { const x = 0.08 + i * 0.105; marks.push([[x + (r() - 0.5) * 0.05, 0.1], [x + (r() - 0.5) * 0.05, 0.9]]); }
+    line(ctx, marks, { w: w * 0.045, seed: seedOf(r) });
   },
   // Hidden paintings.
-  owl(ctx, w, h, r) {  // Education: the owl of learning
-    ctx.fillStyle = PIG.yellow;
-    fillShape(ctx, jit([[0.5, 0.12], [0.78, 0.22], [0.86, 0.55], [0.74, 0.88], [0.5, 0.96], [0.26, 0.88], [0.14, 0.55], [0.22, 0.22]], r, 0.02), w, h);
-    ctx.fillStyle = PIG.char;
-    fillShape(ctx, [[0.2, 0.24], [0.16, 0.04], [0.34, 0.16]], w, h);
-    fillShape(ctx, [[0.8, 0.24], [0.84, 0.04], [0.66, 0.16]], w, h);
-    for (const ex of [0.36, 0.64]) {
-      ctx.fillStyle = PIG.char; ctx.beginPath(); ctx.arc(w * ex, h * 0.38, w * 0.13, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = PIG.yellow; ctx.beginPath(); ctx.arc(w * ex, h * 0.38, w * 0.05, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.fillStyle = PIG.red; fillShape(ctx, [[0.46, 0.5], [0.54, 0.5], [0.5, 0.6]], w, h);
-    ctx.strokeStyle = PIG.red; ctx.lineWidth = w * 0.03; ctx.lineCap = 'round';
-    for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(w * 0.5, h * (0.66 + i * 0.08), w * 0.16, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke(); }
+  // Education. Chauvet has an owl; this one is yellow ochre, outlined, with engraved feathers.
+  owl(ctx, w, h, r) {
+    const s = seedOf(r), body = jit([[0.5, 0.12], [0.78, 0.22], [0.86, 0.55], [0.74, 0.88], [0.5, 0.96], [0.26, 0.88], [0.14, 0.55], [0.22, 0.22]], r, 0.02);
+    wash(ctx, (x) => fillShape(x, body, w, h), { col: 'yellow', seed: s, shade: (u, v) => smooth(0.6, 0.95, v) * 0.3 });
+    wash(ctx, (x) => { fillShape(x, [[0.2, 0.26], [0.15, 0.03], [0.36, 0.17]], w, h); fillShape(x, [[0.8, 0.26], [0.85, 0.03], [0.64, 0.17]], w, h); }, { col: 'black', seed: s + 1 });
+    line(ctx, body, { closed: true, w: 3, seed: s + 2, alpha: 0.8 });
+    fingerDots(ctx, [[0.36, 0.38, w * 0.13], [0.64, 0.38, w * 0.13]], { col: 'black', seed: s + 3 });
+    fingerDots(ctx, [[0.36, 0.38, w * 0.045], [0.64, 0.38, w * 0.045], [0.5, 0.54, w * 0.04]], { col: 'red', seed: s + 4 });
+    for (let i = 0; i < 4; i++) for (let k = 0; k < 3; k++) engrave(ctx, [[0.33 + k * 0.12, 0.62 + i * 0.07], [0.38 + k * 0.12, 0.67 + i * 0.07], [0.43 + k * 0.12, 0.62 + i * 0.07]], { seed: s + i * 3 + k, alpha: 0.6 });
   },
   cloud(ctx, w, h, r) {  // Certifications: six suns under a cloud
-    ctx.strokeStyle = PIG.char; ctx.lineWidth = h * 0.05; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(w * 0.18, h * 0.46);
-    ctx.bezierCurveTo(w * 0.08, h * 0.44, w * 0.1, h * 0.26, w * 0.24, h * 0.27);
-    ctx.bezierCurveTo(w * 0.26, h * 0.1, w * 0.48, h * 0.06, w * 0.54, h * 0.2);
-    ctx.bezierCurveTo(w * 0.66, h * 0.1, w * 0.84, h * 0.18, w * 0.8, h * 0.32);
-    ctx.bezierCurveTo(w * 0.94, h * 0.34, w * 0.92, h * 0.48, w * 0.8, h * 0.47);
-    ctx.closePath(); ctx.stroke();
+    const s = seedOf(r), suns = [], rays = [];
+    line(ctx, [[0.18, 0.46], [0.1, 0.36], [0.24, 0.27], [0.36, 0.1], [0.54, 0.2], [0.7, 0.12], [0.8, 0.32], [0.92, 0.4], [0.8, 0.47], [0.5, 0.48]], { closed: true, w: h * 0.05, seed: s });
     for (let i = 0; i < 6; i++) {
-      const x = w * (0.14 + (i % 3) * 0.36), y = h * (0.66 + Math.floor(i / 3) * 0.2);
-      ctx.fillStyle = PIG.red; ctx.beginPath(); ctx.arc(x, y, h * 0.055, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = PIG.red; ctx.lineWidth = h * 0.018;
-      for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * h * 0.075, y + Math.sin(a) * h * 0.075); ctx.lineTo(x + Math.cos(a) * h * 0.11, y + Math.sin(a) * h * 0.11); ctx.stroke(); }
+      const x = 0.14 + (i % 3) * 0.36, y = 0.66 + Math.floor(i / 3) * 0.2;
+      suns.push([x, y, h * 0.055]);
+      for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; rays.push([[x + (Math.cos(a) * 0.075 * h) / w, y + Math.sin(a) * 0.075], [x + (Math.cos(a) * 0.115 * h) / w, y + Math.sin(a) * 0.115]]); }
     }
+    fingerDots(ctx, suns, { col: 'red', seed: s + 1 });
+    line(ctx, rays, { col: 'red', w: h * 0.022, grain: 0.3, profile: 'down', seed: s + 2 });
   },
   talk(ctx, w, h, r) {  // Languages: two figures, words passing between them
-    ctx.strokeStyle = PIG.red; ctx.fillStyle = PIG.red; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = w * 0.035;
+    const s = seedOf(r), figs = [], heads = [];
     for (const [cx, dir] of [[0.18, 1], [0.82, -1]]) {
-      ctx.beginPath(); ctx.arc(w * cx, h * 0.3, w * 0.06, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(w * cx, h * 0.38); ctx.lineTo(w * cx, h * 0.68); ctx.lineTo(w * (cx - 0.06), h * 0.95); ctx.moveTo(w * cx, h * 0.68); ctx.lineTo(w * (cx + 0.06), h * 0.95); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(w * cx, h * 0.46); ctx.lineTo(w * (cx + dir * 0.12), h * 0.36); ctx.stroke();
+      heads.push([cx, 0.3, w * 0.06]);
+      figs.push([[cx, 0.38], [cx, 0.68]], [[cx, 0.68], [cx - 0.06, 0.95]], [[cx, 0.68], [cx + 0.06, 0.95]], [[cx, 0.46], [cx + dir * 0.12, 0.36]]);
     }
-    ctx.fillStyle = PIG.yellow;
-    for (let i = 0; i < 7; i++) { ctx.beginPath(); ctx.arc(w * (0.3 + i * 0.065), h * (0.24 + Math.sin(i * 0.9) * 0.04), w * 0.018, 0, Math.PI * 2); ctx.fill(); }
-    ctx.fillStyle = PIG.char;
-    for (let i = 0; i < 7; i++) { ctx.beginPath(); ctx.arc(w * (0.7 - i * 0.065), h * (0.4 + Math.sin(i * 0.9) * 0.04), w * 0.018, 0, Math.PI * 2); ctx.fill(); }
+    line(ctx, figs, { col: 'red', w: w * 0.04, grain: 0.25, soft: 0.8, seed: s });
+    fingerDots(ctx, heads, { col: 'red', seed: s + 1 });
+    fingerDots(ctx, [...Array(7)].map((_, i) => [0.3 + i * 0.065, 0.24 + Math.sin(i * 0.9) * 0.04, w * 0.018]), { col: 'yellow', seed: s + 2 });
+    fingerDots(ctx, [...Array(7)].map((_, i) => [0.7 - i * 0.065, 0.4 + Math.sin(i * 0.9) * 0.04, w * 0.018]), { col: 'black', seed: s + 3 });
   },
 };
 
@@ -769,40 +926,15 @@ function drawHandSilhouette(ctx, pts, s, armLength = 2.6, fadeTo = 'rgba(255,255
 }
 
 // A sprayed "negative" handprint: pigment blown around a hand, the hand left bare.
-function makeStencil(pts, s, color, seed, alpha = 1) {
+function makeStencil(pts, s, col, seed, alpha = 1) {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (let i = 1; i < 21; i++) { minX = Math.min(minX, pts[i].x); minY = Math.min(minY, pts[i].y); maxX = Math.max(maxX, pts[i].x); maxY = Math.max(maxY, pts[i].y); }
   minY = Math.min(minY, pts[0].y); maxY = Math.max(maxY, pts[0].y + s * 0.6);
   const pad = s * 0.9;
-  const ox = minX - pad, oy = minY - pad, W = maxX - minX + pad * 2, H = maxY - minY + pad * 2;
-  const c = makeCanvas(W, H);
-  const ctx = c.getContext('2d');
-  const r = mulberry(seed);
-  const cx = W / 2, cy = H / 2;
-  // A soft airbrushed cloud, then fine droplets on top of it.
-  const cloud = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.5);
-  cloud.addColorStop(0, color); cloud.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.globalAlpha = 0.5 * alpha;
-  ctx.fillStyle = cloud;
-  ctx.save(); ctx.translate(cx, cy); ctx.scale(W / Math.max(W, H), H / Math.max(W, H)); ctx.translate(-cx, -cy);
-  ctx.fillRect(0, 0, W * 2, H * 2); ctx.restore();
-  ctx.fillStyle = color;
-  const drops = clamp(Math.round((W * H) / 9), 1500, 16000);
-  const dropR = Math.min(2.2, s * 0.06);
-  for (let i = 0; i < drops; i++) {
-    const a = r() * Math.PI * 2, rr = Math.pow(r(), 0.7);
-    const x = cx + Math.cos(a) * rr * W * 0.5, y = cy + Math.sin(a) * rr * H * 0.5;
-    ctx.globalAlpha = (1 - rr) * 0.6 * alpha;
-    ctx.beginPath(); ctx.arc(x, y, 0.6 + r() * dropR, 0, Math.PI * 2); ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.fillStyle = '#000'; ctx.strokeStyle = '#000';
+  const ox = minX - pad, oy = minY - pad, W = Math.ceil(maxX - minX + pad * 2), H = Math.ceil(maxY - minY + pad * 2);
   const local = pts.map((p) => ({ x: p.x - ox, y: p.y - oy }));
   local[0] = { x: local[0].x + (local[0].x - local[9].x) * 0.15, y: local[0].y + (local[0].y - local[9].y) * 0.15 };
-  drawHandSilhouette(ctx, local, s * 0.92, 0);
-  ctx.globalCompositeOperation = 'source-over';
-  erode(c, seed + 3);
+  const c = sprayAround(W, H, (x) => drawHandSilhouette(x, local, s * 0.92, 0), col, seed, { reach: s * 0.35, alpha });
   return { canvas: c, x: ox, y: oy };
 }
 
@@ -1086,8 +1218,17 @@ const CH = { w: 0.9, h: 1.3, d: 1.9 };
   lampBowl.position.set(0, -CH.h / 2 + 0.04, -CH.d * 0.62);
   chamber.add(lampBowl);
   // A handprint on the back wall: what you see when you look straight in.
-  const bait = makeStencil(posePoints('palm', 128, 120, 34), 34, PIG.red, 333, 1);
-  chamber.add(wallDecal(bait.canvas, 0.42, new THREE.Vector3(0.05, 0.05, -CH.d + 0.005), 0));
+  const baitDecal = wallDecal(makeCanvas(256, 256), 0.42, new THREE.Vector3(0.05, 0.05, -CH.d + 0.005), 0);
+  chamber.add(baitDecal);
+  queuePaint(3, () => {
+    const bait = makeStencil(posePoints('palm', 128, 120, 34), 34, 'red', 333, 1);
+    const c = baitDecal.material.map.image;
+    c.width = bait.canvas.width; c.height = bait.canvas.height;
+    c.getContext('2d').drawImage(bait.canvas, 0, 0);
+    baitDecal.geometry.dispose();
+    baitDecal.geometry = new THREE.PlaneGeometry(0.42, (0.42 * c.height) / c.width);
+    baitDecal.material.map.needsUpdate = true;
+  });
   scene.add(chamber);
   const spill = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.4 }));
   spill.position.copy(S).add(new THREE.Vector3(0, 0, 0.06));
@@ -1101,15 +1242,21 @@ function wallDecal(srcCanvas, width, pos, rotY) {
   m.position.copy(pos); m.rotation.y = rotY;
   return m;
 }
-function paintedCanvas(kind, w, h, seed) {
-  const c = makeCanvas(w, h);
-  PAINTERS[kind](c.getContext('2d'), w, h, mulberry(seed));
-  erode(c, seed);
-  return c;
+const PAINT_RES = 2;
+function paintedCanvas(kind, w, h, seed, age = {}, res = PAINT_RES, into = null) {
+  return atRes(res, () => {
+    const c = into || makeCanvas(w * res, h * res);
+    PAINTERS[kind](c.getContext('2d'), w, h, mulberry(seed));
+    if (age) weather(c, seed, age);
+    return c;
+  });
 }
 // Paintings on the chamber's inner walls: lean left to see the right wall, lean right to see the left one.
-const certsDecal = wallDecal(paintedCanvas('cloud', 280, 230, 401), 0.86, new THREE.Vector3(CH.w / 2 - 0.004, 0.05, -CH.d * 0.4), -Math.PI / 2);
-const langDecal = wallDecal(paintedCanvas('talk', 280, 230, 402), 0.86, new THREE.Vector3(-CH.w / 2 + 0.004, 0.05, -CH.d * 0.4), Math.PI / 2);
+const certsDecal = wallDecal(makeCanvas(280 * PAINT_RES, 230 * PAINT_RES), 0.86, new THREE.Vector3(CH.w / 2 - 0.004, 0.05, -CH.d * 0.4), -Math.PI / 2);
+const langDecal = wallDecal(makeCanvas(280 * PAINT_RES, 230 * PAINT_RES), 0.86, new THREE.Vector3(-CH.w / 2 + 0.004, 0.05, -CH.d * 0.4), Math.PI / 2);
+for (const [decal, kind, seed] of [[certsDecal, 'cloud', 401], [langDecal, 'talk', 402]]) {
+  queuePaint(3, () => { paintedCanvas(kind, 280, 230, seed, {}, PAINT_RES, decal.material.map.image); decal.material.map.needsUpdate = true; });
+}
 chamber.add(certsDecal, langDecal);
 
 // ---------------------------------------------------------------------------
@@ -1189,7 +1336,60 @@ const artCtx = artCanvas.getContext('2d');
 const artTex = new THREE.CanvasTexture(artCanvas);
 artTex.colorSpace = THREE.SRGBColorSpace; artTex.anisotropy = 4;
 const artMat = new THREE.MeshStandardMaterial({ map: artTex, alphaMap: crackTex, normalMap: rock.normal, transparent: true, roughness: 0.95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
-scene.add(new THREE.Mesh(offsetGeometry(wallGeo, 0.006), artMat));
+// Pigment soaks into the stone: it takes on the rock's grain and colour, and thins over
+// pits and stains. The rock texture is sampled through the normal map's wall UVs.
+function soakIntoRock(mat) {
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uRock = { value: rock.map };
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform sampler2D uRock;')
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        vec3 rockC = texture2D(uRock, vNormalMapUv).rgb;
+        float rockL = dot(rockC, vec3(0.2126, 0.7152, 0.0722));
+        diffuseColor.rgb *= mix(1.0, clamp(rockL / 0.3, 0.5, 1.4), 0.7);
+        diffuseColor.a *= mix(0.8, 1.0, smoothstep(0.08, 0.3, rockL));`);
+  };
+  mat.customProgramCacheKey = () => 'soak';
+  return mat;
+}
+// Paint-layer stack on the wall, back to front: older marks and stencils, then the
+// paintings (each its own denser decal), then the calcite veil and the visitor's strokes.
+soakIntoRock(artMat);
+const artMesh = new THREE.Mesh(offsetGeometry(wallGeo, 0.01), artMat);
+artMesh.renderOrder = 3;
+scene.add(artMesh);
+const baseCanvas = makeCanvas(ART_W, ART_H);
+const baseTex = new THREE.CanvasTexture(baseCanvas);
+baseTex.colorSpace = THREE.SRGBColorSpace; baseTex.anisotropy = 4;
+let baseDirty = false, baseUploadAt = 0;   // the base layer uploads at most twice a second while it fills in
+const baseMesh = new THREE.Mesh(offsetGeometry(wallGeo, 0.004), soakIntoRock(new THREE.MeshStandardMaterial({ map: baseTex, alphaMap: crackTex, normalMap: rock.normal, transparent: true, roughness: 0.95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
+baseMesh.renderOrder = 1;
+scene.add(baseMesh);
+// A patch of wall surface carrying one painting. Its UVs are the wall's (for the rock
+// normal map); the painting itself is mapped through uv1.
+function wallPatch(x, y, w, h, lift) {
+  const g = new THREE.PlaneGeometry(1, 1, Math.max(2, Math.ceil(w / 8)), Math.max(2, Math.ceil(h / 8)));
+  const pos = g.attributes.position, uv = g.attributes.uv, local = new Float32Array(uv.array), v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    const u = (x + uv.getX(i) * w) / ART_W, vTop = (y + (1 - uv.getY(i)) * h) / ART_H;
+    wallPoint(u, vTop, v);
+    pos.setXYZ(i, v.x, v.y, v.z);
+    uv.setXY(i, u, 1 - vTop);
+  }
+  g.setAttribute('uv1', new THREE.BufferAttribute(local, 2));
+  g.computeVertexNormals();
+  const n = g.attributes.normal;
+  for (let i = 0; i < pos.count; i++) pos.setXYZ(i, pos.getX(i) + n.getX(i) * lift, pos.getY(i) + n.getY(i) * lift, pos.getZ(i) + n.getZ(i) * lift);
+  return g;
+}
+function addPaintingDecal(p) {
+  const tex = new THREE.CanvasTexture(p.canvas);
+  tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; tex.channel = 1;
+  const mat = soakIntoRock(new THREE.MeshStandardMaterial({ map: tex, normalMap: rock.normal, transparent: true, opacity: 0.94, roughness: 0.95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1.5 }));
+  p.mesh = new THREE.Mesh(wallPatch(p.x, p.y, p.w, p.h, 0.007), mat);
+  p.mesh.renderOrder = 2;
+  scene.add(p.mesh);
+}
 
 const shadowCanvas = makeCanvas(SH_W, SH_H);
 const shadowCtx = shadowCanvas.getContext('2d');
@@ -1197,14 +1397,18 @@ const shadowTmp = makeCanvas(SH_W, SH_H);
 const shadowTmpCtx = shadowTmp.getContext('2d');
 const shadowTex = new THREE.CanvasTexture(shadowCanvas);
 const shadowMat = new THREE.MeshBasicMaterial({ color: 0x040201, alphaMap: shadowTex, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
-scene.add(new THREE.Mesh(offsetGeometry(wallGeo, 0.012), shadowMat));
+const shadowMesh = new THREE.Mesh(offsetGeometry(wallGeo, 0.012), shadowMat);
+shadowMesh.renderOrder = 4;
+scene.add(shadowMesh);
 
 const fxCanvas = makeCanvas(SH_W, SH_H);
 const fxCtx = fxCanvas.getContext('2d');
 const fxTex = new THREE.CanvasTexture(fxCanvas);
 fxTex.colorSpace = THREE.SRGBColorSpace;
 const fxMat = new THREE.MeshBasicMaterial({ map: fxTex, alphaMap: crackTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -6 });
-scene.add(new THREE.Mesh(offsetGeometry(wallGeo, 0.018), fxMat));
+const fxMesh = new THREE.Mesh(offsetGeometry(wallGeo, 0.018), fxMat);
+fxMesh.renderOrder = 5;
+scene.add(fxMesh);
 
 // Painting layout in paint-layer pixels. The visible wall spans roughly x 390–1660, y 110–790;
 // the stone column hides x ≈ 400–600 from straight on, and the crack sits at x ≈ 1500.
@@ -1228,17 +1432,29 @@ function makeGlowSprite(src, w, h) {
   t.drawImage(src, 0, 0, w, h);
   t.globalCompositeOperation = 'source-in';
   t.fillStyle = glowRGB; t.fillRect(0, 0, w, h);
+  // A halo round the painting, mostly outside it, so the painting itself stays legible.
   const g = makeCanvas(w + GLOW_PAD * 2, h + GLOW_PAD * 2);
   const gc = g.getContext('2d');
-  if (supportsFilter) { gc.filter = 'blur(9px)'; gc.drawImage(tint, GLOW_PAD, GLOW_PAD); gc.filter = 'none'; }
-  gc.globalAlpha = 0.45;
+  if (supportsFilter) { gc.filter = 'blur(7px)'; gc.drawImage(tint, GLOW_PAD, GLOW_PAD); gc.filter = 'none'; }
+  else { gc.globalAlpha = 0.5; gc.drawImage(tint, GLOW_PAD, GLOW_PAD); }
+  gc.globalCompositeOperation = 'destination-out';
+  gc.globalAlpha = 0.75;
+  gc.drawImage(tint, GLOW_PAD, GLOW_PAD);
+  gc.globalCompositeOperation = 'source-over';
+  gc.globalAlpha = 0.12;
   gc.drawImage(tint, GLOW_PAD, GLOW_PAD);
   return g;
 }
 function addPaintingState(p) { p.alpha = 1; p.g = 0; p.boostFrom = 0; p.boostTo = 0; p.glow = makeGlowSprite(p.canvas, p.w / 2, p.h / 2); }
 for (const p of PAINTINGS) {
-  p.canvas = paintedCanvas(p.kind, p.w, p.h, p.seed);
+  p.canvas = makeCanvas(p.w * PAINT_RES, p.h * PAINT_RES);
   addPaintingState(p);
+  addPaintingDecal(p);
+  queuePaint(1, () => {
+    paintedCanvas(p.kind, p.w, p.h, p.seed, {}, PAINT_RES, p.canvas);
+    p.glow = makeGlowSprite(p.canvas, p.w / 2, p.h / 2);
+    p.mesh.material.map.needsUpdate = true;
+  });
 }
 
 // Ancient handprints, sprayed long before the visitor arrived.
@@ -1247,22 +1463,31 @@ const STENCILS = [];
   const r = mulberry(77);
   const spots = [[1600, 640], [1640, 545], [1610, 760], [1665, 690], [1545, 835], [430, 720], [500, 790], [360, 640]];
   spots.forEach(([x, y], i) => {
-    const s = 26 + r() * 10;
-    const pts = posePoints('palm', x, y, s, (r() - 0.5) * 0.9);
-    const st = makeStencil(pts, s, r() < 0.6 ? PIG.red : PIG.yellow, 100 + i, 0.75 + r() * 0.25);
-    STENCILS.push({ ...st, alpha: 1, glowUntil: 0, born: 0 });
+    const s = 26 + r() * 10, rot = (r() - 0.5) * 0.9, col = r() < 0.6 ? 'red' : 'yellow', alpha = 0.75 + r() * 0.25;
+    queuePaint(2, () => {
+      const st = makeStencil(posePoints('palm', x, y, s, rot), s, col, 100 + i, alpha);
+      STENCILS.push({ ...st, alpha: 1, glowUntil: 0, born: 0 });
+      baseCanvas.getContext('2d').drawImage(st.canvas, st.x, st.y);
+      baseDirty = true;
+    });
   });
 }
 
 // ---------------------------------------------------------------------------
 // Tracing guides (painting mode): dotted outlines waiting to be painted in
 // ---------------------------------------------------------------------------
+// Stone-age shapes: an animal is outlined in charcoal and rubbed in with ochre;
+// the hand is a stencil, with ochre blown round it.
 const GUIDES = [
-  { id: 'wolf', section: 'experience', title: 'the wolf', x: 655, y: 590, w: 215, h: 175, tool: 'charcoal', line: PIG.char, fill: PIG.red, eye: [0.6, 0.4],
-    pts: [[0.08, 1.0], [0.1, 0.66], [0.17, 0.42], [0.22, 0.22], [0.28, 0.0], [0.37, 0.2], [0.47, 0.03], [0.52, 0.26], [0.63, 0.3], [0.8, 0.38], [0.97, 0.44], [1.0, 0.52], [0.95, 0.56], [0.8, 0.58], [0.88, 0.64], [0.72, 0.68], [0.6, 0.74], [0.48, 0.84], [0.42, 1.0]] },
-  { id: 'rabbit', section: 'about', title: 'the rabbit', x: 1135, y: 585, w: 160, h: 190, tool: 'charcoal', line: PIG.char, fill: PIG.yellow, eye: [0.74, 0.46],
-    pts: [[0.12, 1.0], [0.02, 0.82], [0.04, 0.6], [0.18, 0.46], [0.36, 0.42], [0.5, 0.42], [0.47, 0.2], [0.5, 0.02], [0.57, 0.02], [0.6, 0.3], [0.64, 0.14], [0.7, 0.02], [0.76, 0.06], [0.7, 0.36], [0.8, 0.42], [0.86, 0.54], [0.78, 0.62], [0.68, 0.66], [0.72, 0.94], [0.6, 1.0]] },
-  { id: 'hand', section: 'contact', title: 'the hand', x: 1345, y: 590, w: 140, h: 180, tool: 'ochre', line: PIG.deep, fill: PIG.red,
+  { id: 'wolf', section: 'experience', title: 'the wolf', x: 625, y: 585, w: 290, h: 165, tool: 'charcoal', line: PIG.char, fillCol: 'red', eye: [0.89, 0.29],
+    shade: (u, v) => smooth(0.4, 0.15, v) * 0.35 + smooth(0.62, 0.8, v) * 0.25,
+    pts: [[1.0, 0.38], [0.92, 0.3], [0.88, 0.2], [0.87, 0.12], [0.86, 0.0], [0.83, 0.12], [0.79, 0.02], [0.77, 0.15], [0.72, 0.22], [0.6, 0.26], [0.42, 0.27], [0.26, 0.28], [0.12, 0.38], [0.05, 0.55], [0.04, 0.72], [0.09, 0.74], [0.14, 0.6], [0.2, 0.48], [0.25, 0.62], [0.27, 0.8], [0.25, 0.98], [0.31, 0.98], [0.33, 0.82], [0.36, 0.66], [0.46, 0.63], [0.58, 0.61], [0.62, 0.66], [0.63, 0.98], [0.69, 0.98], [0.7, 0.66], [0.76, 0.56], [0.84, 0.47], [0.93, 0.45]],
+    details: [[[0.98, 0.41], [0.9, 0.42]], [[0.855, 0.06], [0.85, 0.17]], [[0.66, 0.3], [0.69, 0.38]], [[0.71, 0.27], [0.74, 0.35]], [[0.75, 0.26], [0.78, 0.33]], [[0.3, 0.52], [0.27, 0.64]]] },
+  { id: 'rabbit', section: 'about', title: 'the hare', x: 1125, y: 590, w: 180, h: 175, tool: 'charcoal', line: PIG.char, fillCol: 'yellow', eye: [0.86, 0.4],
+    shade: (u, v) => smooth(0.5, 0.2, v) * 0.3 + smooth(0.75, 0.95, v) * 0.2,
+    pts: [[0.99, 0.46], [0.92, 0.34], [0.84, 0.3], [0.8, 0.12], [0.72, 0.0], [0.7, 0.1], [0.74, 0.3], [0.66, 0.16], [0.56, 0.04], [0.56, 0.16], [0.64, 0.34], [0.5, 0.38], [0.3, 0.42], [0.14, 0.56], [0.04, 0.6], [0.06, 0.72], [0.14, 0.86], [0.2, 0.96], [0.48, 0.98], [0.5, 0.9], [0.62, 0.86], [0.7, 0.98], [0.8, 0.97], [0.8, 0.72], [0.86, 0.6], [0.95, 0.56]],
+    details: [[[0.765, 0.08], [0.76, 0.26]], [[0.3, 0.6], [0.24, 0.78], [0.36, 0.9]]] },
+  { id: 'hand', section: 'contact', title: 'the hand', x: 1360, y: 590, w: 140, h: 180, tool: 'ochre', line: PIG.deep, stencil: true,
     pts: [[0.28, 1.0], [0.14, 0.72], [0.0, 0.54], [0.02, 0.44], [0.12, 0.48], [0.22, 0.6], [0.22, 0.32], [0.24, 0.06], [0.32, 0.05], [0.34, 0.33], [0.38, 0.28], [0.42, 0.0], [0.5, 0.0], [0.52, 0.29], [0.56, 0.32], [0.6, 0.06], [0.68, 0.08], [0.68, 0.38], [0.72, 0.44], [0.78, 0.22], [0.86, 0.24], [0.84, 0.55], [0.82, 0.8], [0.72, 1.0]] },
 ];
 const SECTION_NAME = { experience: 'Experience', about: 'About', contact: 'Contact' };
@@ -1313,47 +1538,135 @@ const TOOLS = {
   charcoal: { base: 4.2, catchLo: 0.32, catchHi: 0.62, flecks: 0.6 },
   ochre: { base: 7.5, catchLo: 0.18, catchHi: 0.55, flecks: 0.25 },
 };
-function dab(ctx, ax, ay, r, color, load, seed, tool, ox = 0, oy = 0) {
-  const T = TOOLS[tool];
-  const rr = mulberry(seed);
-  const stick = 0.3 + 0.7 * smooth(T.catchLo, T.catchHi, rockHeight(ax, ay));
-  ctx.fillStyle = color;
-  for (let k = 0; k < 3; k++) {
-    ctx.globalAlpha = clamp(load * stick * (0.32 + rr() * 0.36), 0, 1);
-    ctx.beginPath(); ctx.arc(ax - ox + (rr() - 0.5) * r * 0.8, ay - oy + (rr() - 0.5) * r * 0.8, r * (0.45 + rr() * 0.55), 0, Math.PI * 2); ctx.fill();
+// Stamps: charcoal leaves speckled grains, a fingertip of ochre a blotch with a darker rim.
+const STAMP_N = 48;
+function makeStamp(tool, seed) {
+  const c = makeCanvas(STAMP_N, STAMP_N), x = c.getContext('2d'), img = x.createImageData(STAMP_N, STAMP_N);
+  for (let j = 0; j < STAMP_N; j++) for (let i = 0; i < STAMP_N; i++) {
+    const dx = ((i + 0.5) / STAMP_N) * 2 - 1, dy = ((j + 0.5) / STAMP_N) * 2 - 1;
+    const d = Math.hypot(dx, dy) * (0.9 + 0.22 * vnoise(Math.atan2(dy, dx) * 1.6 + 4, 0.5, seed));
+    if (d >= 1) continue;
+    const a = tool === 'charcoal'
+      ? (1 - d * d * d) * (hash2(i, j, seed) < 0.62 - d * 0.3 ? 0.95 : 0.18) * (0.65 + 0.35 * vnoise(i * 0.35, j * 0.35, seed + 1))
+      : smooth(1, 0.78, d) * (0.55 + 0.35 * fbm(i / 8, j / 8, 2, seed)) + 0.22 * smooth(0.5, 0.88, d) * smooth(1, 0.9, d);
+    const k = (j * STAMP_N + i) * 4;
+    img.data[k] = img.data[k + 1] = img.data[k + 2] = 255; img.data[k + 3] = clamp(a, 0, 1) * 255;
   }
+  x.putImageData(img, 0, 0);
+  return c;
+}
+const STAMPS = { charcoal: [0, 1, 2, 3].map((k) => makeStamp('charcoal', 900 + k)), ochre: [0, 1, 2, 3].map((k) => makeStamp('ochre', 910 + k)) };
+const tintedStamps = new Map();
+function stampOf(tool, k, color) {
+  const key = tool + k + color;
+  let c = tintedStamps.get(key);
+  if (!c) {
+    c = makeCanvas(STAMP_N, STAMP_N);
+    const x = c.getContext('2d');
+    x.drawImage(STAMPS[tool][k], 0, 0);
+    x.globalCompositeOperation = 'source-in'; x.fillStyle = color; x.fillRect(0, 0, STAMP_N, STAMP_N);
+    tintedStamps.set(key, c);
+  }
+  return c;
+}
+// One touch of pigment. It catches on the bumps of the rock and thins as the stroke runs dry.
+function dab(ctx, ax, ay, r, color, load, seed, tool) {
+  const T = TOOLS[tool], rr = mulberry(seed);
+  const stick = 0.3 + 0.7 * smooth(T.catchLo, T.catchHi, rockHeight(ax, ay));
+  const R = r * (0.85 + rr() * 0.35);
+  ctx.globalAlpha = clamp(load * stick * (tool === 'charcoal' ? 0.5 + rr() * 0.3 : 0.38 + rr() * 0.22), 0, 1);
+  ctx.drawImage(stampOf(tool, (rr() * 4) | 0, color), ax - R + (rr() - 0.5) * r * 0.5, ay - R + (rr() - 0.5) * r * 0.5, R * 2, R * 2);
   if (rr() < T.flecks) {
-    ctx.globalAlpha = 0.5 * load;
-    ctx.beginPath(); ctx.arc(ax - ox + (rr() - 0.5) * r * 2.4, ay - oy + (rr() - 0.5) * r * 2.4, 0.6 + rr() * 1.2, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 0.5 * load; ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(ax + (rr() - 0.5) * r * 2.4, ay + (rr() - 0.5) * r * 2.4, 0.6 + rr() * 1.2, 0, Math.PI * 2); ctx.fill();
   }
   ctx.globalAlpha = 1;
 }
 
-// Visitor strokes. Each point stores [x, y, radius, load] so a redraw reproduces it exactly.
-const STROKES = [];
+// Visitor strokes. Each point stores [x, y, radius, load] so a stroke replays exactly;
+// finished strokes are kept on their own layer.
 let currentStroke = null;
+const strokesCanvas = makeCanvas(ART_W, ART_H), strokesCtx = strokesCanvas.getContext('2d');
 function renderStroke(ctx, s) { s.pts.forEach(([x, y, r, l], i) => dab(ctx, x, y, r, s.color, l, s.seed + i, s.tool)); }
 
-let artDirty = true, artUploadAt = 0, artUploadPending = false;
-function redrawArt() {
-  artCtx.clearRect(0, 0, ART_W, ART_H);
-  artCtx.save();
-  artCtx.scale(2, 2);
-  if (supportsFilter) artCtx.filter = 'blur(5px)';
-  artCtx.strokeStyle = 'rgba(16,9,5,0.85)'; artCtx.lineWidth = 9; artCtx.stroke(crackPath);
-  artCtx.filter = 'none';
-  artCtx.strokeStyle = 'rgba(12,7,4,0.9)'; artCtx.lineWidth = 2.5; artCtx.stroke(crackPath);
-  artCtx.restore();
-  for (const s of STENCILS) { artCtx.globalAlpha = s.alpha; artCtx.drawImage(s.canvas, s.x, s.y); }
-  for (const p of PAINTINGS) {
-    if (p.alpha <= 0.001) continue;
-    artCtx.globalAlpha = p.alpha * 0.92;
-    artCtx.drawImage(p.canvas, p.x, p.y);
+// Marks older than the paintings (the base layer, under them), and the calcite veil
+// grown over them since (on the paint layer, over them). Both are made once.
+const VEIL_S = 4, veilCanvas = makeCanvas(ART_W / VEIL_S, ART_H / VEIL_S);
+{
+  const ctx = baseCanvas.getContext('2d');
+  const patch = (x, y, w, h, fn) => { const c = makeCanvas(w, h); fn(c.getContext('2d'), w, h); ctx.drawImage(c, x, y); };
+  // Soot round the crack, so it reads as an opening from across the cave.
+  ctx.save(); ctx.scale(2, 2);
+  if (supportsFilter) ctx.filter = 'blur(5px)';
+  ctx.strokeStyle = 'rgba(16,9,5,0.85)'; ctx.lineWidth = 9; ctx.stroke(crackPath);
+  ctx.filter = 'none';
+  ctx.strokeStyle = 'rgba(12,7,4,0.9)'; ctx.lineWidth = 2.5; ctx.stroke(crackPath);
+  ctx.restore();
+  baseDirty = true;
+  // Older figures, faded and half painted over by later ones.
+  for (const [kind, x, y, w, h, a, seed] of [['bison', 610, 395, 300, 175, 0.2, 61], ['horse', 960, 300, 170, 100, 0.16, 62], ['deer', 330, 250, 180, 140, 0.22, 63]]) {
+    queuePaint(2, () => { ctx.globalAlpha = a; ctx.drawImage(paintedCanvas(kind, w, h, seed, { fade: 0.7, flakes: 4, pits: 0.15 }, 1), x, y); ctx.globalAlpha = 1; baseDirty = true; });
   }
-  artCtx.globalAlpha = 1;
-  for (const s of STROKES) renderStroke(artCtx, s);
-  artTex.needsUpdate = true;
-  artDirty = false;
+  queuePaint(2, () => {
+  // Finger flutings: fingers drawn down through the soft film on the rock.
+  const flute = (x, y, len, ang, n, seed) => {
+    for (let f = 0; f < n; f++) {
+      const pts = [];
+      for (let k = 0; k <= 8; k++) { const t = k / 8; pts.push([x + Math.cos(ang) * len * t + Math.sin(t * 5 + seed) * 6 - Math.sin(ang) * f * 9, y + Math.sin(ang) * len * t + Math.cos(ang) * f * 9]); }
+      engrave(ctx, pts, { px: true, alpha: 0.28, width: 3.4, seed: seed + f });
+    }
+  };
+  flute(330, 470, 130, 1.2, 4, 71);
+  flute(1590, 360, 120, 1.9, 3, 72);
+  // A mammoth scratched with a flint, long before anyone painted here.
+  const mam = (pts) => pts.map(([u, v]) => [1490 + u * 190, 585 + v * 120]);
+  for (const st of [[[0.02, 0.52], [0.12, 0.36], [0.4, 0.2], [0.6, 0.08], [0.7, 0.12], [0.8, 0.02], [0.9, 0.16], [0.95, 0.45], [0.93, 0.8], [0.98, 0.92]], [[0.14, 0.62], [0.45, 0.68], [0.72, 0.64]],
+    [[0.18, 0.6], [0.17, 1.0]], [[0.3, 0.66], [0.31, 1.0]], [[0.62, 0.66], [0.6, 1.0]], [[0.74, 0.62], [0.76, 1.0]], [[0.86, 0.42], [0.76, 0.58], [0.68, 0.52]],
+    [[0.3, 0.68], [0.29, 0.78]], [[0.4, 0.69], [0.39, 0.8]], [[0.5, 0.68], [0.5, 0.79]]]) engrave(ctx, mam(st), { px: true, alpha: 0.42, seed: 74 });
+  // Red dots and a black sign, the kind found near cave entrances.
+  patch(370, 380, 70, 50, (c) => fingerDots(c, [[0.2, 0.3, 5], [0.5, 0.25, 5], [0.8, 0.35, 5], [0.35, 0.7, 5], [0.65, 0.72, 5]], { col: 'red', seed: 81 }));
+  patch(1370, 262, 46, 70, (c) => line(c, [[[0.5, 0.05], [0.5, 0.95]], [[0.5, 0.35], [0.85, 0.45]]], { w: 5, seed: 82 }));
+  // The shapes waiting to be painted, scratched in first, as painters often did.
+  for (const g of GUIDES) engrave(ctx, g.samples, { px: true, closed: true, alpha: 0.4, seed: 90 });
+  baseDirty = true;
+  });
+}
+queuePaint(2, () => {
+  const ctx = veilCanvas.getContext('2d'), w = veilCanvas.width, h = veilCanvas.height, img = ctx.createImageData(w, h);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const u = i / w, v = j / h;
+    const film = smooth(0.56, 0.78, fbm(u * 7 + 11, v * 3.5, 4, 501));
+    const drip = smooth(0.62, 0.9, vnoise(u * 90, v * 2.2, 503)) * smooth(0.6, 0, v) * smooth(0.4, 0.75, fbm(u * 5, v * 2, 2, 505));
+    const ax = i * VEIL_S, ay = j * VEIL_S;
+    // The veil thins out round the shapes still to paint: those paintings will be fresh.
+    let keep = 1;
+    for (const g of GUIDES) keep = Math.min(keep, smooth(20, 110, Math.hypot(Math.max(g.x - ax, 0, ax - g.x - g.w), Math.max(g.y - ay, 0, ay - g.y - g.h))));
+    const k = (j * w + i) * 4;
+    img.data[k] = 236; img.data[k + 1] = 226; img.data[k + 2] = 210; img.data[k + 3] = clamp(film * 0.3 + drip * 0.22, 0, 0.45) * keep * 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  markArt();
+});
+
+let artRect = null, artUploadAt = 0, artUploadPending = false;
+// Ask for part of the paint layer (veil + strokes) to be recomposited on the next frame.
+function markArt(x = 0, y = 0, w = ART_W, h = ART_H) {
+  const r = [x - 1, y - 1, x + w + 1, y + h + 1];
+  artRect = artRect ? [Math.min(artRect[0], r[0]), Math.min(artRect[1], r[1]), Math.max(artRect[2], r[2]), Math.max(artRect[3], r[3])] : r;
+}
+function redrawArt(x0 = 0, y0 = 0, x1 = ART_W, y1 = ART_H) {
+  x0 = clamp(Math.floor(x0), 0, ART_W); y0 = clamp(Math.floor(y0), 0, ART_H);
+  x1 = clamp(Math.ceil(x1), 0, ART_W); y1 = clamp(Math.ceil(y1), 0, ART_H);
+  const w = x1 - x0, h = y1 - y0;
+  if (w <= 0 || h <= 0) return;
+  artCtx.save();
+  artCtx.beginPath(); artCtx.rect(x0, y0, w, h); artCtx.clip();
+  artCtx.clearRect(x0, y0, w, h);
+  artCtx.drawImage(veilCanvas, x0 / VEIL_S, y0 / VEIL_S, w / VEIL_S, h / VEIL_S, x0, y0, w, h);
+  artCtx.drawImage(strokesCanvas, x0, y0, w, h, x0, y0, w, h);
+  if (currentStroke) renderStroke(artCtx, currentStroke);
+  artCtx.restore();
+  artUploadPending = true;
 }
 
 // ---------------------------------------------------------------------------
@@ -1516,7 +1829,7 @@ function returnStepOut() { if (stepOut.id) stepOut.dir = -1; }
 function finishReturn() {
   if (!stepOut.device) return;
   stepOut.device.visible = false;
-  stepOut.painting.alpha = 1; artDirty = true;
+  stepOut.painting.alpha = 1;
   stepOut.id = null; stepOut.device = null; stepOut.painting = null; stepOut.dir = 0;
   deviceLight.intensity = 0;
 }
@@ -1533,7 +1846,7 @@ function updateStepOut(dt, time) {
   dvc.rotation.set(isPhone ? 0 : THREE.MathUtils.lerp(Math.PI / 2, 0.5, e), THREE.MathUtils.lerp(0, isPhone ? 0.35 : 0.45, e) + (stepOut.t === 1 ? Math.sin(time * 0.6) * 0.06 : 0), 0);
   // Fade the painting in a few steps: re-uploading the whole paint layer every frame is expensive.
   const fade = Math.round((1 - smooth(0.0, 0.5, stepOut.t)) * 6) / 6;
-  if (fade !== stepOut.painting.alpha) { stepOut.painting.alpha = fade; artDirty = true; }
+  stepOut.painting.alpha = fade;
   deviceLight.position.set(dvc.position.x + 0.6, dvc.position.y + 0.4, dvc.position.z + 0.9);
   deviceLight.intensity = e * 1.6;
   if (stepOut.dir < 0 && stepOut.t === 0) finishReturn();
@@ -1700,7 +2013,7 @@ let secretTimer = 0;
 function updateSecrets(dt) {
   secretTimer += dt;
   // One discovery at a time: the next waits until its panel is closed.
-  if (secretTimer < 0.15 || mode === 'idle' || focus.active || panelKind) return;
+  if (secretTimer < 0.15 || mode === 'idle' || focus.active || focus.t > 0 || panelKind) return;
   const step = secretTimer; secretTimer = 0;
   for (const s of SECRETS) {
     if (s.found) continue;
@@ -1739,76 +2052,109 @@ function endFocus() {
 }
 $('step-back').addEventListener('click', () => { if (!finish.g) endFocus(); });
 
+// The ghost hand finishes a traced shape the way a cave painter would: an animal is
+// rubbed in with ochre and outlined in charcoal; the hand is pressed to the rock and
+// ochre blown round it. The finished painting is rendered up front, and the ghost
+// reveals it dab by dab.
+const SOFT = (() => {
+  const c = makeCanvas(64, 64), x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.6, 'rgba(255,255,255,0.85)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+  return c;
+})();
 const finish = { g: null, p: null, t: 0, plan: [], drawn: 0, outlined: 0, done: false, hand: null };
+function renderGuide(g) {
+  const pad = g.stencil ? 44 : 14, W = g.w + pad * 2, H = g.h + pad * 2, K = PAINT_RES;
+  const path = shapePath(g.pts, g.w, g.h, pad, pad), sd = 4000 + g.x;
+  const line_ = makeCanvas(W * K, H * K);
+  const fill = atRes(K, () => {
+    if (g.stencil) return sprayAround(W, H, (x) => x.fill(path), 'red', sd, { reach: 22, alpha: 1.3 });
+    const c = makeCanvas(W * K, H * K), lc = line_.getContext('2d');
+    wash(c.getContext('2d'), (x) => x.fill(path), { col: g.fillCol, seed: sd, shade: g.shade, spray: 0.12, alpha: 0.9 });
+    line(lc, g.samples.map(([x, y]) => [x - g.x + pad, y - g.y + pad]), { px: true, closed: true, w: 4.4, seed: sd + 1 });
+    if (g.details) line(lc, g.details.map((st) => st.map(([u, v]) => [pad + u * g.w, pad + v * g.h])), { px: true, w: 3, seed: sd + 2 });
+    fingerDots(lc, [[(pad + g.eye[0] * g.w) / W, (pad + g.eye[1] * g.h) / H, 3]], { col: 'black', seed: sd + 3 });
+    return c;
+  });
+  return (g.final = { pad, W, H, path, fill, line: line_ });
+}
+for (const g of GUIDES) queuePaint(4, () => renderGuide(g));
 function startFinish(g) {
   if (finish.g) return;
   g.done = true;
   if (!focus.active || focus.guide !== g) startFocus(g);
-  const c = makeCanvas(g.w, g.h);
-  const p = { id: `g-${g.id}`, kind: 'traced', x: g.x, y: g.y, w: g.w, h: g.h, group: 'traced', guide: g, canvas: c, alpha: 1, g: 0, boostFrom: 0, boostTo: 0, glow: null };
+  const { pad, W, H, path, fill, line: lineC } = g.final || renderGuide(g), K = PAINT_RES;
+  const p = { id: `g-${g.id}`, kind: 'traced', x: g.x - pad, y: g.y - pad, w: W, h: H, group: 'traced', guide: g, canvas: makeCanvas(W * K, H * K), alpha: 1, g: 0, boostFrom: 0, boostTo: 0, glow: null };
   PAINTINGS.push(p);
-  // The ghost hand dabs in rows, back and forth, the way you'd fill a shape with a finger.
+  addPaintingDecal(p);
   const plan = [];
-  const probe = makeCanvas(1, 1).getContext('2d');
-  let row = 0;
-  for (let y = 6; y < g.h; y += 9, row++) {
-    const xs = [];
-    for (let x = 4; x < g.w; x += 8) if (probe.isPointInPath(g.localPath, x, y)) xs.push(x);
-    if (row % 2) xs.reverse();
-    for (const x of xs) plan.push([x, y]);
+  if (g.stencil) {
+    // Round the hand in a slow circle and a half, the way you'd turn while blowing.
+    for (let a = 0; a < Math.PI * 3; a += 0.11) {
+      const R = 0.36 + 0.08 * Math.sin(a * 3);
+      plan.push([W / 2 + Math.cos(a - Math.PI / 2) * R * W, H / 2 + Math.sin(a - Math.PI / 2) * R * H]);
+    }
+  } else {
+    // Rubbed in row by row, back and forth.
+    const probe = makeCanvas(1, 1).getContext('2d');
+    let row = 0;
+    for (let y = pad + 5; y < H - pad; y += 10, row++) {
+      const xs = [];
+      for (let x = pad + 3; x < W - pad; x += 9) if (probe.isPointInPath(path, x, y)) xs.push(x);
+      if (row % 2) xs.reverse();
+      for (const x of xs) plan.push([x, y]);
+    }
   }
-  Object.assign(finish, { g, p, t: 0, plan, drawn: 0, outlined: 0, done: false, hand: null });
+  Object.assign(finish, { g, p, t: 0, plan, drawn: 0, outlined: 0, done: false, hand: null, pad, fill, line: lineC, fillMask: makeCanvas(W * K, H * K), lineMask: makeCanvas(W * K, H * K), tmp: makeCanvas(W * K, H * K) });
 }
-const FILL_T = 1.7, LINE_T = 0.7, HOLD_T = 0.9;
+const FILL_T = 1.7, LINE_T = 0.7, HOLD_T = 0.9, SPRAY_T = 2.2;
 function updateFinish(dt) {
   if (!finish.g) return;
   // Wait until the camera has arrived at the wall.
   if (focus.t < 0.98 && finish.t === 0) return;
   finish.t += dt;
-  const { g, p } = finish;
-  const pctx = p.canvas.getContext('2d');
-  // 1. Fill with ochre dabs, clipped to the shape.
-  const fillTo = Math.min(finish.plan.length, Math.floor((finish.t / FILL_T) * finish.plan.length));
+  const { g, p, pad } = finish;
+  const fillT = g.stencil ? SPRAY_T : FILL_T, lineT = g.stencil ? 0 : LINE_T;
+  let changed = false;
+  // 1. Rub the ochre in, or blow it round the hand.
+  const fillTo = Math.min(finish.plan.length, Math.floor((finish.t / fillT) * finish.plan.length));
   if (fillTo > finish.drawn) {
-    pctx.save(); pctx.clip(g.localPath);
-    artCtx.save(); artCtx.clip(g.artPath);
-    for (let i = finish.drawn; i < fillTo; i++) {
-      const [x, y] = finish.plan[i];
-      dab(pctx, g.x + x, g.y + y, 8.5, g.fill, 0.95, 5000 + i, 'ochre', g.x, g.y);
-      dab(artCtx, g.x + x, g.y + y, 8.5, g.fill, 0.95, 5000 + i, 'ochre');
-    }
-    pctx.restore(); artCtx.restore();
-    finish.drawn = fillTo;
-    finish.hand = finish.plan[fillTo - 1];
-    artUploadPending = true;
+    const m = finish.fillMask.getContext('2d'), K = PAINT_RES, R = (g.stencil ? 34 : 13) * K;
+    for (let i = finish.drawn; i < fillTo; i++) { const [x, y] = finish.plan[i]; m.drawImage(SOFT, x * K - R, y * K - R, R * 2, R * 2); }
+    if (fillTo === finish.plan.length) { m.fillStyle = '#fff'; m.fillRect(0, 0, p.w * K, p.h * K); }
+    const [hx, hy] = finish.plan[fillTo - 1];
+    finish.drawn = fillTo; finish.hand = [hx - pad, hy - pad]; changed = true;
   }
-  // 2. Go round the outline in charcoal (or deep ochre for the hand).
-  if (finish.t > FILL_T) {
-    const k = Math.min(g.samples.length, Math.floor(((finish.t - FILL_T) / LINE_T) * g.samples.length));
-    for (let i = finish.outlined; i < k; i++) {
-      const a = g.samples[i], b = g.samples[(i + 1) % g.samples.length];
-      for (let s = 0; s <= 3; s++) {
-        const x = a[0] + ((b[0] - a[0]) * s) / 3, y = a[1] + ((b[1] - a[1]) * s) / 3;
-        dab(pctx, x, y, 4.5, g.line, 0.9, 7000 + i * 4 + s, 'charcoal', g.x, g.y);
-        dab(artCtx, x, y, 4.5, g.line, 0.9, 7000 + i * 4 + s, 'charcoal');
-      }
-      finish.hand = [a[0] - g.x, a[1] - g.y];
+  // 2. Charcoal round the outline; the eye and the last details come with it.
+  if (lineT && finish.t > fillT) {
+    const n = g.samples.length, k = Math.min(n, Math.floor(((finish.t - fillT) / lineT) * n));
+    if (k > finish.outlined) {
+      const m = finish.lineMask.getContext('2d'), K = PAINT_RES;
+      for (let i = finish.outlined; i < k; i++) { const [x, y] = g.samples[i]; m.drawImage(SOFT, (x - g.x + pad - 11) * K, (y - g.y + pad - 11) * K, 22 * K, 22 * K); finish.hand = [x - g.x, y - g.y]; }
+      if (k === n) { m.fillStyle = '#fff'; m.fillRect(0, 0, p.w * K, p.h * K); }
+      finish.outlined = k; changed = true;
     }
-    finish.outlined = k;
-    artUploadPending = true;
+  }
+  if (changed) {
+    const t = finish.tmp.getContext('2d'), c = p.canvas.getContext('2d');
+    t.globalCompositeOperation = 'copy'; t.drawImage(finish.line, 0, 0);
+    t.globalCompositeOperation = 'destination-in'; t.drawImage(finish.lineMask, 0, 0);
+    c.globalCompositeOperation = 'copy'; c.drawImage(finish.fill, 0, 0);
+    c.globalCompositeOperation = 'destination-in'; c.drawImage(finish.fillMask, 0, 0);
+    c.globalCompositeOperation = 'source-over'; c.drawImage(finish.tmp, 0, 0);
+    p.mesh.material.map.needsUpdate = true;
   }
   // 3. It comes alive, then the camera steps back and the section opens.
-  if (finish.t > FILL_T + LINE_T && !finish.done) {
+  if (finish.t > fillT + lineT && !finish.done) {
     finish.done = true;
     finish.hand = null;
     p.glow = makeGlowSprite(p.canvas, p.w / 2, p.h / 2);
     boost([p.id]);
     playChime(g.id);
   }
-  if (finish.t > FILL_T + LINE_T + HOLD_T) {
+  if (finish.t > fillT + lineT + HOLD_T) {
     const section = g.section;
     finish.g = null;
-    artDirty = true;
     endFocus();
     setTimeout(() => openPanel(section), 500);
   }
@@ -1970,9 +2316,10 @@ function setGestureUI(text, progress) {
 function leaveHandprint(pts) {
   const art = pts.map((p) => ({ x: p.x * (ART_W / SH_W), y: p.y * (ART_H / SH_H) }));
   const s = Math.hypot(art[0].x - art[9].x, art[0].y - art[9].y) * 0.95;
-  const st = makeStencil(art, s, PIG.red, (Math.random() * 1e6) | 0, 1);
+  const st = makeStencil(art, s, 'red', (Math.random() * 1e6) | 0, 1);
   STENCILS.push({ ...st, alpha: 1, glowUntil: clock + 4, born: clock, glow: makeGlowSprite(st.canvas, st.canvas.width / 2, st.canvas.height / 2) });
-  artDirty = true;
+  baseCanvas.getContext('2d').drawImage(st.canvas, st.x, st.y);
+  baseDirty = true; baseUploadAt = 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -2002,6 +2349,37 @@ function drawShadows(handPts, stick) {
   shadowTex.needsUpdate = true;
 }
 
+function guideGlowFor(g) {
+  if (!g.glowPatch) {
+    const pad = 16, K = 2, c = makeCanvas((g.w + pad * 2) * K, (g.h + pad * 2) * K);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace; tex.channel = 1;
+    const mesh = new THREE.Mesh(wallPatch(g.x - pad, g.y - pad, g.w + pad * 2, g.h + pad * 2, 0.016), new THREE.MeshBasicMaterial({ map: tex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    mesh.renderOrder = 6; mesh.visible = false;
+    scene.add(mesh);
+    g.glowPatch = { pad, K, ctx: c.getContext('2d'), tex, mesh };
+  }
+  return g.glowPatch;
+}
+// Embers along the parts of the engraving still to trace.
+function drawGuideGlow(g, a) {
+  const gp = guideGlowFor(g), c = gp.ctx, K = gp.K, n = g.samples.length;
+  const X = (x) => (x - g.x + gp.pad) * K, Y = (y) => (y - g.y + gp.pad) * K;
+  c.clearRect(0, 0, c.canvas.width, c.canvas.height);
+  c.lineCap = 'round';
+  for (const [wd, col] of [[7, `rgba(255,120,40,${0.13 * a})`], [2.6, `rgba(255,160,80,${0.4 * a})`], [1, `rgba(255,220,160,${0.7 * a})`]]) {
+    c.strokeStyle = col; c.lineWidth = wd * K;
+    c.beginPath();
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      if (g.covered[i] && g.covered[j]) continue;
+      c.moveTo(X(g.samples[i][0]), Y(g.samples[i][1])); c.lineTo(X(g.samples[j][0]), Y(g.samples[j][1]));
+    }
+    c.stroke();
+  }
+  gp.tex.needsUpdate = true;
+  gp.mesh.visible = true;
+}
 function emberEye(x, y, R) {
   const grd = fxCtx.createRadialGradient(x, y, 0, x, y, R * 3);
   grd.addColorStop(0, 'rgba(255,220,150,1)'); grd.addColorStop(0.25, 'rgba(255,140,50,0.8)'); grd.addColorStop(1, 'rgba(255,80,20,0)');
@@ -2020,7 +2398,8 @@ function drawFx(handPts) {
     fxCtx.globalAlpha = Math.min(1, p.g) * p.alpha;
     fxCtx.drawImage(p.glow, p.x / 2 - GLOW_PAD, p.y / 2 - GLOW_PAD);
     // A traced creature opens its eye while it glows.
-    if (p.guide && p.guide.eye && p.g > 0.4) { fxCtx.globalAlpha = clamp((p.g - 0.4) * 2.5, 0, 1); emberEye((p.x + p.guide.eye[0] * p.w) / 2, (p.y + p.guide.eye[1] * p.h) / 2, 3.2); }
+    const g = p.guide;
+    if (g && g.eye && p.g > 0.4) { fxCtx.globalAlpha = clamp((p.g - 0.4) * 2.5, 0, 1); emberEye((g.x + g.eye[0] * g.w) / 2, (g.y + g.eye[1] * g.h) / 2, 3.2); }
   }
   for (const s of STENCILS) {
     if (!s.glow || clock > s.glowUntil) continue;
@@ -2028,17 +2407,20 @@ function drawFx(handPts) {
     fxCtx.drawImage(s.glow, s.x / 2 - GLOW_PAD, s.y / 2 - GLOW_PAD);
   }
   // Tracing guides: dotted ochre outlines that breathe, brighter where already traced.
+  // Up at the wall, the one you're tracing glows along its engraving instead.
+  for (const g of GUIDES) if (g.glowPatch) g.glowPatch.mesh.visible = false;
   if (mode === 'mouse') {
     for (const g of GUIDES) {
       if (g.done) continue;
       const focused = focus.active && focus.guide === g;
-      const breathe = (focused ? 0.75 : 0.45) + 0.25 * Math.sin(clock * 2.2 + g.x) + g.hover * 0.35;
+      if (focused && focus.t > 0.3) { drawGuideGlow(g, 0.75 + 0.25 * Math.sin(clock * 2.2)); continue; }
+      const breathe = (focused ? 0.75 : 0.32) + 0.2 * Math.sin(clock * 2.2 + g.x) + g.hover * 0.4;
       g.samples.forEach(([x, y], i) => {
         const lit = g.covered[i];
         if (lit && focused) return;
         fxCtx.globalAlpha = lit ? 0.95 : clamp(breathe, 0, 1);
         fxCtx.fillStyle = lit ? 'rgb(255,190,110)' : 'rgb(230,130,60)';
-        fxCtx.beginPath(); fxCtx.arc(x / 2, y / 2, lit ? 2.2 : focused ? 1.2 : 1.7, 0, Math.PI * 2); fxCtx.fill();
+        fxCtx.beginPath(); fxCtx.arc(x / 2, y / 2, lit ? 2.2 : focused ? 1.1 : 1.35, 0, Math.PI * 2); fxCtx.fill();
       });
     }
     if (pointer.inside && !finish.g) {
@@ -2402,9 +2784,9 @@ function endPointer(e) {
       const target = clickTarget(x, y);
       if (target?.project) startStepOut(target);
       else if (target?.guide) { boost([target.id]); playChime(target.guide.id); openPanel(target.guide.section); }
-      artDirty = true;
+      markArt(x - 30, y - 30, 60, 60);
     } else {
-      STROKES.push(currentStroke);
+      renderStroke(strokesCtx, currentStroke);
       checkGuides(true);
     }
   } else if (mode === 'camera' && pointer.moved < 8 && e) {
@@ -2474,7 +2856,11 @@ function frame(now) {
     // The cursor is a fingertip, or a hand holding charcoal; while a painting is
     // being finished, a ghost hand does the work.
     const hs = 30 - 14 * easeInOut(focus.t);
-    if (finish.g && finish.hand) {
+    if (finish.g && finish.g.stencil && finish.hand) {
+      // A stencil: the hand stays pressed flat to the rock while the ochre is blown.
+      const g = finish.g;
+      handPts = [posePoints('palm', (g.x + g.w * 0.5) / 2, (g.y + g.h * 0.47) / 2, g.h / 4.1, 0, 9)];
+    } else if (finish.g && finish.hand) {
       const [x, y] = finish.hand;
       handPts = [posePoints('point', (finish.g.x + x) / 2, (finish.g.y + y) / 2, hs, -0.35 + Math.sin(clock * 9) * 0.06, 8)];
       stick = finish.t > FILL_T;
@@ -2518,12 +2904,13 @@ function frame(now) {
   if (handPts.length || shadowAlpha > 0.01) drawShadows(handPts, stick);
 
   for (const p of PAINTINGS) {
+    if (p.mesh) p.mesh.material.opacity = p.alpha * 0.94;
     let target = 0;
     if (clock >= p.boostFrom && clock <= p.boostTo) target = 0.85;
     else if ((panelKind === 'experience' && (p.group === 'herd' || p.group === 'hunt' || p.id === 'g-wolf')) || (panelKind === 'about' && (p.group === 'self' || p.id === 'g-rabbit'))) target = 0.3;
     if (G.dwell.id === p.id && stepOut.id !== p.id) target = Math.max(target, 0.2 + (G.dwell.t / HOLD_DWELL) * 0.75);
     if (mode === 'mouse' && p.project && stepOut.id !== p.id && !focus.active) target = Math.max(target, 0.18 + 0.12 * Math.sin(clock * 2.2));
-    if (p.group === 'traced') target *= 0.5;   // a big, close painting needs less glow to read as alive
+    if (p.group === 'traced') target *= 0.25;   // a big, close painting needs little glow to read as alive
     p.g += (target - p.g) * (1 - Math.exp(-dt * 6));
   }
   for (const s of SECRETS) if (s.decal) s.decal.material.emissiveIntensity = s.found ? 0.25 + 0.5 * Math.max(0, 1 - (clock - s.foundAt) / 2.5) : 0;
@@ -2541,8 +2928,9 @@ function frame(now) {
     flakeGeo.attributes.position.needsUpdate = true;
     flakes.material.opacity = clamp(1 - flakeAge / 2.2, 0, 1);
   }
-  if (artDirty) redrawArt();
-  else if (artUploadPending && now - artUploadAt > 40) { artTex.needsUpdate = true; artUploadPending = false; artUploadAt = now; }
+  if (artRect) { redrawArt(...artRect); artRect = null; }
+  if (artUploadPending && now - artUploadAt > 40) { artTex.needsUpdate = true; artUploadPending = false; artUploadAt = now; }
+  if (baseDirty && now - baseUploadAt > 500) { baseTex.needsUpdate = true; baseDirty = false; baseUploadAt = now; }
 
   composer.render();
 
@@ -2566,6 +2954,7 @@ function frame(now) {
 }
 redrawArt();
 requestAnimationFrame(frame);
+setTimeout(runPaintQueue, 0);
 
 // Test hooks (used by the automated check; harmless for visitors).
 function artToClient(ax, ay) {
@@ -2585,6 +2974,7 @@ window.__cave = {
   get secrets() { return SECRETS.map((s) => ({ id: s.id, found: s.found, visible: +visibleFraction(s).toFixed(2) })); },
   get audio() { return audio ? { state: audio.ac.state, fire: audio.fire } : null; },
   get hint() { return lastHint; },
+  get pending() { return paintQueue.length; },
   setEye: (x, y, z = EYE_D, snap = false) => { eyeLocked = true; eyeTarget.x = x; eyeTarget.y = y; eyeTarget.z = z; if (snap) Object.assign(eye, eyeTarget); },
   guidePath: (id) => GUIDES.find((g) => g.id === id).samples.map(([x, y]) => artToClient(x, y)),
   guideCenter: (id) => { const g = GUIDES.find((q) => q.id === id); return artToClient(g.x + g.w / 2, g.y + g.h / 2); },
