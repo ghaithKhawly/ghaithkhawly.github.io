@@ -2,6 +2,7 @@ import { provide } from '../late';
 import { S } from '../state';
 import { $ } from '../config';
 import { G, faceBox, lastFaceAt, video } from '../tracking/state';
+import { flushToast } from './panels';
 
 // The first time the camera is on: check the light, find the head, then the hand, and
 // teach the first shape, showing what the tracker sees. Each step moves on by itself;
@@ -28,6 +29,7 @@ export function endSetup() {
   setup.on = false;
   card.hidden = true;
   document.body.classList.remove('setup-on');
+  flushToast();
   try { localStorage.setItem(KEY, '1'); } catch { /* private window: it shows again next time */ }
 }
 $('setup-skip').addEventListener('click', endSetup);

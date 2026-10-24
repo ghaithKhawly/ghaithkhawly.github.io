@@ -149,7 +149,11 @@ export function boost(ids) {
 }
 
 export let toastTimer = 0;
+// While the camera walkthrough or the trial is up, a toast waits until it's gone.
+let waiting: [string, number] | null = null;
+export function flushToast() { if (waiting) { const [t, s] = waiting; waiting = null; toast(t, s); } }
 export function toast(text, seconds = 3.2) {
+  if (document.body.classList.contains('setup-on') || document.body.classList.contains('trial-on')) { waiting = [text, seconds]; return; }
   $('toast').textContent = text;
   $('toast').hidden = false;
   clearTimeout(toastTimer);

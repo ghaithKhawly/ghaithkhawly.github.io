@@ -77,7 +77,7 @@ each hand, in ochre when it reads a shape. Skip ends it at any step.
 
 Open the site with `?trial` and use the camera. After the walkthrough it asks for ten
 shapes, one at a time (the wolf four times, the hare three, the palm three), starting
-each from your hand lowered. A shape counts when it's held long enough to open its
+each from a relaxed hand. A shape counts when it's held long enough to open its
 section; it opens nothing during the trial. After ten it shows the score, per shape and
 how long each took, with a button to copy the results. M3 is done when that's 9 of 10.
 

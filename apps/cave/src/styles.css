@@ -110,10 +110,11 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
 #setup {
   position: fixed; z-index: 14; left: 50%; top: calc(env(safe-area-inset-top) + 18px); transform: translateX(-50%);
   width: min(560px, calc(100vw - 24px)); padding: 18px 26px 20px; display: grid; gap: 10px 18px;
+  background: rgba(10, 6, 4, 0.84); border-radius: 6px 12px 8px 14px; box-shadow: 0 0 50px 24px rgba(7, 5, 4, 0.5);
   grid-template-columns: 240px 1fr; grid-template-areas: 'title title' 'view steps' 'view say' 'view skip';
 }
 /* The name and tally step aside while it's up; they'd crowd it on a smaller screen. */
-.setup-on #hud, .setup-on #finds { visibility: hidden; }
+.setup-on #hud, .setup-on #finds, .setup-on #shapes { visibility: hidden; }
 #setup h2 { grid-area: title; font: 800 30px/1 var(--text); }
 .setup-steps { grid-area: steps; list-style: none; padding: 0; display: flex; gap: 14px; font: 500 15px/1 var(--label); color: var(--kaolin-faint); }
 .setup-steps li::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 50%; border: 2px solid currentColor; vertical-align: -1px; }
@@ -126,7 +127,7 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
 #setup-skip { grid-area: skip; justify-self: start; align-self: end; font: 500 15px/1 var(--label); color: var(--kaolin-dim); border-bottom: 1.5px solid var(--kaolin-faint); padding: 2px 0; }
 
 /* Trial mode (?trial): one prompt at a time, then the score. */
-#trial { position: fixed; z-index: 14; left: 50%; top: calc(env(safe-area-inset-top) + 18px); transform: translateX(-50%); width: min(520px, calc(100vw - 24px)); padding: 16px 26px 18px; text-align: center; display: grid; gap: 6px; }
+#trial { position: fixed; z-index: 14; left: 50%; top: calc(env(safe-area-inset-top) + 18px); transform: translateX(-50%); width: min(520px, calc(100vw - 24px)); padding: 16px 26px 18px; text-align: center; display: grid; gap: 6px; background: rgba(10, 6, 4, 0.84); border-radius: 6px 12px 8px 14px; box-shadow: 0 0 50px 24px rgba(7, 5, 4, 0.5); }
 #trial-count { font: 500 15px/1 var(--label); color: var(--kaolin-dim); }
 #trial-say { font: 800 34px/1.1 var(--text); }
 #trial-how { font: 400 17px/1.35 var(--label); color: var(--kaolin-dim); min-height: 1.35em; }
