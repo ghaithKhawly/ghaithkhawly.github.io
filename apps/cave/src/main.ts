@@ -52,6 +52,7 @@ export let prev = performance.now();
 export let hudAt = -1e9;   // last status update, in real time (frames can be slow)
 export const forcedPose = params.get('pose');
 const glareAt = new THREE.Vector3();
+let calm = 0;
 export function frame(now) {
   const dt = Math.min(0.05, (now - prev) / 1000);
   prev = now;
@@ -129,7 +130,10 @@ export function frame(now) {
   win.y = THREE.MathUtils.lerp(0, ft.y, fe);
   win.z = THREE.MathUtils.lerp(0, ft.z, fe);
   win.s = THREE.MathUtils.lerp(1, ft.s, fe);
-  applyWindowCamera(eye);
+  // Reading a section, the view holds still: leaning barely moves the words across the rock.
+  calm += ((focus.section ? 1 : 0) - calm) * k;
+  const still = 1 - 0.85 * calm;
+  applyWindowCamera(calm > 0.001 ? { x: eye.x * still, y: eye.y * still, z: EYE_D + (eye.z - EYE_D) * still } : eye);
   stalactites.visible = column.visible = props.visible = fe < 0.5;
   // The cave mouth frames the window, so it travels with you when you look along the wall.
   if (mouth) { mouth.visible = fe < 0.5; mouth.position.x = pan.x; }

@@ -35,7 +35,7 @@ canvas.addEventListener('pointerdown', (e) => {
   const hit = wallHit(e.clientX, e.clientY);
   pointer.down = true; pointer.moved = 0; pointer.lastX = e.clientX; pointer.lastT = performance.now();
   pointer.panning = false; pointer.drawing = false;
-  if (S.mode !== 'mouse' || !hit) return;
+  if (S.mode !== 'mouse' || !hit || focus.section) return;   // reading a section: the wall isn't for painting
   const g = guideAt(hit[0], hit[1], 40);
   // Away from the wall: clicking a shape walks you up to it first.
   if (!focus.active && g && !g.done) { startFocus(g); pointer.down = false; return; }

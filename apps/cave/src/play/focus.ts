@@ -3,21 +3,21 @@ import type { Guide, Painting } from '../types';
 import { S } from '../state';
 import { GUIDES, guideProgress } from '../art/guides';
 import { PAINTINGS, addPaintingDecal, makeGlowSprite } from '../art/layers';
-import { $, ART_H, ART_W, EYE_D, SCREEN_H, WALL_H, WALL_W } from '../config';
+import { $, ART_H, ART_W, CRACK, EYE_D, SCREEN_H, WALL_H, WALL_W } from '../config';
 import { screenW } from '../core/view';
 import { PAINT_RES } from '../paint/painters';
 import { atRes, fingerDots, line, shapePath, sprayAround, wash } from '../paint/pigment';
-import { boost, openPanel } from '../ui/panels';
+import { boost, closePanel, openPanel, panelKind } from '../ui/panels';
 import { bakedJob, makeCanvas } from '../util';
 import { wallPoint } from '../world/geometry';
 import { canvas } from '../world/scene';
 
 // Earlier modules reach these through `late` (see late.ts). The getters are lazy, so
 // registering before the declarations below is safe.
-provide({ get focus() { return focus; }, get startFinish() { return startFinish; } });
+provide({ get focus() { return focus; }, get startFinish() { return startFinish; }, get frameSection() { return frameSection; }, get endFocus() { return endFocus; } });
 
 // Zooming in to paint, and the ghost hand that finishes a painting
-export const focus = { active: false, t: 0, guide: null, target: { x: 0, y: 0, z: 0, s: 1 } };
+export const focus = { active: false, t: 0, guide: null, section: null as string | null, target: { x: 0, y: 0, z: 0, s: 1 } };
 export function startFocus(g) {
   const P = wallPoint((g.x + g.w / 2) / ART_W, (g.y + g.h / 2) / ART_H);
   // Close enough to fill the view with the shape, but never so close it doesn't fit (narrow phones).
@@ -29,11 +29,45 @@ export function startFocus(g) {
   late.setGestureUI(`Trace ${g.title} with ${g.tool === 'charcoal' ? 'charcoal' : 'red ochre'}`, guideProgress(g) / 0.68);
 }
 export function endFocus() {
-  focus.active = false;
+  focus.active = false; focus.section = null;
   $('step-back').hidden = true;
   if (S.mode === 'mouse') late.setGestureUI(late.paintingHint(), 0);
 }
-$('step-back').addEventListener('click', () => { if (!finish.g) endFocus(); });
+$('step-back').addEventListener('click', () => { if (panelKind) closePanel(); else if (!finish.g) endFocus(); });
+
+// Opening a section walks you up to its painting and paints the section on the rock
+// beside it: the painting on one side of the view and the words on the other. On a
+// narrow screen they stack, with the words on whichever side has more wall: above a
+// painting low on the wall, below one high up.
+export function sectionAnchor(kind: string): { x: number; y: number; w: number; h: number } | null {
+  const guide = GUIDES.find((g) => g.section === kind);
+  if (guide) return guide;
+  if (kind === 'education') return PAINTINGS.find((p) => p.secret === 'education');
+  if (kind === 'certs' || kind === 'languages') return { x: CRACK.ax - CRACK.halfW, y: CRACK.ay - CRACK.halfH, w: CRACK.halfW * 2, h: CRACK.halfH * 2 };
+  return null;   // projects: the device that steps out is the picture
+}
+// A section with a shape still to paint gets painted first (the ghost hand), then opens.
+export function openSection(section: string) {
+  const g = GUIDES.find((q) => q.section === section);
+  if (g && !g.done) startFinish(g); else openPanel(section);
+}
+export function frameSection(kind: string): 'left' | 'right' | 'above' | 'below' {
+  const narrow = window.innerWidth <= 720, a = sectionAnchor(kind);
+  if (!a) return narrow ? 'below' : 'right';
+  const cx = a.x + a.w / 2, cy = a.y + a.h / 2;
+  const side = narrow ? (cy > ART_H * 0.5 ? 'above' : 'below') : cx > ART_W * 0.56 ? 'left' : 'right';
+  const P = wallPoint(cx / ART_W, cy / ART_H);
+  const gw = (a.w / ART_W) * WALL_W, gh = (a.h / ART_H) * WALL_H, s = 0.42;
+  // How much of the view the painting may take, and where its centre sits (fractions of the view).
+  const [fw, fh, fx, fy] = side === 'below' ? [0.72, 0.26, 0.5, 0.2] : side === 'above' ? [0.72, 0.24, 0.5, 0.81] : [0.36, 0.46, side === 'right' ? 0.29 : 0.71, 0.6];
+  const dist = Math.max(1.9, (gw * EYE_D) / (fw * screenW), (gh * EYE_D) / (fh * SCREEN_H));
+  // The view at the wall is this wide and tall, so shift the window to put the painting at (fx, fy).
+  const Wv = (screenW * dist) / EYE_D, Hv = (SCREEN_H * dist) / EYE_D;
+  focus.target = { x: P.x + (0.5 - fx) * Wv, y: P.y - (0.5 - fy) * Hv, z: P.z + dist - EYE_D * s, s };
+  focus.active = true; focus.guide = null; focus.section = kind;
+  $('step-back').hidden = false;
+  return side;
+}
 
 // The ghost hand finishes a traced shape the way a cave painter would: an animal is
 // rubbed in with ochre and outlined in charcoal; the hand is pressed to the rock and
@@ -143,7 +177,7 @@ export function updateFinish(dt) {
   if (finish.t > fillT + lineT + HOLD_T) {
     const section = g.section;
     finish.g = null;
-    endFocus();
+    // Stay up at the wall: the section opens beside the painting you just finished.
     setTimeout(() => openPanel(section), 500);
   }
 }

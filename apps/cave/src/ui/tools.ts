@@ -6,7 +6,7 @@ import { $, EYE_D } from '../config';
 import { endFocus, finish, focus, startFinish } from '../play/focus';
 import { SECRETS, discover } from '../play/secrets';
 import { G, eye, eyeTarget, faceF, stats, video } from '../tracking/state';
-import { closePanel, openPanel } from './panels';
+import { closePanel, openPanel, panelKind } from './panels';
 
 // Earlier modules reach these through `late` (see late.ts). The getters are lazy, so
 // registering before the declarations below is safe.
@@ -40,7 +40,7 @@ for (const chip of document.querySelectorAll('.chip')) {
 }
 window.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  if (focus.active && !finish.g) endFocus(); else closePanel();
+  if (panelKind) closePanel(); else if (focus.active && !finish.g) endFocus();
 });
 export let debugOn = false;
 export function toggleDebug(force?: boolean) {

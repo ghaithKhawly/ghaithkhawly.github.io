@@ -126,37 +126,56 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
 .chip { padding: 6px 2px; font: 700 18px/1 var(--text); color: var(--kaolin); border-bottom: 2px solid var(--kaolin-faint); }
 .chip:hover { border-bottom-color: var(--ochre-lit); }
 
-/* ---------- panel: a soot-blackened patch of stone (M2 paints sections onto the rock) ---------- */
-#panel {
-  position: fixed; z-index: 20; top: calc(env(safe-area-inset-top) + 110px); right: max(16px, env(safe-area-inset-right));
-  width: min(440px, calc(100vw - 32px)); max-height: calc(100% - 300px); overflow: auto; isolation: isolate;
-  padding: 26px 28px 30px; animation: appear 0.5s ease;
-  background: var(--soot); border-radius: 4px 10px 6px 12px; box-shadow: 0 0 60px 30px rgba(7, 5, 4, 0.45);
+/* ---------- a section, painted on the rock beside its painting ---------- */
+/* The words multiply into the rock like pigment. Under them a limewash evens the stone
+   out so they read, the way painters primed a wall. */
+#panel-wash {
+  position: fixed; z-index: 19; pointer-events: none; border-radius: 70px 90px 80px 60px;
+  background: rgba(246, 226, 196, 0.42); mix-blend-mode: screen; filter: url(#rough-edge) blur(22px); animation: appear 0.9s ease;
 }
-/* Things found in the crack open on the left, so the crack stays in view. */
-#panel.left { right: auto; left: max(16px, env(safe-area-inset-left)); top: calc(env(safe-area-inset-top) + 150px); }
+#panel {
+  position: fixed; z-index: 20; mix-blend-mode: multiply; color: var(--charcoal);
+  top: calc(env(safe-area-inset-top) + 10vh); max-height: 66vh; width: min(580px, 43vw); overflow: auto;
+  padding: 6px 10px 12px; animation: appear 0.9s ease; scrollbar-width: thin; scrollbar-color: rgba(42, 28, 20, 0.4) transparent;
+}
+#panel.side-right { left: 54vw; }
+#panel.side-left { left: 5vw; }
+#panel.side-below { left: 18px; right: 18px; width: auto; top: 40vh; max-height: calc(58vh - env(safe-area-inset-bottom)); }
+#panel.side-above { left: 18px; right: 18px; width: auto; top: calc(env(safe-area-inset-top) + 104px); height: 52vh; max-height: none; }
 @keyframes appear { from { opacity: 0; } to { opacity: 1; } }
 @keyframes appear-c { from { opacity: 0; } to { opacity: 1; } }
-#panel header { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; margin-bottom: 16px; }
-#panel .kicker { font: italic 500 16px/1.3 var(--text); color: var(--ochre-lit); }
-#panel h2 { font: 800 38px/1 var(--text); margin-top: 6px; letter-spacing: -0.01em; text-wrap: balance; }
-#panel-close { width: 40px; height: 40px; font: 400 30px/1 var(--text); color: var(--kaolin-dim); }
-#panel-close:hover { color: var(--kaolin); }
-#panel-body { display: grid; gap: 18px; }
-#panel p { color: var(--kaolin-dim); }
-#panel h3 { font: 700 20px/1.25 var(--text); }
-.muted { color: var(--kaolin-dim); }
-.role { display: grid; gap: 4px; }
-.role .when { font: 500 14px/1.3 var(--label); color: var(--yellow); }
-.role ul { padding-left: 20px; color: var(--kaolin-dim); font-size: 17px; }
-.tags { display: flex; flex-wrap: wrap; gap: 4px 16px; }
-.tag { font: 500 15px/1.3 var(--label); color: var(--kaolin); }
-.group h4 { margin: 0 0 6px; font: italic 500 16px/1.2 var(--text); color: var(--ochre-lit); }
-.contact-line { display: grid; gap: 2px; }
-.contact-line .value { font: 700 20px/1.3 var(--text); color: var(--kaolin); user-select: all; word-break: break-all; }
-.linkrow { display: flex; gap: 18px; flex-wrap: wrap; }
-.linkrow a { color: var(--kaolin); text-decoration: none; border-bottom: 2px solid var(--ochre-lit); font-weight: 700; }
-.list { padding-left: 20px; display: grid; gap: 6px; color: var(--kaolin-dim); }
+#panel header { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; margin-bottom: 14px; }
+#panel .kicker { font: italic 500 17px/1.3 var(--text); color: #5c2812; }
+#panel h2 { font: 800 clamp(40px, 4.6vw, 60px)/0.95 var(--text); color: var(--ochre); margin-top: 4px; letter-spacing: -0.015em; text-wrap: balance; }
+#panel-close { width: 40px; height: 40px; font: 400 32px/1 var(--text); color: var(--charcoal); opacity: 0.75; }
+#panel-close:hover { opacity: 1; }
+#panel :focus-visible { outline-color: var(--charcoal); }
+#panel-body { display: grid; gap: 12px; font-size: 17px; line-height: 1.38; }
+#panel p { color: var(--charcoal); }
+#panel .lede { font: italic 500 19px/1.35 var(--text); }
+#panel h3 { font: 800 24px/1.12 var(--text); }
+#panel .used { font: 500 15px/1.35 var(--label); color: #4a1a08; }
+#panel .note { font: italic 400 15px/1.35 var(--text); }
+/* A charcoal line down the roles with an ochre finger-dot at each: the order they came in. */
+.roles { list-style: none; margin: 0; padding: 0 0 0 32px; position: relative; display: grid; gap: 14px; }
+.roles::before { content: ''; position: absolute; left: 10px; top: 28px; bottom: 44px; width: 3px; border-radius: 2px; background: var(--charcoal); filter: url(#paint-light); }
+.roles li { position: relative; }
+.roles li::before { content: ''; position: absolute; left: -30px; top: 22px; width: 17px; height: 17px; border-radius: 50%; background: var(--ochre); filter: url(#paint-light); }
+.roles li:first-child::before { left: -31.5px; top: 20px; width: 20px; height: 20px; }
+.roles .when { display: block; font: 700 14.5px/1.2 var(--label); color: #4a1a08; }
+.roles h3 { margin: 2px 0 3px; }
+.group h4 { margin: 0 0 2px; font: 800 19px/1.2 var(--text); color: var(--ochre); }
+.contact-line { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.contact-line .value { font: 800 24px/1.2 var(--text); user-select: all; word-break: break-all; }
+#panel .btn { color: #1a0d07; }
+#panel .btn::before { background: var(--ochre-lit); border-color: var(--ochre-lit); }
+.linkrow { display: flex; gap: 22px; flex-wrap: wrap; font: 800 20px/1.2 var(--text); }
+.linkrow a { color: var(--charcoal); text-decoration: none; border-bottom: 3px solid var(--ochre); }
+.list { padding-left: 22px; display: grid; gap: 6px; }
+/* While a section is open, what sat over the wall steps aside. */
+.panel-open #chips, .panel-open #gesture, .panel-open #shapes, .panel-open #hud, .panel-open #finds { visibility: hidden; }
+/* More below: the words fade into the rock until you scroll to them. */
+#panel.more { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 70px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 70px), transparent); }
 
 /* ---------- tracking view (diagnostics) ---------- */
 #debug {
@@ -181,10 +200,8 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
   #gesture-label { font-size: 18px; }
   #chips { bottom: calc(env(safe-area-inset-bottom) + 150px); }
   #step-back { top: calc(env(safe-area-inset-top) + 56px); font-size: 16px; }
-  #panel { top: auto; bottom: calc(env(safe-area-inset-bottom) + 12px); max-height: 60%; padding: 22px 22px 26px; background: rgba(10, 6, 4, 0.95); }
-  /* On a phone the open section takes the bottom of the screen; what sat there steps aside. */
-  .panel-open #chips, .panel-open #gesture, .panel-open #shapes { visibility: hidden; }
-  #panel.left { top: auto; }
+  #panel-body { font-size: 17px; }
+  .panel-open #tools { visibility: hidden; }
   #shapes { width: auto; right: max(12px, env(safe-area-inset-right)); bottom: calc(env(safe-area-inset-bottom) + 160px); grid-template-columns: repeat(3, 1fr); }
   #shapes h3 { grid-column: 1 / -1; }
   .shape { flex-direction: column; text-align: center; }

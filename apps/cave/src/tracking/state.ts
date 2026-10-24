@@ -7,6 +7,7 @@ import { coach } from '../hands/gestures';
 import { POSES, makeStencil } from '../hands/silhouette';
 import { startStepOut, stepOut } from '../play/stepout';
 import { openPanel, toast } from '../ui/panels';
+import { openSection } from '../play/focus';
 import { OneEuro, clamp, deadzone } from '../util';
 
 // Earlier modules reach these through `late` (see late.ts). The getters are lazy, so
@@ -125,8 +126,8 @@ export function updateGestures(dt, now) {
   }
 
   if (G.latched !== G.label) {
-    if (G.label === 'wolf' && G.hold >= HOLD_GESTURE) { G.latched = 'wolf'; late.playChime('wolf'); openPanel('experience'); }
-    else if (G.label === 'rabbit' && G.hold >= HOLD_GESTURE) { G.latched = 'rabbit'; late.playChime('rabbit'); openPanel('about'); }
+    if (G.label === 'wolf' && G.hold >= HOLD_GESTURE) { G.latched = 'wolf'; late.playChime('wolf'); openSection('experience'); }
+    else if (G.label === 'rabbit' && G.hold >= HOLD_GESTURE) { G.latched = 'rabbit'; late.playChime('rabbit'); openSection('about'); }
     else if (G.label === 'palm' && G.hold >= HOLD_PALM && still && main) { G.latched = 'palm'; leaveHandprint(toShadowPoints(main.N)); late.playChime('palm'); openPanel('contact'); }
   }
   if (G.latched === G.label && G.label !== 'hand' && G.label !== 'none') progress = 1;

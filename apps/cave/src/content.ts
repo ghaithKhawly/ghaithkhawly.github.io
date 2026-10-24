@@ -4,7 +4,7 @@ import cv from '../../classic/src/data/cv-fulltime.json';
 
 const dash = (s: string) => s.replace(/ - /g, ' – ');
 
-export interface Experience { company: string; position: string; period: string; description: string[] }
+export interface Experience { company: string; position: string; period: string; description: string[]; technologies: string[] }
 export interface Project { title: string; description: string; technologies: string[] }
 
 export const CV = {
@@ -15,7 +15,7 @@ export const CV = {
   github: cv.hero.github,
   linkedin: cv.hero.linkedin,
   about: cv.about,
-  experiences: cv.experiences.map((e): Experience => ({ company: e.company, position: e.position, period: dash(e.period), description: e.description })),
+  experiences: cv.experiences.map((e): Experience => ({ company: e.company, position: e.position, period: dash(e.period), description: e.description, technologies: e.technologies ?? [] })),
   skills: cv.skillCategories.map((c) => ({ title: c.title, skills: c.skills })),
   education: { degree: cv.education.degree, institution: cv.education.institution, period: dash(cv.education.period), note: cv.education.description },
   certifications: { year: cv.certifications[0]?.year ?? '', items: cv.certifications.map((c) => c.title) },
