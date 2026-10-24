@@ -52,14 +52,14 @@ screenshots.
 | **justacalc** | Finished; private repo | Expo Router, mathjs + decimal.js, nerdamer | Counting marks → a phone |
 | **Aquarium Object Detection** | Finished university project, with Ammar Alzoubi | PyTorch: a from-scratch grid detector vs. Faster R-CNN | Fish and a shark → boxes snap round them |
 | **Gym Management System** | Finished coursework; private repo | Flutter, SQLite, offline-first | Figures lifting stones → a tablet |
-| **Taza** | Live landing page and vendor bot (to confirm) | React + Vite, Telegram bot on Render | Bread and fruit → a phone |
+| **Taza** | Startup concept; won a Startup Weekend in Syria. Landing page and vendor bot built for it | React + Vite, Telegram bot on Render | Bread and fruit → a phone |
 | **Medical App** | Team project, from the CV; no repo | FastAPI, PostgreSQL | Stays under Experience |
 
 Left out: **The-Gym-app** (unfinished, superseded by Gym Management System),
 **backend** (NestJS scaffold), **supabase-connectivity-suite** (an internal
 tool), **taza-year-in-review** (small; a candidate for a moving painting later).
 
-Private repos are described without a link unless they are made public.
+justacalc and Gym Management System stay private: they are described, shown with screenshots, and not linked.
 
 ## Architecture
 
