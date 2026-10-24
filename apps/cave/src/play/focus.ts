@@ -60,7 +60,7 @@ export function frameSection(kind: string, arg?: string): 'left' | 'right' | 'ab
   const P = wallPoint(cx / ART_W, cy / ART_H);
   const gw = (a.w / ART_W) * WALL_W, gh = (a.h / ART_H) * WALL_H, s = 0.42;
   // How much of the view the painting may take, and where its centre sits (fractions of the view).
-  const [fw, fh, fx, fy] = side === 'below' ? [0.72, 0.26, 0.5, 0.2] : side === 'above' ? [0.72, 0.24, 0.5, 0.81] : [0.36, 0.46, side === 'right' ? 0.29 : 0.71, 0.6];
+  const [fw, fh, fx, fy] = side === 'below' ? [0.72, 0.22, 0.5, 0.27] : side === 'above' ? [0.72, 0.24, 0.5, 0.81] : [0.36, 0.46, side === 'right' ? 0.29 : 0.71, 0.6];
   const dist = Math.max(1.9, (gw * EYE_D) / (fw * screenW), (gh * EYE_D) / (fh * SCREEN_H));
   // The view at the wall is this wide and tall, so shift the window to put the painting at (fx, fy).
   const Wv = (screenW * dist) / EYE_D, Hv = (SCREEN_H * dist) / EYE_D;

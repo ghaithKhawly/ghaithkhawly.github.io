@@ -141,7 +141,7 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
 }
 #panel.side-right { left: 54vw; }
 #panel.side-left { left: 5vw; }
-#panel.side-below { left: 18px; right: 18px; width: auto; top: 40vh; max-height: calc(58vh - env(safe-area-inset-bottom)); }
+#panel.side-below { left: 18px; right: 18px; width: auto; top: 46vh; max-height: calc(58vh - env(safe-area-inset-bottom)); }
 #panel.side-above { left: 18px; right: 18px; width: auto; top: calc(env(safe-area-inset-top) + 104px); height: 52vh; max-height: none; }
 @keyframes appear { from { opacity: 0; } to { opacity: 1; } }
 @keyframes appear-c { from { opacity: 0; } to { opacity: 1; } }
@@ -209,6 +209,7 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
   #chips { bottom: calc(env(safe-area-inset-bottom) + 150px); }
   #step-back { top: calc(env(safe-area-inset-top) + 56px); font-size: 16px; }
   #panel-body { font-size: 17px; }
+  #step-back { top: calc(env(safe-area-inset-top) + 12px); }
   .panel-open #tools { visibility: hidden; }
   #shapes { width: auto; right: max(12px, env(safe-area-inset-right)); bottom: calc(env(safe-area-inset-bottom) + 160px); grid-template-columns: repeat(3, 1fr); }
   #shapes h3 { grid-column: 1 / -1; }
