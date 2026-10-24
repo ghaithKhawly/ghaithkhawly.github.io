@@ -67,27 +67,33 @@ Private repos are described without a link unless they are made public.
 apps/
   cave/           the new site (Vite + TypeScript + three.js)
     src/
-      core/       renderer, window camera, frame loop, device tier
-      world/      wall, rock, cave mouth, column, fire, crack chamber
-      paint/      pigment engine (shared by the bake script and live strokes)
-      tracking/   MediaPipe hands + face, gestures, One Euro filters
+      world/      rock, wall, floor, column, fire, crack chamber, cave mouth
+      paint/      pigment engine and the paintings built from it
+      art/        paint layers, painting decals, shapes to trace, strokes
+      hands/      silhouettes, poses, gesture classifier
+      tracking/   camera, MediaPipe, head and hand state
       play/       painting mode, ghost hand, hidden things, step-out devices
-      ui/         intro, panels, toasts, shortcuts (plain DOM)
-      audio/      fire loop, drips, chimes, scratch
-      content/    typed content built from content/*.json
-    scripts/bake-paintings.ts   renders paintings to public/art/*.webp
+      fx/         live shadows and glows
+      core/       post-processing, window camera
+      ui/         intro, panels, toasts, tools (plain DOM)
+      content.ts  CV content
+    tests/        Playwright checks
   classic/        the current React site, built with PUBLIC_URL=/classic
-content/          one source of truth: CV and projects (JSON)
+scripts/build.mjs builds both into dist/
 docs/
 prototype/        frozen reference
 ```
 
+- **Content:** both sites read `apps/classic/src/data/*.json`, which is
+  generated from the LaTeX CV. Cave-only content (the project list and the
+  painting each one gets) lands in `apps/cave/src/content/` in M2.
 - **Build output:** `dist/` holds the cave at the root and the classic site
-  under `dist/classic/`. One GitHub Actions workflow builds, tests and deploys
-  both.
+  under `dist/classic/`. The `Site` workflow builds both and runs the checks
+  on every push.
 - **Deploy switch:** the live site deploys from the `gh-pages` branch today.
   Until launch (M6) nothing changes there. At launch, Settings → Pages →
-  Source switches to "GitHub Actions" (one click, done by you).
+  Source switches to "GitHub Actions" (one click, done by you), and the
+  workflow's deploy job is turned on.
 - **Tracking:** MediaPipe is only downloaded after the visitor turns the
   camera on.
 

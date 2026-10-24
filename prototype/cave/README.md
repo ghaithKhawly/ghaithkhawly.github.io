@@ -1,5 +1,8 @@
 # The Cave: prototype
 
+> **Frozen.** The cave now lives in [`apps/cave`](../../apps/cave), split into
+> TypeScript modules. This single-file version stays as a reference.
+
 A throwaway prototype to answer one question before any real design work: does
 exploring a portfolio with your hands and head feel good?
 

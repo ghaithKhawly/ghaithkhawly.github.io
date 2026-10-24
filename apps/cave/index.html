@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Cave · Ghaith Khawly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+<canvas id="scene" aria-label="A firelit cave wall covered in paintings"></canvas>
+<video id="cam" playsinline muted hidden></video>
+
+<section id="intro" aria-labelledby="intro-title">
+  <div class="intro-inner">
+    <div class="eyebrow">Prototype · The Cave</div>
+    <h1 id="intro-title">Ghaith Khawly</h1>
+    <p>Full-stack developer. This portfolio is a cave. Bring your hands into the firelight and cast shadows on the wall; the paintings answer. Three things are hidden. Lean to find them.</p>
+    <ul class="gestures">
+      <li><canvas class="thumb" data-thumb="wolf" width="88" height="88"></canvas><div><b>Wolf</b><span>Hand sideways, thumb up, three fingers together. Experience.</span></div></li>
+      <li><canvas class="thumb" data-thumb="rabbit" width="88" height="88"></canvas><div><b>Rabbit</b><span>Two fingers up, the rest folded. About.</span></div></li>
+      <li><canvas class="thumb" data-thumb="palm" width="88" height="88"></canvas><div><b>Open palm, held still</b><span>Leaves your handprint. Contact.</span></div></li>
+      <li><canvas class="thumb" data-thumb="point" width="88" height="88"></canvas><div><b>Touch a painting</b><span>Rest your shadow's fingertip on the phone or laptop.</span></div></li>
+    </ul>
+    <div class="actions">
+      <button class="btn primary" id="start-cam" type="button">Light the fire · use camera</button>
+      <button class="btn" id="start-mouse" type="button">No camera · paint with the mouse</button>
+    </div>
+    <div id="intro-status" role="status" aria-live="polite"></div>
+    <div class="note">Camera frames are processed on your device and never uploaded. With the camera on, lean left and right: the screen becomes a window into the cave.</div>
+  </div>
+</section>
+
+<div id="hud" hidden aria-hidden="true">
+  <div class="row"><span class="dot" id="dot-cam"></span><span id="hud-cam">camera off</span></div>
+  <div class="row"><span class="headbox" id="headbox"><i id="head-dot"></i></span><span id="hud-head">head</span></div>
+  <div class="row"><span class="dot" id="dot-hand"></span><span id="hud-hand">hand: none</span></div>
+  <div class="row"><span class="dot" id="dot-found"></span><span id="hud-found">hidden: 0 / 3 found</span></div>
+</div>
+
+<div id="tools" hidden>
+  <button class="tool" id="t-sound" type="button" aria-pressed="true">Sound</button>
+  <button class="tool" id="t-head" type="button" aria-pressed="true" hidden>Head tracking</button>
+  <button class="tool" id="t-shapes" type="button" aria-pressed="true" hidden>Shapes</button>
+  <button class="tool" id="t-shortcuts" type="button" aria-pressed="false" hidden>Shortcuts</button>
+  <button class="tool" id="t-debug" type="button" aria-pressed="false" hidden>Tracking view</button>
+  <button class="tool" id="t-recenter" type="button" hidden>Recenter</button>
+</div>
+<button id="step-back" type="button" hidden>← Step back from the wall</button>
+
+<div id="toast" hidden role="status"></div>
+
+<div id="gesture" hidden aria-live="polite">
+  <svg class="ring" viewBox="0 0 26 26" aria-hidden="true"><circle class="track" cx="13" cy="13" r="10"/><circle class="fill" id="ring-fill" cx="13" cy="13" r="10" stroke-dasharray="62.8" stroke-dashoffset="62.8"/></svg>
+  <span id="gesture-label">Raise a hand into the firelight</span>
+</div>
+
+<div id="shapes" hidden>
+  <h3>Shadow shapes</h3>
+  <div class="shape" data-shape="wolf"><canvas class="thumb" data-thumb="wolf" width="88" height="88"></canvas><div><b>Wolf · Experience</b><span>Hand sideways. Thumb up as the ear, three fingers together as the snout.</span></div></div>
+  <div class="shape" data-shape="rabbit"><canvas class="thumb" data-thumb="rabbit" width="88" height="88"></canvas><div><b>Rabbit · About</b><span>Index and middle finger up as ears. Fold the rest.</span></div></div>
+  <div class="shape" data-shape="palm"><canvas class="thumb" data-thumb="palm" width="88" height="88"></canvas><div><b>Open palm · Contact</b><span>Fingers up and spread. Hold still for a second.</span></div></div>
+</div>
+
+<div id="chips" hidden>
+  <button class="chip" type="button" data-section="experience">Experience</button>
+  <button class="chip" type="button" data-section="about">About</button>
+  <button class="chip" type="button" data-section="contact">Contact</button>
+  <button class="chip" type="button" data-section="education">Education</button>
+  <button class="chip" type="button" data-section="certs">Certifications</button>
+  <button class="chip" type="button" data-section="languages">Languages</button>
+</div>
+
+<aside id="panel" hidden aria-labelledby="panel-title">
+  <header>
+    <div><div class="eyebrow" id="panel-eyebrow"></div><h2 id="panel-title"></h2></div>
+    <button id="panel-close" type="button" aria-label="Close">×</button>
+  </header>
+  <div id="panel-body"></div>
+</aside>
+
+<div id="debug" hidden>
+  <canvas id="debug-cam" width="240" height="180"></canvas>
+  <pre id="debug-text"></pre>
+</div>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

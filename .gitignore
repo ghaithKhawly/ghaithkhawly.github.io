@@ -1,1 +1,5 @@
 node_modules
+dist
+apps/classic/build
+apps/cave/test-results
+apps/cave/playwright-report

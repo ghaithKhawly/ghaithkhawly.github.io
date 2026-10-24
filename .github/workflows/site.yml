@@ -1,0 +1,69 @@
+name: Site
+
+# Builds the cave and the classic site into one dist/, then runs the cave's browser checks.
+# Deploying is manual until launch: the live site still deploys from the gh-pages branch.
+# At launch, switch Settings → Pages → Source to "GitHub Actions", then run this workflow
+# with "deploy" ticked (or drop the condition on the deploy job).
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy to GitHub Pages (only once Pages is set to GitHub Actions)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/*/package-lock.json
+      - name: Install
+        run: npm run setup
+      - name: Build both sites
+        run: npm run build
+      - name: Install Chromium for the checks
+        working-directory: apps/cave
+        run: npx playwright install --with-deps chromium
+      - name: Browser checks
+        working-directory: apps/cave
+        run: npx playwright test
+      - name: Keep traces of failed checks
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: apps/cave/test-results
+          retention-days: 7
+      - name: Package for Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
