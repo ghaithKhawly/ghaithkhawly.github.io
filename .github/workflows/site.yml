@@ -50,7 +50,7 @@ jobs:
           path: apps/cave/test-results
           retention-days: 7
       - name: Package for Pages
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: dist
 
