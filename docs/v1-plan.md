@@ -38,6 +38,35 @@ What v1 has to fix:
 | Current site | Kept, unchanged, at `/classic`. |
 | Projects | Picked from the GitHub account; see below. |
 
+## Art direction: Painted
+
+Picked from three style frames (Painted, Shadow, Field book). Everything you
+read is pigment: charcoal and ochre on the lit rock, pale kaolin clay on the dark
+stone round the cave mouth. No floating panels.
+
+| In the cave | A section open |
+|---|---|
+| ![The cave with the name, finds and gesture hint painted at the edges](m1/painted-1.jpg) | ![Experience painted on the rock beside the wolf](m1/painted-2.jpg) |
+
+| Colour | Value | Used for |
+|---|---|---|
+| Red ochre | `#b23c1c` | Headings, found marks, the hand stencil |
+| Yellow ochre | `#c98f35` | Second paint |
+| Charcoal | `#2a1c14` | Text on lit rock |
+| Kaolin | `#efe3c9` | Text on dark stone |
+| Cave dark | `#070504` | Background |
+
+Type: **Alegreya** for text and headings, **Alegreya Sans** for small labels
+(both free, SIL Open Font License). Painted text goes through a roughen-and-pores
+filter so it picks up the grain of the rock.
+
+- Text on lit rock is charcoal, multiplied into the rock. Text on dark stone is kaolin.
+- Body text is 18px or larger. Where the rock behind it is too dark for 4.5:1
+  contrast, a pale wash goes down first, the way painters primed a wall.
+- No pills, cards, blurred glass or monospace.
+- M1 restyles what exists (intro, status, hints, tools, and the panels as a
+  stopgap). M2 moves each section onto the rock beside its painting.
+
 ## Projects
 
 Each project gets a painting in the same Paleolithic style, a metaphor for what
@@ -116,7 +145,7 @@ images, the same content).
 |---|---|---|---|
 | M0 | Foundation | Restructure into `apps/cave` + `apps/classic`; port the prototype to TypeScript modules; content from JSON; port the Playwright checks; CI that builds both apps and runs the checks | The cave matches the prototype; CI passes |
 | M1 | Art direction | Replace the status display; type and colour system; fire glare; CC0 rock; paintings baked at build time; cave mouth and column sculpted to match | You approve still frames |
-| M2 | Content in the cave | All projects above as paintings that step out with real screenshots; Experience, About, Education and the rest framed as things in the cave, not plain panels | Every section reachable by gesture, by painting and by shortcut |
+| M2 | Content in the cave | All projects above as paintings that step out with real screenshots; Experience, About, Education and the rest painted on the rock beside their paintings, not in panels | Every section reachable by gesture, by painting and by shortcut |
 | M3 | Camera | A short setup walkthrough; gesture confidence and hysteresis; tested with real hands in different light; lean thresholds tuned | 9 out of 10 real tries succeed |
 | M4 | Phones and performance | Device tiers, budgets above, tilt on iOS and Android, self-hosted MediaPipe files | Budgets met on a real mid-range phone |
 | M5 | Fallbacks and reach | 2D version, reduced motion, keyboard, a screen-reader copy of the CV in the page, share and search metadata | Lighthouse accessibility ≥ 90 |
