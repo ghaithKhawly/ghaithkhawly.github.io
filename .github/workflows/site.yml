@@ -39,6 +39,8 @@ jobs:
       - name: Install Chromium for the checks
         working-directory: apps/cave
         run: npx playwright install --with-deps chromium
+      - name: Install ffmpeg (makes the fake webcam video for the camera check)
+        run: sudo apt-get install -y --no-install-recommends ffmpeg
       - name: Browser checks
         working-directory: apps/cave
         run: npx playwright test
