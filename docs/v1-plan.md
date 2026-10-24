@@ -148,7 +148,7 @@ images, the same content).
 | M0 | Foundation | Restructure into `apps/cave` + `apps/classic`; port the prototype to TypeScript modules; content from JSON; port the Playwright checks; CI that builds both apps and runs the checks | The cave matches the prototype; CI passes |
 | M1 | Art direction | Replace the status display; type and colour system; sections painted on the rock beside their paintings; fire glare; CC0 rock; paintings baked at build time; cave mouth and column sculpted to match | You approve still frames |
 | M2 | Content in the cave | All projects above as paintings that step out with real screenshots, their words painted on the rock like the other sections | Every section reachable by gesture, by painting and by shortcut |
-| M3 | Camera | A short setup walkthrough; gesture confidence and hysteresis; tested with real hands in different light; lean thresholds tuned | 9 out of 10 real tries succeed |
+| M3 | Camera | A short setup walkthrough; gesture confidence and hysteresis; tested with real hands in different light; lean thresholds tuned. Measured on 2,542 real hands: [docs/m3-gestures.md](m3-gestures.md) | 9 out of 10 real tries succeed (`?trial` scores it) |
 | M4 | Phones and performance | Device tiers, budgets above, tilt on iOS and Android, self-hosted MediaPipe files | Budgets met on a real mid-range phone |
 | M5 | Fallbacks and reach | 2D version, reduced motion, keyboard, a screen-reader copy of the CV in the page, share and search metadata | Lighthouse accessibility ≥ 90 |
 | M6 | Launch | Switch Pages to Actions; `/classic` live; old deploy script retired | The cave is live |

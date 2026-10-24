@@ -23,8 +23,10 @@ test.use({
 
 test('a rabbit shadow opens About', async ({ page }) => {
   test.skip(!hasFfmpeg, 'needs ffmpeg to make the fake webcam video');
+  // The ghost hand paints the hare before About opens: slow at a software frame a second.
+  test.setTimeout(600_000);
   await open(page);
   await page.click('#start-cam');
   await page.waitForFunction(() => window.__cave.mode === 'camera', null, { timeout: 180_000 });
-  await waitForPanel(page, 'about');
+  await waitForPanel(page, 'about', 400_000);
 });

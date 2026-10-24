@@ -98,6 +98,25 @@
 
 <div id="toast" class="soot" hidden role="status"></div>
 
+<section id="setup" class="soot" hidden aria-labelledby="setup-title">
+  <h2 id="setup-title" class="painted">Getting ready</h2>
+  <ol class="setup-steps">
+    <li data-step="light">Light</li>
+    <li data-step="head">Your head</li>
+    <li data-step="hand">Your hand</li>
+  </ol>
+  <canvas id="setup-view" width="240" height="180" aria-label="What the camera sees, with the points it tracks on your hand"></canvas>
+  <p id="setup-say" role="status" aria-live="polite"></p>
+  <button id="setup-skip" type="button">Skip</button>
+</section>
+
+<section id="trial" class="soot" hidden aria-label="Gesture trial">
+  <p id="trial-count"></p>
+  <p id="trial-say" role="status" aria-live="polite" class="painted"></p>
+  <p id="trial-how"></p>
+  <div class="trial-actions"><button id="trial-copy" type="button" hidden>Copy the results</button><button id="trial-end" type="button">End the trial</button></div>
+</section>
+
 <div id="gesture" class="soot" hidden aria-live="polite">
   <svg class="stencil" aria-hidden="true"><use href="#g-stencil"/></svg>
   <span id="gesture-label" class="painted">Raise a hand into the firelight</span>

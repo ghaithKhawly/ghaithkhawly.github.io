@@ -43,6 +43,8 @@ import { G, eye, eyeTarget, lastFaceAt, lastHint, pointer, stats, syntheticHand,
 import { openPanel, panel, panelKind } from './ui/panels';
 import { drawDebug } from './ui/tools';
 import { updateStatus } from './ui/status';
+import { setup, updateSetup } from './ui/setup';
+import { trial, updateTrial } from './ui/trial';
 import { bakeLoad, bakeTargets, clamp, easeInOut, paintQueue, runPaintQueue, vnoise } from './util';
 import { wallPoint } from './world/geometry';
 import { camera, chamber, column, embers, fillLight, fireLight, flameUniforms, flames, halo, lampLight, logMat, mouth, props, stalactites, washLight } from './world/scene';
@@ -93,7 +95,9 @@ export function frame(now) {
     handPts = S.hands.map(toShadowPoints);
     G.label = S.analyses[0].label; G.hold += dt;
   } else if (S.mode === 'camera') {
-    S.analyses = S.hands.map((N) => analyzeHand(N, S.camAspect));
+    // A shape being held is judged by the looser thresholds, so it doesn't flicker out.
+    const held = G.label === 'wolf' || G.label === 'rabbit' || G.label === 'palm' ? G.label : null;
+    S.analyses = S.hands.map((N) => analyzeHand(N, S.camAspect, held));
     handPts = S.hands.map(toShadowPoints);
     updateGestures(dt, S.clock);
   } else if (S.mode === 'mouse') {
@@ -185,6 +189,8 @@ export function frame(now) {
     hudAt = now;
     const tracked = S.mode === 'camera' && S.headOn && S.faceRef && S.clock - lastFaceAt < 1.2;
     updateStatus(!!tracked);
+    updateSetup();
+    updateTrial();
     drawDebug();
   }
   requestAnimationFrame(frame);
@@ -214,6 +220,8 @@ window.__cave = {
   get secrets() { return SECRETS.map((s) => ({ id: s.id, found: s.found, visible: +visibleFraction(s).toFixed(2) })); },
   get audio() { return audio ? { state: audio.ac.state, fire: audio.fire } : null; },
   get hint() { return lastHint; },
+  get setup() { return { on: setup.on, step: setup.step, light: setup.light, since: +setup.since.toFixed(2), clock: +S.clock.toFixed(2) }; },
+  get trial() { return { on: trial.on, i: trial.i, phase: trial.phase, results: trial.results }; },
   get pending() { return paintQueue.length + rockLoad.pending + bakeLoad.pending; },
   // For `npm run bake` (page opened with ?bake): every baked canvas, as WebP.
   bakeExport: () => Object.fromEntries([...bakeTargets].map(([k, c]) => [k, c.toDataURL('image/webp', 0.85)])),

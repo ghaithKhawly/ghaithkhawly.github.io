@@ -49,6 +49,7 @@ export function sectionAnchor(kind: string, arg?: string): { x: number; y: numbe
 }
 // A section with a shape still to paint gets painted first (the ghost hand), then opens.
 export function openSection(section: string) {
+  if (panelKind) closePanel();   // one thing open at a time
   const g = GUIDES.find((q) => q.section === section);
   if (g && !g.done) startFinish(g); else openPanel(section);
 }

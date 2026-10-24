@@ -106,6 +106,34 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
   animation: appear-c 0.6s ease;
 }
 
+/* The first-time camera walkthrough: steps, what the camera sees, what to do now. */
+#setup {
+  position: fixed; z-index: 14; left: 50%; top: calc(env(safe-area-inset-top) + 18px); transform: translateX(-50%);
+  width: min(560px, calc(100vw - 24px)); padding: 18px 26px 20px; display: grid; gap: 10px 18px;
+  grid-template-columns: 240px 1fr; grid-template-areas: 'title title' 'view steps' 'view say' 'view skip';
+}
+/* The name and tally step aside while it's up; they'd crowd it on a smaller screen. */
+.setup-on #hud, .setup-on #finds { visibility: hidden; }
+#setup h2 { grid-area: title; font: 800 30px/1 var(--text); }
+.setup-steps { grid-area: steps; list-style: none; padding: 0; display: flex; gap: 14px; font: 500 15px/1 var(--label); color: var(--kaolin-faint); }
+.setup-steps li::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 50%; border: 2px solid currentColor; vertical-align: -1px; }
+.setup-steps .now { color: var(--kaolin); }
+.setup-steps .done { color: var(--kaolin-dim); }
+.setup-steps .done::before { background: var(--ochre-lit); border-color: var(--ochre-lit); }
+.setup-steps .warn::before { background: var(--yellow); border-color: var(--yellow); }
+#setup-view { grid-area: view; width: 240px; height: 180px; border-radius: 6px; background: #000; }
+#setup-say { grid-area: say; font: 700 19px/1.35 var(--text); color: var(--kaolin); align-self: start; }
+#setup-skip { grid-area: skip; justify-self: start; align-self: end; font: 500 15px/1 var(--label); color: var(--kaolin-dim); border-bottom: 1.5px solid var(--kaolin-faint); padding: 2px 0; }
+
+/* Trial mode (?trial): one prompt at a time, then the score. */
+#trial { position: fixed; z-index: 14; left: 50%; top: calc(env(safe-area-inset-top) + 18px); transform: translateX(-50%); width: min(520px, calc(100vw - 24px)); padding: 16px 26px 18px; text-align: center; display: grid; gap: 6px; }
+#trial-count { font: 500 15px/1 var(--label); color: var(--kaolin-dim); }
+#trial-say { font: 800 34px/1.1 var(--text); }
+#trial-how { font: 400 17px/1.35 var(--label); color: var(--kaolin-dim); min-height: 1.35em; }
+.trial-actions { display: flex; gap: 22px; justify-content: center; margin-top: 4px; }
+.trial-actions button { font: 500 15px/1 var(--label); color: var(--kaolin-dim); border-bottom: 1.5px solid var(--kaolin-faint); padding: 2px 0; }
+.trial-actions button:hover { color: var(--kaolin); }
+
 /* The shapes to make (camera mode), up the left side above the gesture hint */
 #shapes {
   position: fixed; z-index: 10; left: max(14px, env(safe-area-inset-left)); bottom: calc(env(safe-area-inset-bottom) + 104px);
@@ -209,6 +237,8 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
   #chips { bottom: calc(env(safe-area-inset-bottom) + 150px); }
   #step-back { top: calc(env(safe-area-inset-top) + 56px); font-size: 16px; }
   #panel-body { font-size: 17px; }
+  #setup { grid-template-columns: 1fr; grid-template-areas: 'title' 'steps' 'view' 'say' 'skip'; padding: 14px 16px; }
+  #setup-view { width: 100%; height: auto; aspect-ratio: 4 / 3; }
   #step-back { top: calc(env(safe-area-inset-top) + 12px); }
   .panel-open #tools { visibility: hidden; }
   #shapes { width: auto; right: max(12px, env(safe-area-inset-right)); bottom: calc(env(safe-area-inset-bottom) + 160px); grid-template-columns: repeat(3, 1fr); }

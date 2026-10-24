@@ -6,9 +6,12 @@ test('leaning finds all three hidden things', async ({ page }) => {
   await startPainting(page);
   const lean = (x: number) => page.evaluate((v) => window.__cave.setEye(v, 0, 3.5, true), x);
 
-  await lean(0);
-  await page.waitForTimeout(3_000);
-  expect((await page.evaluate(() => window.__cave.secrets)).every((s: { found: boolean }) => !s.found)).toBe(true);
+  // Standing still, or swaying a little, finds nothing.
+  for (const x of [0, -0.4, 0.4]) {
+    await lean(x);
+    await page.waitForTimeout(3_000);
+    expect((await page.evaluate(() => window.__cave.secrets)).every((s: { found: boolean }) => !s.found)).toBe(true);
+  }
 
   await lean(1.2);
   await waitForPanel(page, 'education');

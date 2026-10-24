@@ -27,8 +27,8 @@ export async function startPainting(page: Page) {
 export const focusT = (page: Page) => cave(page, 'focus.t') as Promise<number>;
 export const panel = (page: Page) => cave(page, 'panel') as Promise<string | null>;
 
-export async function waitForPanel(page: Page, kind: string) {
-  await page.waitForFunction((k) => window.__cave.panel === k, kind, { timeout: 240_000 });
+export async function waitForPanel(page: Page, kind: string, timeout = 240_000) {
+  await page.waitForFunction((k) => window.__cave.panel === k, kind, { timeout });
 }
 
 export async function closePanel(page: Page) {

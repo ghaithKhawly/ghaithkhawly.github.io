@@ -12,12 +12,16 @@ import { MOUTH_Z, camera, certsDecal, inCrack, langDecal, mouthData, mouthDims }
 
 // Hidden things: found by leaning until they come into view
 export const owl = PAINTINGS.find((p) => p.id === 'owl');
+// How much of each must be in view to count as found, set so each takes a deliberate lean
+// of about 10 cm (an eye offset of 0.9) and no amount of natural sway finds one. The
+// right wall of the crack is partly in view from straight on, so it needs nearly all of it;
+// the left wall only shows between leans of 0.9 and 1.5, so a little of it is enough.
 export const SECRETS: Secret[] = [
-  { id: 'education', title: 'Education', where: 'behind the column', seen: 0, found: false,
+  { id: 'education', title: 'Education', where: 'behind the column', seen: 0, found: false, need: 0.6,
     points: () => [[0.5, 0.5], [0.3, 0.3], [0.7, 0.3], [0.3, 0.75], [0.7, 0.75]].map(([u, v]) => wallPoint((owl.x + u * owl.w) / ART_W, (owl.y + v * owl.h) / ART_H)) },
-  { id: 'certs', title: 'Certifications', where: 'inside the crack, on the right wall', seen: 0, found: false, decal: certsDecal,
+  { id: 'certs', title: 'Certifications', where: 'inside the crack, on the right wall', seen: 0, found: false, need: 0.8, decal: certsDecal,
     points: () => [[0, 0], [-0.25, 0.2], [0.25, 0.2], [-0.25, -0.2], [0.25, -0.2]].map(([x, y]) => certsDecal.localToWorld(new THREE.Vector3(x, y, 0))) },
-  { id: 'languages', title: 'Languages', where: 'inside the crack, on the left wall', seen: 0, found: false, decal: langDecal,
+  { id: 'languages', title: 'Languages', where: 'inside the crack, on the left wall', seen: 0, found: false, need: 0.4, decal: langDecal,
     points: () => [[0, 0], [-0.25, 0.2], [0.25, 0.2], [-0.25, -0.2], [0.25, -0.2]].map(([x, y]) => langDecal.localToWorld(new THREE.Vector3(x, y, 0))) },
 ];
 export const tmpV = new THREE.Vector3(), rayDir = new THREE.Vector3();
@@ -78,7 +82,7 @@ export function updateSecrets(dt) {
   const step = secretTimer; secretTimer = 0;
   for (const s of SECRETS) {
     if (s.found) continue;
-    s.seen = visibleFraction(s) >= 0.6 ? s.seen + step : 0;
+    s.seen = visibleFraction(s) >= s.need ? s.seen + step : 0;
     if (s.seen >= 0.45) { discover(s); return; }
   }
 }

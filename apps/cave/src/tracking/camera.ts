@@ -78,6 +78,8 @@ export function enterScene() {
   $('t-shortcuts').hidden = cam;
   canvas.style.cursor = cam ? 'default' : 'none';
   if (params.has('debug') && cam) late.toggleDebug(true);
+  // ?setup shows the walkthrough again; ?trial runs it, then the gesture trial.
+  if (cam) { late.startSetup(params.has('setup') || params.has('trial')); late.startTrial(); }
   if (!cam) setGestureUI(paintingHint(), 0);
   // On a narrow screen the middle of the wall is the fire; start looking at the rabbit instead.
   if (screenW < 1.6) pan.target = pan.x = 0.9;

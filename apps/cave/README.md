@@ -16,10 +16,13 @@ npm install
 npm run dev        # http://localhost:5173
 npm run build      # typecheck, then build into dist/
 npm test           # Playwright browser checks against the built site
+npm run test:gestures  # the gesture classifier on 2,542 real hands, in a second
 npm run bake       # re-paint the baked paintings (see below)
 ```
 
-The camera needs `https` or `localhost`.
+The camera needs `https` or `localhost`. Add `?setup` to see the first-time camera
+walkthrough again, or `?trial` to score ten tries at the three shapes with your own
+hands (see [docs/m3-gestures.md](../../docs/m3-gestures.md)).
 
 ## How the code is laid out
 

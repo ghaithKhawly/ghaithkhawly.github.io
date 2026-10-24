@@ -5,8 +5,8 @@ import { $, ART_H, ART_W, EYE_D, HEAD_GAIN, HOLD_DWELL, HOLD_GESTURE, HOLD_PALM,
 import { coach } from '../hands/gestures';
 import { POSES, makeStencil } from '../hands/silhouette';
 import { startStepOut, stepOut } from '../play/stepout';
-import { openPanel, toast } from '../ui/panels';
-import { openSection } from '../play/focus';
+import { openPanel, panelKind, toast } from '../ui/panels';
+import { finish, openSection } from '../play/focus';
 import { projectById } from '../content/projects';
 import { OneEuro, clamp, deadzone } from '../util';
 
@@ -22,6 +22,8 @@ export const eye = { x: 0, y: 0, z: EYE_D }, eyeTarget = { x: 0, y: 0, z: EYE_D 
 export let lastFaceAt = -10;
 export const faceF = { cx: new OneEuro(0.5, 4), cy: new OneEuro(0.5, 4), fw: new OneEuro(0.4, 2) };
 export const faceHeld = { cx: 0.5, cy: 0.5, fw: 0.2 };
+// The last face found, as a fraction of the camera frame (not mirrored).
+export const faceBox = { x: 0, y: 0, w: 0, h: 0 };
 export const pointer = { inside: false, ax: 1024, ay: 470, down: false, drawing: false, panning: false, lastX: 0, moved: 0, lastT: 0, strokeLen: 0 };
 export const G = { label: 'none', history: [], hold: 0, latched: null, wrist: [], dwell: { id: null, t: 0 } };
 export const stats = { fps: 0, detectMs: 0, delegate: '—' };
@@ -31,6 +33,7 @@ export function onFace(det, t) {
   const vw = video.videoWidth, vh = video.videoHeight;
   const b = det.boundingBox;
   const rcx = (b.originX + b.width / 2) / vw, rcy = (b.originY + b.height / 2) / vh, rfw = b.width / vw;
+  Object.assign(faceBox, { x: b.originX / vw, y: b.originY / vh, w: b.width / vw, h: b.height / vh });
   // Filter, then ignore movements smaller than detection noise.
   faceHeld.cx = deadzone(faceHeld.cx, faceF.cx.filter(rcx, t), 0.004);
   faceHeld.cy = deadzone(faceHeld.cy, faceF.cy.filter(rcy, t), 0.004);
@@ -125,17 +128,23 @@ export function updateGestures(dt, now) {
     else hint = 'Make a wolf, a hare or an open palm';
   }
 
-  if (G.latched !== G.label) {
+  if (G.latched !== G.label && late.trial?.on) {
+    // Trial mode: a held shape is scored, and opens nothing.
+    if ((G.label === 'wolf' || G.label === 'rabbit') && G.hold >= HOLD_GESTURE || (G.label === 'palm' && G.hold >= HOLD_PALM && still)) { G.latched = G.label; late.playChime(G.label); late.trialShape(G.label); }
+  } else if (G.latched !== G.label) {
     if (G.label === 'wolf' && G.hold >= HOLD_GESTURE) { G.latched = 'wolf'; late.playChime('wolf'); openSection('experience'); }
     else if (G.label === 'rabbit' && G.hold >= HOLD_GESTURE) { G.latched = 'rabbit'; late.playChime('rabbit'); openSection('about'); }
     else if (G.label === 'palm' && G.hold >= HOLD_PALM && still && main) { G.latched = 'palm'; leaveHandprint(toShadowPoints(main.N)); late.playChime('palm'); openPanel('contact'); }
   }
   if (G.latched === G.label && G.label !== 'hand' && G.label !== 'none') progress = 1;
 
-  // Dwell: the shadow's index fingertip touching a project painting.
+  // Dwell: the shadow's index fingertip touching a project painting. Only a plain pointing
+  // hand counts, and only with nothing open: a hare's ear resting on a painting while
+  // you hold the shape isn't a touch.
   let dwellTarget = null;
-  if (main && G.label !== 'palm') {
-    const tip = toShadowPoints(main.N)[8];
+  const pointing = G.label === 'hand' && !panelKind && !finish.g && !late.trial?.on ? S.analyses.find((a) => a.label === 'hand') : null;
+  if (pointing) {
+    const tip = toShadowPoints(pointing.N)[8];
     const ax = (tip.x / SH_W) * ART_W, ay = (tip.y / SH_H) * ART_H;
     dwellTarget = PAINTINGS.find((p) => p.project && ax > p.x - p.w * 0.15 && ax < p.x + p.w * 1.15 && ay > p.y - p.h * 0.15 && ay < p.y + p.h * 1.15) || null;
   }

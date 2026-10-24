@@ -50,6 +50,7 @@ export interface Secret {
   where: string;
   seen: number;
   found: boolean;
+  need: number;               // how much of it has to be in view, 0..1, to count as found
   foundAt?: number;
   decal?: THREE.Mesh;
   points: () => THREE.Vector3[];
