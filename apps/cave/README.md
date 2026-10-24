@@ -16,13 +16,15 @@ npm install
 npm run dev        # http://localhost:5173
 npm run build      # typecheck, then build into dist/
 npm test           # Playwright browser checks against the built site
+npm run bake       # re-paint the baked paintings (see below)
 ```
 
 The camera needs `https` or `localhost`.
 
 ## How the code is laid out
 
-This is the prototype split into TypeScript modules, with behaviour unchanged.
+It started as the prototype split into TypeScript modules; v1 work (see the plan)
+changes it from there.
 
 | Folder | What's in it |
 |---|---|
@@ -36,6 +38,8 @@ This is the prototype split into TypeScript modules, with behaviour unchanged.
 | `core/` | Post-processing and the window camera |
 | `ui/` | Panels, toasts, tool buttons |
 | `content.ts` | CV content, read from `../classic/src/data/cv-fulltime.json` |
+| `assets/rock/` | Photo-scanned rock textures (CC0, Poly Haven); credits in its README |
+| `assets/baked/` | The paintings, painted once by `npm run bake` |
 
 Three pieces of plumbing hold the split together:
 
@@ -48,6 +52,19 @@ Three pieces of plumbing hold the split together:
   …), since an imported `let` is read-only.
 
 TypeScript runs with `strict` off for now. M1 onwards tightens it module by module.
+
+## Baked paintings
+
+The pigment engine (`paint/`) is slow: every painting is built pixel by pixel. So it
+runs once, at build time, not in the visitor's browser. `npm run bake` opens the site
+with `?bake` in a headless browser, lets every paint job run, and saves each canvas to
+`src/assets/baked/<key>.webp`. At run time a job whose image exists just draws it
+(`bakedJob` and `bakedLayer` in `util.ts`).
+
+Run it after changing anything the paintings are made from: `paint/`, the painting
+list and seeds in `art/`, the shapes to trace, the chamber paintings. A job with no
+baked image falls back to painting in the browser, so a stale or missing bake still
+works, just slower.
 
 ## Checks
 

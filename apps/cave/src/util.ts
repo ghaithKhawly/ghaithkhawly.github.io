@@ -54,6 +54,43 @@ export function runPaintQueue() {
   if (paintQueue.length) setTimeout(runPaintQueue, 0);
 }
 
+// Painted once at build time, loaded at run time. `npm run bake` runs every job below in
+// a browser and saves its canvas to src/assets/baked/<key>.webp; a job whose image is
+// there just draws it, and the pigment engine only runs for jobs that haven't been baked
+// (and everything, when the page is opened with ?bake).
+const BAKED = import.meta.glob('./assets/baked/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+export const baking = new URLSearchParams(location.search).has('bake');
+export const bakeTargets = new Map<string, HTMLCanvasElement>();
+export const bakeLoad = { pending: 0 };
+const bakedUrl = (key: string) => (baking ? null : BAKED[`./assets/baked/${key}.webp`] || null);
+function drawBaked(url: string, canvas: HTMLCanvasElement, done?: () => void) {
+  bakeLoad.pending++;
+  const img = new Image();
+  img.src = url;
+  img.decode().then(() => {
+    if (canvas.width !== img.width || canvas.height !== img.height) { canvas.width = img.width; canvas.height = img.height; }
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+    done?.();
+  }).catch((e) => console.error(`Baked image ${url} failed to load`, e)).finally(() => { bakeLoad.pending--; });
+}
+// One canvas, painted by one job.
+export function bakedJob(key: string, canvas: HTMLCanvasElement, prio: number, paint: () => void, done?: () => void) {
+  if (baking) bakeTargets.set(key, canvas);
+  const url = bakedUrl(key);
+  if (url) drawBaked(url, canvas, done);
+  else queuePaint(prio, () => { paint(); done?.(); });
+}
+// One canvas built up by several jobs: returns a queuePaint that does nothing once the
+// canvas has been baked.
+export function bakedLayer(key: string, canvas: HTMLCanvasElement, done?: () => void) {
+  if (baking) bakeTargets.set(key, canvas);
+  const url = bakedUrl(key);
+  if (url) drawBaked(url, canvas, done);
+  return (prio: number, fn: () => void) => { if (!url) queuePaint(prio, fn); };
+}
+
 // One Euro filter: heavy smoothing while still, responsive while moving.
 export class OneEuro {
   minCutoff: number; beta: number; dCutoff: number; x: number | null; dx: number; t: number;

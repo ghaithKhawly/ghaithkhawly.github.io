@@ -4,7 +4,7 @@ import { S } from '../state';
 import { $, ART_H, ART_W, COLUMN, CRACK, EYE_D, FIRE, FLOOR_Y, SCREEN_H, SH_H, SH_W } from '../config';
 import { makeStencil, posePoints } from '../hands/silhouette';
 import { PAINT_RES, paintedCanvas } from '../paint/painters';
-import { clamp, fbm, makeCanvas, mulberry, queuePaint, supportsFilter, vnoise } from '../util';
+import { bakedJob, clamp, fbm, makeCanvas, mulberry, supportsFilter, vnoise } from '../util';
 import { makeColumn, makeFloor, makeRock, makeStalactite, makeWall, wallPoint } from './geometry';
 import { ROCK, ROCK_N, rockMaterial, rockTexture, wallHeight } from './rock';
 
@@ -211,13 +211,14 @@ export const CH = { w: 0.9, h: 1.3, d: 1.9 };
   // A handprint on the back wall: what you see when you look straight in.
   const baitDecal = wallDecal(makeCanvas(256, 256), 0.42, new THREE.Vector3(0.05, 0.05, -CH.d + 0.005), 0);
   chamber.add(baitDecal);
-  queuePaint(3, () => {
-    const bait = makeStencil(posePoints('palm', 128, 120, 34), 34, 'red', 333, 1);
-    const c = baitDecal.material.map.image;
-    c.width = bait.canvas.width; c.height = bait.canvas.height;
-    c.getContext('2d').drawImage(bait.canvas, 0, 0);
+  const bait = baitDecal.material.map.image;
+  bakedJob('decal-bait', bait, 3, () => {
+    const st = makeStencil(posePoints('palm', 128, 120, 34), 34, 'red', 333, 1);
+    bait.width = st.canvas.width; bait.height = st.canvas.height;
+    bait.getContext('2d').drawImage(st.canvas, 0, 0);
+  }, () => {
     baitDecal.geometry.dispose();
-    baitDecal.geometry = new THREE.PlaneGeometry(0.42, (0.42 * c.height) / c.width);
+    baitDecal.geometry = new THREE.PlaneGeometry(0.42, (0.42 * bait.height) / bait.width);
     baitDecal.material.map.needsUpdate = true;
   });
   scene.add(chamber);
@@ -237,7 +238,8 @@ export function wallDecal(srcCanvas, width, pos, rotY) {
 export const certsDecal = wallDecal(makeCanvas(280 * PAINT_RES, 230 * PAINT_RES), 0.86, new THREE.Vector3(CH.w / 2 - 0.004, 0.05, -CH.d * 0.4), -Math.PI / 2);
 export const langDecal = wallDecal(makeCanvas(280 * PAINT_RES, 230 * PAINT_RES), 0.86, new THREE.Vector3(-CH.w / 2 + 0.004, 0.05, -CH.d * 0.4), Math.PI / 2);
 for (const [decal, kind, seed] of [[certsDecal, 'cloud', 401], [langDecal, 'talk', 402]] as [THREE.Mesh, string, number][]) {
-  queuePaint(3, () => { const map = (decal.material as THREE.MeshStandardMaterial).map; paintedCanvas(kind, 280, 230, seed, {}, PAINT_RES, map.image); map.needsUpdate = true; });
+  const map = (decal.material as THREE.MeshStandardMaterial).map;
+  bakedJob(`decal-${kind}`, map.image, 3, () => paintedCanvas(kind, 280, 230, seed, {}, PAINT_RES, map.image), () => { map.needsUpdate = true; });
 }
 chamber.add(certsDecal, langDecal);
 

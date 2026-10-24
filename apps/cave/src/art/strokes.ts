@@ -1,10 +1,10 @@
 import { S } from '../state';
 import { GUIDES } from './guides';
-import { artCtx, baseCanvas } from './layers';
+import { artCtx, baseCanvas, baseJob } from './layers';
 import { ART_H, ART_W } from '../config';
 import { paintedCanvas } from '../paint/painters';
 import { engrave, fingerDots, line } from '../paint/pigment';
-import { clamp, fbm, hash2, makeCanvas, mulberry, queuePaint, smooth, supportsFilter, vnoise } from '../util';
+import { bakedJob, clamp, fbm, hash2, makeCanvas, mulberry, smooth, supportsFilter, vnoise } from '../util';
 import { crackPath, rockHeight } from '../world/scene';
 
 // Pigment: dabs that catch on the rock, thicken when slow, and run dry
@@ -78,9 +78,9 @@ export const VEIL_S = 4, veilCanvas = makeCanvas(ART_W / VEIL_S, ART_H / VEIL_S)
   S.baseDirty = true;
   // Older figures, faded and half painted over by later ones.
   for (const [kind, x, y, w, h, a, seed] of [['bison', 610, 395, 300, 175, 0.2, 61], ['horse', 960, 300, 170, 100, 0.16, 62], ['deer', 330, 250, 180, 140, 0.22, 63]] as [string, number, number, number, number, number, number][]) {
-    queuePaint(2, () => { ctx.globalAlpha = a; ctx.drawImage(paintedCanvas(kind, w, h, seed, { fade: 0.7, flakes: 4, pits: 0.15 }, 1), x, y); ctx.globalAlpha = 1; S.baseDirty = true; });
+    baseJob(2, () => { ctx.globalAlpha = a; ctx.drawImage(paintedCanvas(kind, w, h, seed, { fade: 0.7, flakes: 4, pits: 0.15 }, 1), x, y); ctx.globalAlpha = 1; S.baseDirty = true; });
   }
-  queuePaint(2, () => {
+  baseJob(2, () => {
   // Finger flutings: fingers drawn down through the soft film on the rock.
   const flute = (x, y, len, ang, n, seed) => {
     for (let f = 0; f < n; f++) {
@@ -104,7 +104,7 @@ export const VEIL_S = 4, veilCanvas = makeCanvas(ART_W / VEIL_S, ART_H / VEIL_S)
   S.baseDirty = true;
   });
 }
-queuePaint(2, () => {
+bakedJob('veil', veilCanvas, 2, () => {
   const ctx = veilCanvas.getContext('2d'), w = veilCanvas.width, h = veilCanvas.height, img = ctx.createImageData(w, h);
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
     const u = i / w, v = j / h;
@@ -118,8 +118,7 @@ queuePaint(2, () => {
     img.data[k] = 236; img.data[k + 1] = 226; img.data[k + 2] = 210; img.data[k + 3] = clamp(film * 0.3 + drip * 0.22, 0, 0.45) * keep * 255;
   }
   ctx.putImageData(img, 0, 0);
-  markArt();
-});
+}, () => markArt());
 
 // Ask for part of the paint layer (veil + strokes) to be recomposited on the next frame.
 export function markArt(x = 0, y = 0, w = ART_W, h = ART_H) {

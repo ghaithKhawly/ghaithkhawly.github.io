@@ -4,7 +4,7 @@ import { S } from '../state';
 import { ART_H, ART_W, SH_H, SH_W } from '../config';
 import { makeStencil, posePoints } from '../hands/silhouette';
 import { PAINT_RES, paintedCanvas } from '../paint/painters';
-import { makeCanvas, mulberry, queuePaint, supportsFilter } from '../util';
+import { bakedJob, bakedLayer, makeCanvas, mulberry, supportsFilter } from '../util';
 import { offsetGeometry, wallPoint } from '../world/geometry';
 import { crackTex, rock, scene, wallGeo } from '../world/scene';
 
@@ -41,6 +41,8 @@ artMesh.renderOrder = 3;
 scene.add(artMesh);
 export const baseCanvas = makeCanvas(ART_W, ART_H);
 export const baseTex = new THREE.CanvasTexture(baseCanvas);
+// Everything on the base layer at load (handprints, older figures, flutings) is baked as one image.
+export const baseJob = bakedLayer('base', baseCanvas, () => { S.baseDirty = true; S.baseUploadAt = 0; });
 baseTex.colorSpace = THREE.SRGBColorSpace; baseTex.anisotropy = 4;
 // the base layer uploads at most twice a second while it fills in
 export const baseMesh = new THREE.Mesh(offsetGeometry(wallGeo, 0.004), soakIntoRock(new THREE.MeshStandardMaterial({ map: baseTex, alphaMap: crackTex, normalMap: rock.normal, transparent: true, roughness: 0.95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
@@ -131,8 +133,7 @@ for (const p of PAINTINGS) {
   p.canvas = makeCanvas(p.w * PAINT_RES, p.h * PAINT_RES);
   addPaintingState(p);
   addPaintingDecal(p);
-  queuePaint(1, () => {
-    paintedCanvas(p.kind, p.w, p.h, p.seed, {}, PAINT_RES, p.canvas);
+  bakedJob(`painting-${p.id}`, p.canvas, 1, () => paintedCanvas(p.kind, p.w, p.h, p.seed, {}, PAINT_RES, p.canvas), () => {
     p.glow = makeGlowSprite(p.canvas, p.w / 2, p.h / 2);
     p.mesh.material.map.needsUpdate = true;
   });
@@ -145,7 +146,7 @@ export const STENCILS = [];
   const spots = [[1600, 640], [1640, 545], [1610, 760], [1665, 690], [1545, 835], [430, 720], [500, 790], [360, 640]];
   spots.forEach(([x, y], i) => {
     const s = 26 + r() * 10, rot = (r() - 0.5) * 0.9, col = r() < 0.6 ? 'red' : 'yellow', alpha = 0.75 + r() * 0.25;
-    queuePaint(2, () => {
+    baseJob(2, () => {
       const st = makeStencil(posePoints('palm', x, y, s, rot), s, col, 100 + i, alpha);
       STENCILS.push({ ...st, alpha: 1, glowUntil: 0, born: 0 });
       baseCanvas.getContext('2d').drawImage(st.canvas, st.x, st.y);

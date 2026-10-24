@@ -43,7 +43,7 @@ import { G, eye, eyeTarget, lastFaceAt, lastHint, pointer, stats, syntheticHand,
 import { openPanel, panel, panelKind } from './ui/panels';
 import { drawDebug } from './ui/tools';
 import { updateStatus } from './ui/status';
-import { clamp, easeInOut, paintQueue, runPaintQueue, vnoise } from './util';
+import { bakeLoad, bakeTargets, clamp, easeInOut, paintQueue, runPaintQueue, vnoise } from './util';
 import { wallPoint } from './world/geometry';
 import { camera, chamber, column, embers, fillLight, fireLight, flameUniforms, flames, halo, lampLight, logMat, mouth, props, stalactites, washLight } from './world/scene';
 
@@ -204,7 +204,9 @@ window.__cave = {
   get secrets() { return SECRETS.map((s) => ({ id: s.id, found: s.found, visible: +visibleFraction(s).toFixed(2) })); },
   get audio() { return audio ? { state: audio.ac.state, fire: audio.fire } : null; },
   get hint() { return lastHint; },
-  get pending() { return paintQueue.length + rockLoad.pending; },
+  get pending() { return paintQueue.length + rockLoad.pending + bakeLoad.pending; },
+  // For `npm run bake` (page opened with ?bake): every baked canvas, as WebP.
+  bakeExport: () => Object.fromEntries([...bakeTargets].map(([k, c]) => [k, c.toDataURL('image/webp', 0.85)])),
   setEye: (x, y, z = EYE_D, snap = false) => { S.eyeLocked = true; eyeTarget.x = x; eyeTarget.y = y; eyeTarget.z = z; if (snap) Object.assign(eye, eyeTarget); },
   guidePath: (id) => GUIDES.find((g) => g.id === id).samples.map(([x, y]) => artToClient(x, y)),
   guideCenter: (id) => { const g = GUIDES.find((q) => q.id === id); return artToClient(g.x + g.w / 2, g.y + g.h / 2); },

@@ -28,7 +28,7 @@ export async function startCamera() {
     await video.play();
     S.camAspect = (video.videoWidth || 4) / (video.videoHeight || 3);
     status.textContent = 'Loading hand tracking (about 8 MB, once)…';
-    const mp = await import(`${MP_BASE}/vision_bundle.mjs`);
+    const mp = await import(/* @vite-ignore */ `${MP_BASE}/vision_bundle.mjs`);
     const fileset = await mp.FilesetResolver.forVisionTasks(`${MP_BASE}/wasm`);
     const make = async (Cls, opts) => {
       try { const t = await Cls.createFromOptions(fileset, { ...opts, baseOptions: { ...opts.baseOptions, delegate: 'GPU' } }); stats.delegate = 'GPU'; return t; }

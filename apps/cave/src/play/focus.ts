@@ -8,7 +8,7 @@ import { screenW } from '../core/view';
 import { PAINT_RES } from '../paint/painters';
 import { atRes, fingerDots, line, shapePath, sprayAround, wash } from '../paint/pigment';
 import { boost, openPanel } from '../ui/panels';
-import { makeCanvas, queuePaint } from '../util';
+import { bakedJob, makeCanvas } from '../util';
 import { wallPoint } from '../world/geometry';
 import { canvas } from '../world/scene';
 
@@ -50,26 +50,28 @@ export const finish: {
   pad?: number; fill?: HTMLCanvasElement; line?: HTMLCanvasElement; fillMask?: HTMLCanvasElement; lineMask?: HTMLCanvasElement; tmp?: HTMLCanvasElement;
 } = { g: null, p: null, t: 0, plan: [], drawn: 0, outlined: 0, done: false, hand: null };
 export function renderGuide(g) {
-  const pad = g.stencil ? 44 : 14, W = g.w + pad * 2, H = g.h + pad * 2, K = PAINT_RES;
-  const path = shapePath(g.pts, g.w, g.h, pad, pad), sd = 4000 + g.x;
-  const line_ = makeCanvas(W * K, H * K);
-  const fill = atRes(K, () => {
-    if (g.stencil) return sprayAround(W, H, (x) => x.fill(path), 'red', sd, { reach: 22, alpha: 1.3 });
-    const c = makeCanvas(W * K, H * K), lc = line_.getContext('2d');
+  const { pad, W, H, path, fill, line: line_ } = g.final, K = PAINT_RES, sd = 4000 + g.x;
+  atRes(K, () => {
+    if (g.stencil) { const s = sprayAround(W, H, (x) => x.fill(path), 'red', sd, { reach: 22, alpha: 1.3 }); fill.width = s.width; fill.height = s.height; fill.getContext('2d').drawImage(s, 0, 0); return; }
+    const c = fill, lc = line_.getContext('2d');
     wash(c.getContext('2d'), (x) => x.fill(path), { col: g.fillCol, seed: sd, shade: g.shade, spray: 0.12, alpha: 0.9 });
     line(lc, g.samples.map(([x, y]) => [x - g.x + pad, y - g.y + pad]), { px: true, closed: true, w: 4.4, seed: sd + 1 });
     if (g.details) line(lc, g.details.map((st) => st.map(([u, v]) => [pad + u * g.w, pad + v * g.h])), { px: true, w: 3, seed: sd + 2 });
     fingerDots(lc, [[(pad + g.eye[0] * g.w) / W, (pad + g.eye[1] * g.h) / H, 3]], { col: 'black', seed: sd + 3 });
-    return c;
   });
-  return (g.final = { pad, W, H, path, fill, line: line_ });
+  return g.final;
 }
-for (const g of GUIDES) queuePaint(4, () => renderGuide(g));
+for (const g of GUIDES) {
+  const pad = g.stencil ? 44 : 14, W = g.w + pad * 2, H = g.h + pad * 2;
+  g.final = { pad, W, H, path: shapePath(g.pts, g.w, g.h, pad, pad), fill: makeCanvas(W * PAINT_RES, H * PAINT_RES), line: makeCanvas(W * PAINT_RES, H * PAINT_RES) };
+  bakedJob(`guide-${g.id}-line`, g.final.line, 4, () => {});   // painted along with the fill
+  bakedJob(`guide-${g.id}-fill`, g.final.fill, 4, () => renderGuide(g));
+}
 export function startFinish(g) {
   if (finish.g) return;
   g.done = true;
   if (!focus.active || focus.guide !== g) startFocus(g);
-  const { pad, W, H, path, fill, line: lineC } = g.final || renderGuide(g), K = PAINT_RES;
+  const { pad, W, H, path, fill, line: lineC } = g.final, K = PAINT_RES;
   const p = { id: `g-${g.id}`, kind: 'traced', x: g.x - pad, y: g.y - pad, w: W, h: H, group: 'traced', guide: g, canvas: makeCanvas(W * K, H * K), alpha: 1, g: 0, boostFrom: 0, boostTo: 0, glow: null };
   PAINTINGS.push(p);
   addPaintingDecal(p);
