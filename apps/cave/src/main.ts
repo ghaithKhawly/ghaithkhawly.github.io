@@ -51,6 +51,7 @@ import { camera, chamber, column, embers, fillLight, fireLight, flameUniforms, f
 export let prev = performance.now();
 export let hudTimer = 0;
 export const forcedPose = params.get('pose');
+const glareAt = new THREE.Vector3();
 export function frame(now) {
   const dt = Math.min(0.05, (now - prev) / 1000);
   prev = now;
@@ -76,6 +77,11 @@ export function frame(now) {
   flameUniforms.uTime.value = S.clock;
   flameUniforms.uLevel.value = S.fireLevel;
   vignette.uniforms.uTime.value = S.clock;
+  // Glare sits on the flame, wherever it is on screen; up at the wall the fire's behind you.
+  const flameAt = glareAt.set(FIRE.x, FIRE.y + 0.18, FIRE.z).project(camera);
+  vignette.uniforms.uFire.value.set((flameAt.x + 1) / 2, (flameAt.y + 1) / 2);
+  vignette.uniforms.uAspect.value = window.innerWidth / window.innerHeight;
+  vignette.uniforms.uGlare.value = flames.visible && flameAt.z < 1 ? S.fireLevel * fl * behind : 0;
 
   // Input → hand points in shadow-canvas pixels
   detect(now / 1000);

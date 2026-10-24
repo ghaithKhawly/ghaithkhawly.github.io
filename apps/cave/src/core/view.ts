@@ -17,17 +17,24 @@ export const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 export const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.7, 0.82);
 composer.addPass(bloom);
+// Vignette, film grain, and glare: firelight scattered in the eye, a warm haze and faint
+// rays round the flame, the way a fire looks when everything else is dark.
 export const vignette = new ShaderPass({
-  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uStrength: { value: 0.88 } },
+  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uStrength: { value: 0.88 }, uFire: { value: new THREE.Vector2(0.5, 0.2) }, uGlare: { value: 0 }, uAspect: { value: 1.6 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader: `
-    uniform sampler2D tDiffuse; uniform float uTime; uniform float uStrength; varying vec2 vUv;
+    uniform sampler2D tDiffuse; uniform float uTime; uniform float uStrength; uniform vec2 uFire; uniform float uGlare; uniform float uAspect; varying vec2 vUv;
     float rnd(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
     void main(){
       vec4 c = texture2D(tDiffuse, vUv);
       vec2 d = vUv - 0.5;
       float v = smoothstep(0.85, 0.22, length(d * vec2(1.05, 1.3)));
       c.rgb *= mix(1.0 - uStrength, 1.0, v);
+      vec2 f = (vUv - uFire) * vec2(uAspect, 1.0);
+      float r = length(f), a = atan(f.y, f.x);
+      float haze = exp(-r * 3.4) * 0.07 + exp(-r * 12.0) * 0.12;
+      float rays = (pow(abs(sin(a * 7.0 + uTime * 0.12)), 22.0) * 0.6 + pow(abs(sin(a * 11.0 - uTime * 0.09 + 1.3)), 30.0) * 0.4) * exp(-r * 7.0) * 0.12;
+      c.rgb += vec3(1.0, 0.52, 0.2) * (haze + rays) * uGlare;
       c.rgb += (rnd(vUv * 1000.0 + fract(uTime)) - 0.5) * 0.02;
       gl_FragColor = c;
     }`,
