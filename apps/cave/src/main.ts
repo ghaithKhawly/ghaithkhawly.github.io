@@ -37,7 +37,7 @@ import { analyzeHand, coach } from './hands/gestures';
 import { POSES, posePoints } from './hands/silhouette';
 import { FILL_T, finish, focus, updateFinish } from './play/focus';
 import { SECRETS, tmpV, updateSecrets, visibleFraction } from './play/secrets';
-import { FLAKES, flakeGeo, flakePos, flakeVel, flakes, startStepOut, stepOut, updateStepOut } from './play/stepout';
+import { DEVICES, FLAKES, flakeGeo, flakePos, flakeVel, flakes, screens, startStepOut, stepOut, updateStepOut } from './play/stepout';
 import { detect, fireTarget, startMouse } from './tracking/camera';
 import { G, eye, eyeTarget, lastFaceAt, lastHint, pointer, stats, syntheticHand, toShadowPoints, updateGestures } from './tracking/state';
 import { openPanel, panel, panelKind } from './ui/panels';
@@ -155,7 +155,6 @@ export function frame(now) {
     if (p.mesh) p.mesh.material.opacity = p.alpha * 0.94;
     let target = 0;
     if (S.clock >= p.boostFrom && S.clock <= p.boostTo) target = 0.85;
-    else if ((panelKind === 'experience' && (p.group === 'herd' || p.group === 'hunt' || p.id === 'g-wolf')) || (panelKind === 'about' && (p.group === 'self' || p.id === 'g-rabbit'))) target = 0.3;
     if (G.dwell.id === p.id && stepOut.id !== p.id) target = Math.max(target, 0.2 + (G.dwell.t / HOLD_DWELL) * 0.75);
     if (S.mode === 'mouse' && p.project && stepOut.id !== p.id && !focus.active) target = Math.max(target, 0.18 + 0.12 * Math.sin(S.clock * 2.2));
     if (p.group === 'traced') target *= 0.25;   // a big, close painting needs little glow to read as alive
@@ -206,6 +205,8 @@ window.__cave = {
   get analyses() { return S.analyses.map((a) => ({ label: a.label, ext: a.ext, thumbOut: a.thumbOut, up: a.up, sideways: a.sideways, tipsTogether: a.tipsTogether, spread: a.spread })); },
   get panel() { return panelKind; },
   get stepOut() { return stepOut.id; },
+  get screen() { const d = screens.project && DEVICES[screens.project.device]; return screens.project ? { project: screens.project.id, index: screens.index, shown: !!d?.userData.screen.material.map } : null; },
+  paintingCenter: (id) => { const p = PAINTINGS.find((q) => q.id === id); return artToClient(p.x + p.w / 2, p.y + p.h / 2); },
   get stepOutState() { return stepOut.device ? { t: stepOut.t, dir: stepOut.dir, pos: stepOut.device.position.toArray().map((v) => +v.toFixed(2)) } : null; },
   get stats() { return { ...stats, eye: { ...eye }, faceRef: S.faceRef, faceSamples: S.faceCal.length }; },
   get guides() { return GUIDES.map((g) => ({ id: g.id, done: g.done, progress: +guideProgress(g).toFixed(2), precision: g.inBox ? +(g.near / g.inBox).toFixed(2) : null })); },

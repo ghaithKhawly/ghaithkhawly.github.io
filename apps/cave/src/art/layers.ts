@@ -7,6 +7,7 @@ import { PAINT_RES, paintedCanvas } from '../paint/painters';
 import { bakedJob, bakedLayer, makeCanvas, mulberry, supportsFilter } from '../util';
 import { offsetGeometry, wallPoint } from '../world/geometry';
 import { crackTex, rock, scene, wallGeo } from '../world/scene';
+import { PROJECTS } from '../content/projects';
 
 // Wall layers: paint (lit), shadow, glow (additive)
 export const artCanvas = makeCanvas(ART_W, ART_H);
@@ -95,15 +96,10 @@ scene.add(fxMesh);
 
 // Painting layout in paint-layer pixels. The visible wall spans roughly x 390–1660, y 110–790;
 // the stone column hides x ≈ 400–600 from straight on, and the crack sits at x ≈ 1500.
+// The projects fill the two rows above the shapes to trace (positions in content/projects.ts).
 export const PAINTINGS: Painting[] = [
-  { id: 'bison', kind: 'bison', x: 640, y: 262, w: 235, h: 140, group: 'herd', seed: 11 },
-  { id: 'horse', kind: 'horse', x: 900, y: 240, w: 235, h: 135, group: 'herd', seed: 12 },
-  { id: 'deer', kind: 'deer', x: 1160, y: 245, w: 195, h: 150, group: 'herd', seed: 13 },
-  { id: 'hunters', kind: 'hunters', x: 640, y: 425, w: 230, h: 125, group: 'hunt', seed: 15 },
-  { id: 'self', kind: 'self', x: 905, y: 405, w: 130, h: 150, group: 'self', seed: 16 },
-  { id: 'phone', kind: 'phone', x: 1075, y: 410, w: 95, h: 165, group: 'project', project: 'phone', seed: 17 },
-  { id: 'laptop', kind: 'laptop', x: 1225, y: 430, w: 185, h: 135, group: 'project', project: 'laptop', seed: 18 },
-  { id: 'dots', kind: 'dots', x: 700, y: 205, w: 200, h: 40, group: 'sign', seed: 19 },
+  ...PROJECTS.map((p) => ({ id: `project-${p.id}`, ...p.painting, group: 'project', project: p.id })),
+  { id: 'dots', kind: 'dots', x: 660, y: 158, w: 200, h: 38, group: 'sign', seed: 19 },
   { id: 'tally', kind: 'tally', x: 1580, y: 285, w: 100, h: 55, group: 'sign', seed: 20 },
   { id: 'owl', kind: 'owl', x: 520, y: 330, w: 100, h: 130, group: 'secret', secret: 'education', seed: 21 },
 ];

@@ -40,6 +40,8 @@ changes it from there.
 | `content.ts` | CV content, read from `../classic/src/data/cv-fulltime.json` |
 | `assets/rock/` | Photo-scanned rock textures (CC0, Poly Haven); credits in its README |
 | `assets/baked/` | The paintings, painted once by `npm run bake` |
+| `assets/screens/` | Each project's real screens; where they came from is in its README |
+| `content/projects.ts` | The projects: words, painting, device and screens |
 
 Three pieces of plumbing hold the split together:
 
@@ -75,6 +77,7 @@ frame a second):
 - the Contact shortcut stencils the hand
 - leaning finds all three hidden things, one at a time
 - on a phone, the view starts on the hare and the zoom fits the screen
+- a project painting steps out as its device with real screens, and they step through
 - a fake webcam showing a rabbit shadow opens About (needs `ffmpeg`)
 
 The page exposes `window.__cave` for these checks (state getters and a few

@@ -124,6 +124,7 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
   display: flex; gap: 4px 20px; flex-wrap: wrap; justify-content: center; width: min(640px, calc(100vw - 32px)); padding: 14px 20px;
 }
 .chip { padding: 6px 2px; font: 700 18px/1 var(--text); color: var(--kaolin); border-bottom: 2px solid var(--kaolin-faint); }
+.chip-row { flex-basis: 100%; text-align: center; font: italic 500 15px/1 var(--text); color: var(--kaolin-dim); margin: 6px 0 -2px; }
 .chip:hover { border-bottom-color: var(--ochre-lit); }
 
 /* ---------- a section, painted on the rock beside its painting ---------- */
@@ -172,6 +173,13 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
 .linkrow { display: flex; gap: 22px; flex-wrap: wrap; font: 800 20px/1.2 var(--text); }
 .linkrow a { color: var(--charcoal); text-decoration: none; border-bottom: 3px solid var(--ochre); }
 .list { padding-left: 22px; display: grid; gap: 6px; }
+.points { padding-left: 22px; display: grid; gap: 5px; }
+/* A project's screens: step through them under the words. */
+.screens { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; margin-top: 2px; }
+.screen-step { width: 40px; height: 40px; font: 700 28px/1 var(--text); color: var(--charcoal); border: 2px solid rgba(42, 28, 20, 0.45); border-radius: 50% 46% 52% 48%; }
+.screen-step:hover { border-color: var(--ochre); color: var(--ochre); }
+#panel .caption { font: italic 500 17px/1.3 var(--text); text-align: center; }
+.repo { justify-self: start; color: var(--charcoal); font: 800 19px/1.2 var(--text); text-decoration: none; border-bottom: 3px solid var(--ochre); }
 /* While a section is open, what sat over the wall steps aside. */
 .panel-open #chips, .panel-open #gesture, .panel-open #shapes, .panel-open #hud, .panel-open #finds { visibility: hidden; }
 /* More below: the words fade into the rock until you scroll to them. */

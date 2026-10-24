@@ -2,43 +2,26 @@ import { late } from '../late';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { S } from '../state';
-import { ART_H, ART_W, WALL_H, WALL_W } from '../config';
-import { pan, screenW } from '../core/view';
-import { clamp, easeInOut, makeCanvas, mulberry, smooth } from '../util';
+import { ART_H, ART_W, EYE_D, WALL_H, WALL_W } from '../config';
+import { clamp, easeInOut, mulberry, smooth } from '../util';
 import { wallPoint } from '../world/geometry';
 import { scene } from '../world/scene';
+import { type ProjectInfo, projectById, screenUrl } from '../content/projects';
 
-// Step-out objects (the painted phone and laptop become real)
-export function screenTexture(draw, w, h) {
-  const c = makeCanvas(w, h);
-  draw(c.getContext('2d'), w, h);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
-  return t;
-}
+// Step-out devices: a project's painting becomes the phone or laptop it runs on, showing
+// real screens. One phone and one laptop serve every project; their screens are swapped.
 export const deviceMat = new THREE.MeshStandardMaterial({ color: 0x1d1c1f, metalness: 0.55, roughness: 0.38 });
+// Lit screens, kept under the bloom threshold so a white page doesn't flare.
+const SCREEN_ON = 0xc4c4c4;
+const screenMat = () => new THREE.MeshBasicMaterial({ color: 0x0b0b0c, toneMapped: false });
+export const PHONE = { w: 0.34, h: 0.71, screenW: 0.312, screenH: 0.675 };   // screen is 480 × 1039
 export function makePhone() {
   const g = new THREE.Group();
-  g.add(new THREE.Mesh(new RoundedBoxGeometry(0.34, 0.68, 0.035, 4, 0.045), deviceMat));
-  const tex = screenTexture((ctx, w, h) => {
-    const bg = ctx.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, '#13261f'); bg.addColorStop(1, '#0b1411');
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = '#9fe0c0'; ctx.font = '600 22px system-ui, sans-serif'; ctx.fillText('Savings', 28, 64);
-    ctx.fillStyle = '#ffffff'; ctx.font = '700 54px system-ui, sans-serif'; ctx.fillText('$2,480', 28, 130);
-    ctx.fillStyle = '#6fa58c'; ctx.font = '500 18px system-ui, sans-serif'; ctx.fillText('Goal: new laptop · 62%', 28, 162);
-    ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(28, 182, w - 56, 14);
-    ctx.fillStyle = '#5ee0a0'; ctx.fillRect(28, 182, (w - 56) * 0.62, 14);
-    [0.4, 0.7, 0.55, 0.9, 0.62, 0.8, 0.5].forEach((b, i) => { ctx.fillStyle = i === 3 ? '#5ee0a0' : 'rgba(94,224,160,0.35)'; const bw = (w - 56) / 7 - 10; ctx.fillRect(28 + i * (bw + 10), 420 - b * 170, bw, b * 170); });
-    ctx.fillStyle = '#6fa58c'; ctx.font = '500 16px system-ui, sans-serif'; ctx.fillText('This week', 28, 450);
-    for (let i = 0; i < 3; i++) {
-      const y = 490 + i * 72;
-      ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(22, y, w - 44, 60);
-      ctx.fillStyle = '#e8f5ee'; ctx.font = '500 18px system-ui, sans-serif'; ctx.fillText(['Groceries', 'Transport', 'Coffee'][i], 40, y + 37);
-      ctx.fillStyle = '#ff9d7a'; ctx.textAlign = 'right'; ctx.fillText(['−$42', '−$9', '−$4'][i], w - 40, y + 37); ctx.textAlign = 'left';
-    }
-  }, 300, 620);
-  const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.62), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
+  g.add(new THREE.Mesh(new RoundedBoxGeometry(PHONE.w, PHONE.h, 0.035, 4, 0.045), deviceMat));
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(PHONE.screenW, PHONE.screenH), screenMat());
   screen.position.z = 0.0185;
   g.add(screen);
+  g.userData.screen = screen;
   return g;
 }
 export function makeLaptop() {
@@ -50,25 +33,46 @@ export function makeLaptop() {
   const lidMesh = new THREE.Mesh(new RoundedBoxGeometry(0.9, 0.58, 0.02, 3, 0.01), deviceMat);
   lidMesh.position.y = 0.29;
   lid.add(lidMesh);
-  const tex = screenTexture((ctx, w, h) => {
-    ctx.fillStyle = '#0e1320'; ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = '#7aa2ff'; ctx.font = '600 24px ui-monospace, monospace'; ctx.fillText('Medical API · v1', 30, 50);
-    [['GET', '/patients', '#5ee0a0'], ['POST', '/patients', '#ffcf66'], ['GET', '/appointments/{id}', '#5ee0a0'], ['PUT', '/records/{id}', '#7aa2ff'], ['DELETE', '/sessions', '#ff7a7a']].forEach(([m, path, c], i) => {
-      const y = 92 + i * 52;
-      ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(24, y - 30, w - 48, 42);
-      ctx.fillStyle = c; ctx.font = '700 18px ui-monospace, monospace'; ctx.fillText(m, 40, y);
-      ctx.fillStyle = '#d7def0'; ctx.font = '500 18px ui-monospace, monospace'; ctx.fillText(path, 140, y);
-    });
-    ctx.fillStyle = '#8b95b0'; ctx.font = '500 16px ui-monospace, monospace';
-    ['{', '  "id": 1042,', '  "name": "…",', '  "visits": 7', '}'].forEach((l, i) => ctx.fillText(l, 40, 380 + i * 24));
-  }, 600, 400);
-  const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.52), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.525), screenMat());   // 16:10
   screen.position.set(0, 0.29, 0.0105);
   lid.add(screen);
   g.add(lid);
+  g.userData.screen = screen;
   return g;
 }
 export const DEVICES = { phone: makePhone(), laptop: makeLaptop() };
+
+// Screens load on demand; each is kept once loaded.
+const loaded = new Map<string, Promise<THREE.Texture>>();
+function screenTexture(project: ProjectInfo, i: number) {
+  const key = `${project.id}/${i}`;
+  if (!loaded.has(key)) {
+    loaded.set(key, screenUrl(project, project.screens[i]).then((url) => new THREE.TextureLoader().loadAsync(url)).then((t) => {
+      t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+    }));
+  }
+  return loaded.get(key);
+}
+export const screens = { project: null as ProjectInfo | null, index: 0, at: 0, auto: true, loading: 0 };
+// Show screen i of the open project (wrapping round). `user` stops the slow auto-advance.
+export function showScreen(i: number, user = false) {
+  const p = screens.project;
+  if (!p || !p.screens.length) return;
+  screens.index = ((i % p.screens.length) + p.screens.length) % p.screens.length;
+  screens.at = S.clock;
+  if (user) screens.auto = false;
+  const want = screens.index, dvc = DEVICES[p.device];
+  screens.loading++;
+  screenTexture(p, want).then((t) => {
+    if (screens.project !== p || screens.index !== want) return;
+    const m = dvc.userData.screen.material as THREE.MeshBasicMaterial;
+    m.map = t; m.color.set(SCREEN_ON); m.needsUpdate = true;
+  }).catch((e) => console.error(e)).finally(() => { screens.loading--; });
+  late.screenChanged?.();
+}
+// Fetch the rest of a project's screens in the background once the first is up.
+function preload(p: ProjectInfo) { p.screens.forEach((_, i) => screenTexture(p, i)); }
+
 export const deviceLight = new THREE.PointLight(0xffc48a, 0, 0, 2);
 scene.add(deviceLight);
 for (const dvc of Object.values(DEVICES)) { dvc.visible = false; scene.add(dvc); }
@@ -91,23 +95,38 @@ export function burstFlakes(center, w, h) {
   S.flakeAge = 0;
 }
 
-export const stepOut = { id: null, t: 0, dir: 0, from: new THREE.Vector3(), to: new THREE.Vector3(), device: null, painting: null, startScale: 1 };
+export const stepOut = { id: null, t: 0, dir: 0, from: new THREE.Vector3(), to: new THREE.Vector3(), device: null, painting: null, startScale: 1, yaw: 0 };
 export function startStepOut(painting) {
+  const project = projectById(painting.project);
+  if (!project) return;
   if (stepOut.id === painting.id && stepOut.dir >= 0) return;
   if (stepOut.id && stepOut.id !== painting.id) finishReturn();
-  const dvc = DEVICES[painting.project];
+  late.playChime('project');
+  // The view walks up to the painting and the words go on the rock beside it (see focus.ts).
+  late.openPanel('project', project.id);
+  if (!project.device || !project.screens.length) return;   // nothing to step out yet: just the words
+  const dvc = DEVICES[project.device], isPhone = project.device === 'phone';
   const u = (painting.x + painting.w / 2) / ART_W, v = (painting.y + painting.h / 2) / ART_H;
   wallPoint(u, v, stepOut.from);
   stepOut.from.z += 0.05;
+  // It comes off the wall toward you, along the line from your eye to the painting, so it
+  // stays where the painting was on screen and ends up about a third bigger than it.
   const worldW = (painting.w / ART_W) * WALL_W, worldH = (painting.h / ART_H) * WALL_H;
-  const narrow = window.innerWidth <= 720;
-  stepOut.to.set(pan.x - screenW * (narrow ? 0.05 : 0.19), (narrow ? 0.5 : 0) + (painting.project === 'phone' ? 0.0 : -0.2), narrow ? -0.9 : -0.75);
+  const t = late.focus.target, eye = new THREE.Vector3(t.x, t.y, t.z + EYE_D * t.s);
+  const k = Math.min(0.85, isPhone ? PHONE.h / (1.35 * worldH) : 0.9 / (1.15 * worldW));
+  stepOut.to.copy(eye).lerp(stepOut.from, k);
+  if (!isPhone) stepOut.to.y -= 0.12;
+  const side = late.focus.target.x > stepOut.from.x ? 1 : -1;   // turn a little toward the words
+  stepOut.yaw = window.innerWidth <= 720 ? 0 : side * 0.22;
   stepOut.id = painting.id; stepOut.painting = painting; stepOut.device = dvc; stepOut.t = 0; stepOut.dir = 1;
-  stepOut.startScale = painting.project === 'phone' ? worldH / 0.68 : worldW / 0.9;
+  stepOut.startScale = isPhone ? worldH / PHONE.h : worldW / 0.9;
   dvc.visible = true;
+  screens.project = project; screens.auto = true;
+  const m = dvc.userData.screen.material as THREE.MeshBasicMaterial;
+  m.map = null; m.color.set(0x0b0b0c); m.needsUpdate = true;
+  showScreen(0);
+  preload(project);
   burstFlakes(stepOut.from, worldW, worldH);
-  late.playChime('project');
-  late.openPanel('project', painting.project);
 }
 export function returnStepOut() { if (stepOut.id) stepOut.dir = -1; }
 export function finishReturn() {
@@ -115,6 +134,7 @@ export function finishReturn() {
   stepOut.device.visible = false;
   stepOut.painting.alpha = 1;
   stepOut.id = null; stepOut.device = null; stepOut.painting = null; stepOut.dir = 0;
+  screens.project = null;
   deviceLight.intensity = 0;
 }
 export function updateStepOut(dt, time) {
@@ -125,9 +145,11 @@ export function updateStepOut(dt, time) {
   dvc.position.lerpVectors(stepOut.from, stepOut.to, e);
   dvc.position.y += Math.sin(e * Math.PI) * 0.25 + (stepOut.t === 1 ? Math.sin(time * 1.4) * 0.02 : 0);
   const s = THREE.MathUtils.lerp(stepOut.startScale, 1, e);
-  const isPhone = stepOut.painting.project === 'phone';
+  const isPhone = dvc === DEVICES.phone;
   dvc.scale.set(s, s, Math.max(0.02, e));
-  dvc.rotation.set(isPhone ? 0 : THREE.MathUtils.lerp(Math.PI / 2, 0.5, e), THREE.MathUtils.lerp(0, isPhone ? 0.35 : 0.45, e) + (stepOut.t === 1 ? Math.sin(time * 0.6) * 0.06 : 0), 0);
+  dvc.rotation.set(isPhone ? 0 : THREE.MathUtils.lerp(Math.PI / 2, 0.42, e), THREE.MathUtils.lerp(0, stepOut.yaw, e) + (stepOut.t === 1 ? Math.sin(time * 0.6) * 0.04 : 0), 0);
+  // Screens move on by themselves, slowly, until the visitor picks one.
+  if (stepOut.t === 1 && stepOut.dir > 0 && screens.auto && S.clock - screens.at > 6) showScreen(screens.index + 1);
   // Fade the painting in a few steps: re-uploading the whole paint layer every frame is expensive.
   const fade = Math.round((1 - smooth(0.0, 0.5, stepOut.t)) * 6) / 6;
   stepOut.painting.alpha = fade;

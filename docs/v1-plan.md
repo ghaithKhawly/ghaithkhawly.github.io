@@ -77,7 +77,7 @@ screenshots.
 
 | Project | State | Stack | Painting → steps out as |
 |---|---|---|---|
-| **Rakeb** (Damascus transit router) | Actively developed; the flagship | Expo / React Native, Fastify, PostgreSQL + PostGIS, Python graph pipeline, A\* in worker threads, Arabic free-text trips | Trails of dots between camps → a phone with the route map (design screens are in the repo) |
+| **Rakeb** (Damascus transit router) | Actively developed; the flagship | Expo / React Native, Fastify, PostgreSQL + PostGIS, Python graph pipeline, A\* in worker threads, Arabic free-text trips | Trails of dots between camps, along its real routes → a phone with the route network (the repo's design screens are generic mockups, so not used) |
 | **Office Order** | In daily use at an office, on an air-gapped LAN | Express, SQLite, React + Vite + Tailwind, SSE, Arabic-first RTL | Hunters sharing out a kill → a laptop and the wall display |
 | **Savings Tracker** | Finished (v3, 20 tests) | Expo / React Native, Zustand, Victory charts | A hoard and tally marks → a phone |
 | **justacalc** | Finished; private repo | Expo Router, mathjs + decimal.js, nerdamer | Counting marks → a phone |

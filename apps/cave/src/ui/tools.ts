@@ -7,6 +7,9 @@ import { endFocus, finish, focus, startFinish } from '../play/focus';
 import { SECRETS, discover } from '../play/secrets';
 import { G, eye, eyeTarget, faceF, stats, video } from '../tracking/state';
 import { closePanel, openPanel, panelKind } from './panels';
+import { PROJECTS } from '../content/projects';
+import { PAINTINGS } from '../art/layers';
+import { startStepOut } from '../play/stepout';
 
 // Earlier modules reach these through `late` (see late.ts). The getters are lazy, so
 // registering before the declarations below is safe.
@@ -28,7 +31,14 @@ $('t-shortcuts').addEventListener('click', (e) => {
   $('chips').hidden = !show;
   e.currentTarget.setAttribute('aria-pressed', String(show));
 });
-for (const chip of document.querySelectorAll('.chip')) {
+// One shortcut per project, after the sections: it steps the project out of the wall.
+for (const p of PROJECTS) {
+  const b = document.createElement('button');
+  b.className = 'chip'; b.type = 'button'; b.dataset.project = p.id; b.textContent = p.title;
+  b.addEventListener('click', () => startStepOut(PAINTINGS.find((q) => q.project === p.id)));
+  $('chips').append(b);
+}
+for (const chip of document.querySelectorAll('.chip[data-section]')) {
   chip.addEventListener('click', () => {
     const section = (chip as HTMLElement).dataset.section;
     const g = GUIDES.find((q) => q.section === section);

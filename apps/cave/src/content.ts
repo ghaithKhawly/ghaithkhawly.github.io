@@ -20,11 +20,8 @@ export const CV = {
   education: { degree: cv.education.degree, institution: cv.education.institution, period: dash(cv.education.period), note: cv.education.description },
   certifications: { year: cv.certifications[0]?.year ?? '', items: cv.certifications.map((c) => c.title) },
   languages: cv.languages,
-  // Which painted device shows which project. M2 replaces this with the full project list.
-  projects: {
-    phone: pick('Savings Tracker'),
-    laptop: pick('Medical App'),
-  } as Record<string, Project>,
+  // The projects with a painting are in content/projects.ts. This one is told under Experience.
+  medical: pick('Medical App'),
 };
 
 function pick(title: string): Project {

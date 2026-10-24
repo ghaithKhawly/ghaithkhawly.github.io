@@ -1,6 +1,5 @@
 import { late, provide } from '../late';
 import { S } from '../state';
-import { CV } from '../content';
 import { PAINTINGS, STENCILS, baseCanvas, makeGlowSprite } from '../art/layers';
 import { $, ART_H, ART_W, EYE_D, HEAD_GAIN, HOLD_DWELL, HOLD_GESTURE, HOLD_PALM, SCREEN_H, SHADOW_MAG, SH_H, SH_W, WALL_H, WALL_W } from '../config';
 import { coach } from '../hands/gestures';
@@ -8,6 +7,7 @@ import { POSES, makeStencil } from '../hands/silhouette';
 import { startStepOut, stepOut } from '../play/stepout';
 import { openPanel, toast } from '../ui/panels';
 import { openSection } from '../play/focus';
+import { projectById } from '../content/projects';
 import { OneEuro, clamp, deadzone } from '../util';
 
 // Earlier modules reach these through `late` (see late.ts). The getters are lazy, so
@@ -142,7 +142,7 @@ export function updateGestures(dt, now) {
   if (dwellTarget && dwellTarget.id === G.dwell.id) G.dwell.t += dt; else G.dwell = { id: dwellTarget ? dwellTarget.id : null, t: 0 };
   if (dwellTarget && stepOut.id !== dwellTarget.id) {
     progress = G.dwell.t / HOLD_DWELL;
-    hint = `Touching ${CV.projects[dwellTarget.project].title}. Hold it there.`;
+    hint = `Touching ${projectById(dwellTarget.project).title}. Hold it there.`;
     if (G.dwell.t >= HOLD_DWELL) startStepOut(dwellTarget);
   }
   setGestureUI(hint, clamp(progress, 0, 1));

@@ -39,20 +39,21 @@ $('step-back').addEventListener('click', () => { if (panelKind) closePanel(); el
 // beside it: the painting on one side of the view and the words on the other. On a
 // narrow screen they stack, with the words on whichever side has more wall: above a
 // painting low on the wall, below one high up.
-export function sectionAnchor(kind: string): { x: number; y: number; w: number; h: number } | null {
+export function sectionAnchor(kind: string, arg?: string): { x: number; y: number; w: number; h: number } | null {
+  if (kind === 'project') return PAINTINGS.find((p) => p.project === arg) ?? null;
   const guide = GUIDES.find((g) => g.section === kind);
   if (guide) return guide;
   if (kind === 'education') return PAINTINGS.find((p) => p.secret === 'education');
   if (kind === 'certs' || kind === 'languages') return { x: CRACK.ax - CRACK.halfW, y: CRACK.ay - CRACK.halfH, w: CRACK.halfW * 2, h: CRACK.halfH * 2 };
-  return null;   // projects: the device that steps out is the picture
+  return null;
 }
 // A section with a shape still to paint gets painted first (the ghost hand), then opens.
 export function openSection(section: string) {
   const g = GUIDES.find((q) => q.section === section);
   if (g && !g.done) startFinish(g); else openPanel(section);
 }
-export function frameSection(kind: string): 'left' | 'right' | 'above' | 'below' {
-  const narrow = window.innerWidth <= 720, a = sectionAnchor(kind);
+export function frameSection(kind: string, arg?: string): 'left' | 'right' | 'above' | 'below' {
+  const narrow = window.innerWidth <= 720, a = sectionAnchor(kind, arg);
   if (!a) return narrow ? 'below' : 'right';
   const cx = a.x + a.w / 2, cy = a.y + a.h / 2;
   const side = narrow ? (cy > ART_H * 0.5 ? 'above' : 'below') : cx > ART_W * 0.56 ? 'left' : 'right';

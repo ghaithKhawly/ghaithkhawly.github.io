@@ -3,11 +3,12 @@ import { S } from '../state';
 import { CV } from '../content';
 import { PAINTINGS } from '../art/layers';
 import { $ } from '../config';
-import { returnStepOut } from '../play/stepout';
+import { returnStepOut, screens, showScreen } from '../play/stepout';
+import { projectById } from '../content/projects';
 
 // Earlier modules reach these through `late` (see late.ts). The getters are lazy, so
 // registering before the declarations below is safe.
-provide({ get openPanel() { return openPanel; } });
+provide({ get openPanel() { return openPanel; }, get screenChanged() { return screenChanged; } });
 
 // Sections, painted on the rock beside their paintings. The words are real text, laid
 // over the canvas and multiplied into it; a limewash goes down first so they read.
@@ -37,7 +38,9 @@ export function openPanel(kind: string, arg?: any) {
       ol.append(li);
     }
     panelBody.append(ol);
-    boost(['bison', 'horse', 'deer', 'hunters']);
+    const m = CV.medical;
+    const team = el('div', 'group'); team.append(el('h4', null, `Also: ${m.title}`), el('p', null, m.description), el('p', 'used', m.technologies.join(', ')));
+    panelBody.append(team);
   } else if (kind === 'about') {
     eyebrow.textContent = 'Opened by the hare';
     title.textContent = CV.name;
@@ -47,12 +50,25 @@ export function openPanel(kind: string, arg?: any) {
       grp.append(el('p', 'used', g.skills.join(', ')));
       panelBody.append(grp);
     }
-    boost(['self']);
   } else if (kind === 'project') {
-    const p = CV.projects[arg];
-    eyebrow.textContent = 'Stepped out of the wall';
+    const p = projectById(arg);
+    eyebrow.textContent = p.status;
     title.textContent = p.title;
-    panelBody.append(el('p', null, p.description), el('p', 'used', p.technologies.join(', ')), el('p', 'note', 'The screen on the device is an illustration for now, not a real screenshot.'));
+    panelBody.append(el('p', 'lede', p.what));
+    const ul = el('ul', 'points'); for (const t of p.points) ul.append(el('li', null, t));
+    panelBody.append(ul, el('p', 'used', p.stack.join(', ')));
+    if (p.screens.length) {
+      const row = el('div', 'screens');
+      const prev = el('button', 'screen-step', '‹') as HTMLButtonElement, next = el('button', 'screen-step', '›') as HTMLButtonElement;
+      prev.type = next.type = 'button'; prev.setAttribute('aria-label', 'Previous screen'); next.setAttribute('aria-label', 'Next screen');
+      prev.addEventListener('click', () => showScreen(screens.index - 1, true));
+      next.addEventListener('click', () => showScreen(screens.index + 1, true));
+      const cap = el('p', 'caption'); cap.id = 'screen-caption'; cap.setAttribute('aria-live', 'polite');
+      row.append(prev, cap, next);
+      panelBody.append(row);
+    } else panelBody.append(el('p', 'note', 'Screenshots are on their way.'));
+    if (p.note) panelBody.append(el('p', 'note', p.note));
+    if (p.link) { const a = el('a', 'repo', 'The code on GitHub') as HTMLAnchorElement; a.href = p.link; a.target = '_blank'; a.rel = 'noopener'; panelBody.append(a); }
   } else if (kind === 'contact') {
     eyebrow.textContent = 'Your handprint';
     title.textContent = 'Leave a mark';
@@ -88,7 +104,7 @@ export function openPanel(kind: string, arg?: any) {
 }
 // Walk up to the painting, then lay the words on the free side of the view.
 function place() {
-  const side = late.frameSection(panelKind);
+  const side = late.frameSection(panelKind, panelArg);
   panel.classList.remove('side-left', 'side-right', 'side-above', 'side-below');
   panel.classList.add(`side-${side}`);
   panel.hidden = false; wash.hidden = false;
@@ -103,6 +119,16 @@ export function placeWash() {
   Object.assign(wash.style, { left: `${r.left - mx}px`, top: `${r.top - my}px`, width: `${r.width + mx * 2}px`, height: `${r.height + my * 2}px` });
 }
 window.addEventListener('resize', () => { if (panelKind) place(); });
+// The caption under a project's device: which screen, and what it shows.
+export function screenChanged() {
+  const cap = document.getElementById('screen-caption'), p = screens.project;
+  if (cap && p) cap.textContent = `${screens.index + 1} of ${p.screens.length}: ${p.screens[screens.index].caption}`;
+}
+window.addEventListener('keydown', (e) => {
+  if (panelKind !== 'project' || !screens.project) return;
+  if (e.key === 'ArrowRight') showScreen(screens.index + 1, true);
+  if (e.key === 'ArrowLeft') showScreen(screens.index - 1, true);
+});
 export function selectText(node) { const r = document.createRange(); r.selectNodeContents(node); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
 export function closePanel() {
   panel.hidden = true; wash.hidden = true;
