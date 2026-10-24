@@ -33,6 +33,8 @@ export function updateFinds() {
   $('finds-text').textContent = `${p} of ${painted.length} paintings, ${h} of ${hidden.length} hidden`;
 }
 
+updateFinds();
+
 let lastStatus = '';
 export function updateStatus(headTracked: boolean) {
   let text: string;

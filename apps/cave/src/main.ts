@@ -49,7 +49,7 @@ import { camera, chamber, column, embers, fillLight, fireLight, flameUniforms, f
 
 // Main loop
 export let prev = performance.now();
-export let hudTimer = 0;
+export let hudAt = -1e9;   // last status update, in real time (frames can be slow)
 export const forcedPose = params.get('pose');
 const glareAt = new THREE.Vector3();
 export function frame(now) {
@@ -178,9 +178,8 @@ export function frame(now) {
 
   composer.render();
 
-  hudTimer += dt;
-  if (hudTimer > 0.12) {
-    hudTimer = 0;
+  if (now - hudAt > 120) {
+    hudAt = now;
     const tracked = S.mode === 'camera' && S.headOn && S.faceRef && S.clock - lastFaceAt < 1.2;
     updateStatus(!!tracked);
     drawDebug();
