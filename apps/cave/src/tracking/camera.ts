@@ -71,7 +71,7 @@ export function startTilt() {
 export let fireTarget = 0.35;
 export function enterScene() {
   $('intro').hidden = true;
-  $('hud').hidden = false; $('tools').hidden = false; $('gesture').hidden = false;
+  $('hud').hidden = false; $('finds').hidden = false; $('tools').hidden = false; $('gesture').hidden = false;
   const cam = S.mode === 'camera';
   $('shapes').hidden = !cam;
   for (const id of ['t-head', 't-shapes', 't-debug', 't-recenter']) $(id).hidden = !cam;
@@ -83,7 +83,7 @@ export function enterScene() {
   if (screenW < 1.6) pan.target = pan.x = 0.9;
   fireTarget = 1;
 }
-export const paintingHint = () => (window.innerWidth <= 720 ? 'Tap a dotted shape to paint it · drag to look' : 'Click a dotted shape to paint it');
+export const paintingHint = () => (window.innerWidth <= 720 ? 'Tap a dotted shape to paint it. Drag to look round.' : 'Click a dotted shape to paint it');
 
 export function detect(t) {
   if (S.mode !== 'camera' || !S.handLandmarker || video.readyState < 2) return;

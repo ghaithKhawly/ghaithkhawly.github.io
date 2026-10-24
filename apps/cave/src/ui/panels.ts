@@ -13,26 +13,29 @@ provide({ get openPanel() { return openPanel; } });
 // Panels
 export const panel = $('panel'), panelBody = $('panel-body');
 export let panelKind = null;
+// Everything opened so far (sections, and `project:<id>`), for the tally of finds.
+export const opened = new Set<string>();
 export function el(tag: string, cls?: string | null, text?: string | null): HTMLElement { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
 export function openPanel(kind: string, arg?: any) {
   panelKind = kind;
+  opened.add(kind === 'project' ? `project:${arg}` : kind);
   panelBody.replaceChildren();
   panel.classList.toggle('left', kind === 'certs' || kind === 'languages');
   const eyebrow = $('panel-eyebrow'), title = $('panel-title');
   if (kind === 'experience') {
-    eyebrow.textContent = 'The hunt · Wolf';
+    eyebrow.textContent = 'Opened by the wolf';
     title.textContent = 'Experience';
     for (const x of CV.experiences) {
       const r = el('div', 'role');
-      r.append(el('span', 'when', x.period), el('h3', null, `${x.position} · ${x.company}`));
+      r.append(el('span', 'when', x.period), el('h3', null, `${x.position}, ${x.company}`));
       const ul = el('ul'); for (const d of x.description) ul.append(el('li', null, d));
       r.append(ul); panelBody.append(r);
     }
     boost(['bison', 'horse', 'deer', 'hunters']);
   } else if (kind === 'about') {
-    eyebrow.textContent = 'The figure · Rabbit';
+    eyebrow.textContent = 'Opened by the hare';
     title.textContent = CV.name;
-    panelBody.append(el('p', null, CV.about), el('p', 'muted', `${CV.title} · ${CV.location}`));
+    panelBody.append(el('p', null, CV.about), el('p', 'muted', `${CV.title}, ${CV.location}`));
     for (const g of CV.skills) {
       const grp = el('div', 'group'); grp.append(el('h4', null, g.title));
       const tags = el('div', 'tags'); for (const s of g.skills) tags.append(el('span', 'tag', s));
@@ -61,25 +64,27 @@ export function openPanel(kind: string, arg?: any) {
     for (const [label, href] of [['GitHub', CV.github], ['LinkedIn', CV.linkedin]]) { const a = el('a', null, label) as HTMLAnchorElement; a.href = href; a.target = '_blank'; a.rel = 'noopener'; links.append(a); }
     panelBody.append(line, copy, links, el('p', 'muted', CV.location));
   } else if (kind === 'education') {
-    eyebrow.textContent = 'Found behind the column · The owl';
+    eyebrow.textContent = 'Behind the column, under the owl';
     title.textContent = 'Education';
-    panelBody.append(el('h3', null, CV.education.degree), el('p', null, CV.education.institution), el('p', 'muted', `${CV.education.period} · ${CV.education.note}`));
+    panelBody.append(el('h3', null, CV.education.degree), el('p', null, CV.education.institution), el('p', 'muted', `${CV.education.period}. ${CV.education.note}`));
   } else if (kind === 'certs') {
-    eyebrow.textContent = 'Found inside the crack · Six suns';
+    eyebrow.textContent = 'Inside the crack, beside six suns';
     title.textContent = 'Certifications';
     const ul = el('ul', 'list'); for (const c of CV.certifications.items) ul.append(el('li', null, c));
-    panelBody.append(el('p', 'muted', `Google Cloud · ${CV.certifications.year}`), ul);
+    panelBody.append(el('p', 'muted', `Google Cloud, ${CV.certifications.year}`), ul);
   } else if (kind === 'languages') {
-    eyebrow.textContent = 'Found inside the crack · Two speakers';
+    eyebrow.textContent = 'Inside the crack, beside two speakers';
     title.textContent = 'Languages';
-    const ul = el('ul', 'list'); for (const l of CV.languages) ul.append(el('li', null, `${l.language} · ${l.level}`));
+    const ul = el('ul', 'list'); for (const l of CV.languages) ul.append(el('li', null, `${l.language}: ${l.level}`));
     panelBody.append(ul);
   }
   panel.hidden = false;
+  document.body.classList.add('panel-open');
 }
 export function selectText(node) { const r = document.createRange(); r.selectNodeContents(node); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
 export function closePanel() {
   panel.hidden = true;
+  document.body.classList.remove('panel-open');
   if (panelKind === 'project') returnStepOut();
   panelKind = null;
 }

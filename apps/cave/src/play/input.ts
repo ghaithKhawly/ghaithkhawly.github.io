@@ -78,7 +78,7 @@ canvas.addEventListener('pointermove', (e) => {
     canvas.style.cursor = clickTarget(hit[0], hit[1]) ? 'pointer' : 'none';
     if (!focus.active) {
       const g = guideAt(hit[0], hit[1], 30);
-      setGestureUI(g && !g.done ? `Click to paint ${g.title} · opens ${SECTION_NAME[g.section]}` : paintingHint(), 0);
+      setGestureUI(g && !g.done ? `Click to paint ${g.title}. It opens ${SECTION_NAME[g.section]}.` : paintingHint(), 0);
       if (!S.eyeLocked) {
         eyeTarget.x = -edgeLean((e.clientX / window.innerWidth - 0.5) * 2) * 1.5;
         eyeTarget.y = edgeLean((e.clientY / window.innerHeight - 0.5) * 2) * 0.5;

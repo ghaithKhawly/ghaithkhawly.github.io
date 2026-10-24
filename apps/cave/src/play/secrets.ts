@@ -87,7 +87,7 @@ export function discover(s) {
   s.foundAt = S.clock;
   const n = SECRETS.filter((q) => q.found).length;
   late.playChime('secret');
-  toast(`Found ${n} of 3 · ${s.title}, ${s.where}`);
+  toast(`${s.title}, ${s.where}. ${n} of 3 found.`);
   if (s.id === 'education') boost(['owl']);
   openPanel(s.id);
 }

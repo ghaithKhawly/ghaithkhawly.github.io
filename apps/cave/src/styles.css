@@ -1,158 +1,191 @@
-/* Layout: a full-bleed WebGL cave; the UI floats at the edges like notes held up to the firelight. */
+/* Painted: everything you read is pigment. Kaolin clay on the dark stone round the
+   cave mouth, red ochre for what matters, and a soot wash under text that has to sit
+   over lit rock. No pills, cards or glass. */
 :root {
-  --bg: #070504;
-  --ink: #f3e6d0;
-  --muted: #b39c84;
-  --ochre: #c8743a;
-  --ember: #ffb25e;
-  --ash: rgba(243, 230, 208, 0.14);
-  --panel: rgba(16, 11, 8, 0.88);
-  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
-  --body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --dark: #070504;
+  --kaolin: #efe3c9;
+  --kaolin-dim: rgba(239, 227, 201, 0.74);
+  --kaolin-faint: rgba(239, 227, 201, 0.3);
+  --ochre: #b23c1c;
+  --ochre-lit: #d2582c;     /* red ochre where it has to read on dark stone */
+  --yellow: #c98f35;
+  --charcoal: #2a1c14;
+  --soot: rgba(10, 6, 4, 0.82);
+  --text: "Alegreya", Georgia, "Times New Roman", serif;
+  --label: "Alegreya Sans", "Gill Sans", system-ui, sans-serif;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html, body { height: 100%; margin: 0; background: var(--bg); color: var(--ink); overflow: hidden; }
-body { font: 15px/1.55 var(--body); -webkit-font-smoothing: antialiased; }
+html, body { height: 100%; margin: 0; background: var(--dark); color: var(--kaolin); overflow: hidden; }
+body { font: 18px/1.5 var(--text); -webkit-font-smoothing: antialiased; }
 #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-button { font: inherit; color: inherit; cursor: pointer; }
-button:focus-visible, a:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+.defs { position: absolute; width: 0; height: 0; }
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; padding: 0; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--kaolin); outline-offset: 4px; border-radius: 2px; }
 [hidden] { display: none !important; }
-canvas.thumb { width: 44px; height: 44px; border-radius: 50%; flex: none; display: block; }
+p, h1, h2, h3, ul { margin: 0; }
+kbd { font: 500 13px/1 var(--label); border: 1.5px solid currentColor; border-radius: 4px; padding: 2px 6px 3px; opacity: 0.8; }
+canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
+
+/* Pigment: a rough edge and the rock's pores. Only on large text; small text stays crisp. */
+.painted { filter: url(#paint-light); }
+.painted.big { filter: url(#paint-big); }
+/* Soot: a soft dark wash so kaolin reads even when the view is right up against lit rock. */
+.soot { background: radial-gradient(closest-side, rgba(7, 5, 4, 0.64), rgba(7, 5, 4, 0.4) 55%, rgba(7, 5, 4, 0)); }
 
 /* ---------- intro ---------- */
 #intro {
   position: fixed; inset: 0; z-index: 30; display: grid; align-items: end; overflow: auto;
-  padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-  background: radial-gradient(120% 90% at 30% 100%, rgba(7,5,4,0.2), rgba(7,5,4,0.92) 70%);
+  padding: max(28px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: radial-gradient(120% 90% at 30% 100%, rgba(7, 5, 4, 0.25), rgba(7, 5, 4, 0.93) 70%);
 }
-.intro-inner { max-width: 660px; margin-left: clamp(0px, 6vw, 96px); display: grid; gap: 18px; }
-.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ochre); }
-#intro h1 { font: 700 clamp(40px, 7vw, 76px)/0.95 var(--display); margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
-#intro p { margin: 0; color: var(--muted); max-width: 54ch; font-size: 17px; }
-.gestures { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-.gestures li { display: flex; gap: 12px; align-items: center; font-size: 14px; }
-.gestures b { font-weight: 600; }
-.gestures span { color: var(--muted); display: block; font-size: 13px; }
-.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
-.btn { border: 1px solid var(--ash); background: rgba(243,230,208,0.04); padding: 12px 18px; border-radius: 999px; font-weight: 600; }
-.btn.primary { background: var(--ember); color: #1b0f06; border-color: transparent; }
+.intro-inner { max-width: 640px; margin-left: clamp(0px, 6vw, 96px); display: grid; gap: 20px; }
+#intro h1 { font: 800 clamp(46px, 7.5vw, 84px)/0.92 var(--text); letter-spacing: -0.015em; text-wrap: balance; }
+#intro .lede { color: var(--kaolin-dim); max-width: 50ch; font-size: 19px; line-height: 1.5; }
+.gestures { list-style: none; padding: 0; display: grid; gap: 12px 22px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.gestures li { display: flex; gap: 14px; align-items: center; }
+.gestures b { font: 700 17px/1.2 var(--text); display: block; }
+.gestures span { color: var(--kaolin-dim); display: block; font: 400 15px/1.35 var(--label); margin-top: 2px; }
+.actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; }
+/* A swatch of paint behind the words: the edge is roughened, the words stay sharp. */
+.btn { position: relative; isolation: isolate; padding: 13px 22px 15px; font: 700 18px/1 var(--text); color: var(--kaolin); }
+.btn::before { content: ''; position: absolute; inset: 0; z-index: -1; border: 2px solid var(--kaolin-faint); border-radius: 3px 7px 4px 6px; filter: url(#rough-edge); }
+.btn:hover::before { border-color: var(--kaolin-dim); }
+.btn.primary { color: #1a0d07; }
+.btn.primary::before { background: var(--ochre-lit); border-color: var(--ochre-lit); }
+.btn.primary:hover::before { background: #dd6532; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.note { font: 400 12px/1.5 var(--mono); color: var(--muted); }
-#intro-status { font: 500 13px/1.5 var(--mono); color: var(--ember); min-height: 1.5em; }
+.note { font: 400 14px/1.5 var(--label); color: var(--kaolin-dim); max-width: 60ch; }
+#intro-status { font: italic 500 17px/1.5 var(--text); color: var(--ochre-lit); min-height: 1.5em; }
 
-/* ---------- HUD ---------- */
+/* ---------- in the cave: name, finds, gesture, tools ---------- */
 #hud {
-  position: fixed; z-index: 10; top: calc(env(safe-area-inset-top) + 14px); left: max(16px, env(safe-area-inset-left));
-  font: 500 11px/1.6 var(--mono); letter-spacing: 0.04em; color: var(--muted); pointer-events: none; display: grid; gap: 2px;
+  position: fixed; z-index: 10; top: calc(env(safe-area-inset-top) + 18px); left: max(14px, env(safe-area-inset-left));
+  padding: 10px 16px 14px; pointer-events: none;
 }
-#hud .row { display: flex; gap: 8px; align-items: center; }
-.dot { width: 7px; height: 7px; border-radius: 50%; background: #5a4b3e; display: inline-block; }
-.dot.on { background: var(--ember); box-shadow: 0 0 8px var(--ember); }
-.headbox { position: relative; width: 34px; height: 22px; border: 1px solid var(--ash); border-radius: 5px; }
-.headbox i { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #5a4b3e; transition: background 0.3s; }
-.headbox.on i { background: var(--ember); box-shadow: 0 0 6px var(--ember); }
-#hud-found { color: var(--ink); }
-#tools {
-  position: fixed; z-index: 10; top: calc(env(safe-area-inset-top) + 10px); right: max(16px, env(safe-area-inset-right));
-  display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 64vw;
-}
-.tool { border: 1px solid var(--ash); background: rgba(7,5,4,0.55); padding: 6px 11px; border-radius: 999px; font: 500 12px/1.2 var(--mono); color: var(--ink); backdrop-filter: blur(6px); }
-.tool[aria-pressed="true"] { border-color: var(--ember); color: var(--ember); }
-#step-back {
-  position: fixed; z-index: 12; left: 50%; top: calc(env(safe-area-inset-top) + 14px); transform: translateX(-50%);
-  border: 1px solid rgba(255,178,94,0.5); background: rgba(7,5,4,0.7); color: var(--ink); padding: 8px 16px; border-radius: 999px;
-  font: 500 13px/1.2 var(--mono); backdrop-filter: blur(8px);
-}
+#hud .who { font: 700 31px/1 var(--text); letter-spacing: -0.005em; }
+#hud .role { font: italic 400 17px/1.3 var(--text); color: var(--kaolin-dim); margin-top: 6px; }
+#hud .status { font: 500 14px/1.4 var(--label); color: var(--kaolin-dim); margin-top: 10px; max-width: 30ch; }
 
-#toast {
-  position: fixed; z-index: 12; left: 50%; top: calc(env(safe-area-inset-top) + 64px); transform: translateX(-50%);
-  padding: 10px 16px; border-radius: 999px; background: rgba(7,5,4,0.72); border: 1px solid rgba(255,178,94,0.4);
-  font: 500 13px/1.35 var(--body); color: var(--ink); backdrop-filter: blur(8px); animation: rise-c 0.5s ease; max-width: calc(100vw - 32px); text-align: center;
+#finds {
+  position: fixed; z-index: 10; top: calc(env(safe-area-inset-top) + 18px); right: max(14px, env(safe-area-inset-right));
+  padding: 12px 16px 14px; text-align: right; pointer-events: none;
 }
+#tally { display: block; margin-left: auto; overflow: visible; }
+#tally path { fill: none; stroke-linecap: round; }
+#tally .found { stroke: var(--ochre-lit); stroke-width: 5.5; filter: url(#paint-light); }
+#tally .open { stroke: var(--kaolin-faint); stroke-width: 2; }
+#finds-text { font: 500 15px/1.3 var(--label); color: var(--kaolin-dim); margin-top: 8px; }
 
 #gesture {
-  position: fixed; z-index: 10; left: 50%; transform: translateX(-50%);
-  bottom: calc(env(safe-area-inset-bottom) + 22px);
-  display: flex; align-items: center; gap: 12px; padding: 9px 16px 9px 12px; border-radius: 999px;
-  background: rgba(7,5,4,0.6); border: 1px solid var(--ash); backdrop-filter: blur(8px);
-  font: 500 13px/1.25 var(--mono); max-width: calc(100vw - 32px);
+  --p: 0;
+  position: fixed; z-index: 10; left: max(14px, env(safe-area-inset-left)); bottom: calc(env(safe-area-inset-bottom) + 18px);
+  display: flex; align-items: center; gap: 14px; padding: 12px 18px 12px 12px; max-width: min(560px, calc(100vw - 420px));
 }
-#gesture .ring { width: 26px; height: 26px; flex: none; }
-#gesture .ring circle { fill: none; stroke-width: 3; }
-#gesture .ring .track { stroke: rgba(243,230,208,0.15); }
-#gesture .ring .fill { stroke: var(--ember); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 0.08s linear; }
+#gesture .stencil { width: 54px; height: 54px; flex: none; }
+#gesture-label { font: 700 21px/1.2 var(--text); }
 
-/* Shape guide (camera mode) */
-#shapes {
-  position: fixed; z-index: 10; left: max(16px, env(safe-area-inset-left)); bottom: calc(env(safe-area-inset-bottom) + 18px);
-  display: grid; gap: 6px; width: 236px; padding: 10px; border-radius: 16px;
-  background: rgba(7,5,4,0.62); border: 1px solid var(--ash); backdrop-filter: blur(8px);
+#tools {
+  position: fixed; z-index: 10; right: max(14px, env(safe-area-inset-right)); bottom: calc(env(safe-area-inset-bottom) + 14px);
+  display: flex; gap: 6px; padding: 10px 12px; flex-wrap: wrap; justify-content: flex-end; max-width: 60vw;
 }
-#shapes h3 { margin: 0 4px 2px; font: 500 11px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-.shape { display: flex; gap: 10px; align-items: center; padding: 6px; border-radius: 12px; border: 1px solid transparent; transition: border-color 0.2s, background 0.2s; }
-.shape b { display: block; font: 600 13px/1.2 var(--body); }
-.shape span { display: block; font-size: 12px; line-height: 1.35; color: var(--muted); }
-.shape.near { border-color: rgba(255,178,94,0.3); }
-.shape.active { border-color: var(--ember); background: rgba(255,178,94,0.1); }
+.tool { display: grid; justify-items: center; gap: 6px; min-width: 58px; padding: 6px 6px 4px; font: 500 13px/1.1 var(--label); color: var(--kaolin-dim); }
+.tool .glyph { width: 28px; height: 28px; color: var(--kaolin-faint); filter: url(#paint-light); }
+.tool[aria-pressed="true"] { color: var(--kaolin); }
+.tool[aria-pressed="true"] .glyph { color: var(--ochre-lit); }
+.tool:not([aria-pressed]) .glyph { color: var(--kaolin); }
+.tool:hover .glyph { color: var(--kaolin); }
+
+#step-back {
+  position: fixed; z-index: 12; left: 50%; top: calc(env(safe-area-inset-top) + 16px); transform: translateX(-50%);
+  display: flex; gap: 10px; align-items: center; padding: 12px 22px; font: 700 18px/1 var(--text);
+}
+#toast {
+  position: fixed; z-index: 12; left: 50%; top: calc(env(safe-area-inset-top) + 66px); transform: translateX(-50%);
+  padding: 14px 28px; font: 700 19px/1.3 var(--text); text-align: center; max-width: calc(100vw - 32px);
+  animation: appear-c 0.6s ease;
+}
+
+/* The shapes to make (camera mode), up the left side above the gesture hint */
+#shapes {
+  position: fixed; z-index: 10; left: max(14px, env(safe-area-inset-left)); bottom: calc(env(safe-area-inset-bottom) + 104px);
+  display: grid; gap: 4px; width: 270px; padding: 14px 16px;
+}
+#shapes h3 { font: italic 500 16px/1 var(--text); color: var(--kaolin-dim); margin: 0 0 6px; }
+.shape { display: flex; gap: 12px; align-items: center; padding: 5px 0; opacity: 0.8; transition: opacity 0.2s; }
+.shape b { display: block; font: 700 16px/1.2 var(--text); }
+.shape span { display: block; font: 400 14px/1.35 var(--label); color: var(--kaolin-dim); }
+.shape.near { opacity: 1; }
+.shape.active { opacity: 1; }
+.shape.active b { color: var(--ochre-lit); }
 
 #chips {
-  position: fixed; z-index: 10; left: 50%; transform: translateX(-50%);
-  bottom: calc(env(safe-area-inset-bottom) + 74px);
-  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: min(560px, calc(100vw - 32px));
+  position: fixed; z-index: 10; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom) + 100px);
+  display: flex; gap: 4px 20px; flex-wrap: wrap; justify-content: center; width: min(640px, calc(100vw - 32px)); padding: 14px 20px;
 }
-.chip { border: 1px solid var(--ash); background: rgba(7,5,4,0.7); padding: 8px 14px; border-radius: 999px; font: 500 13px/1.2 var(--body); backdrop-filter: blur(6px); }
+.chip { padding: 6px 2px; font: 700 18px/1 var(--text); color: var(--kaolin); border-bottom: 2px solid var(--kaolin-faint); }
+.chip:hover { border-bottom-color: var(--ochre-lit); }
 
-/* ---------- panel ---------- */
+/* ---------- panel: a soot-blackened patch of stone (M2 paints sections onto the rock) ---------- */
 #panel {
-  position: fixed; z-index: 20; top: calc(env(safe-area-inset-top) + 64px); right: max(16px, env(safe-area-inset-right));
-  width: min(420px, calc(100vw - 32px)); max-height: calc(100% - 150px); overflow: auto;
-  background: var(--panel); border: 1px solid var(--ash); border-radius: 18px; padding: 22px 22px 24px;
-  backdrop-filter: blur(10px); box-shadow: 0 30px 80px rgba(0,0,0,0.5);
-  animation: rise 0.45s cubic-bezier(.2,.8,.2,1);
+  position: fixed; z-index: 20; top: calc(env(safe-area-inset-top) + 110px); right: max(16px, env(safe-area-inset-right));
+  width: min(440px, calc(100vw - 32px)); max-height: calc(100% - 300px); overflow: auto; isolation: isolate;
+  padding: 26px 28px 30px; animation: appear 0.5s ease;
+  background: var(--soot); border-radius: 4px 10px 6px 12px; box-shadow: 0 0 60px 30px rgba(7, 5, 4, 0.45);
 }
 /* Things found in the crack open on the left, so the crack stays in view. */
-#panel.left { right: auto; left: max(16px, env(safe-area-inset-left)); top: calc(env(safe-area-inset-top) + 108px); }
-@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-@keyframes rise-c { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
-#panel header { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; margin-bottom: 14px; }
-#panel h2 { font: 700 30px/1.05 var(--display); margin: 6px 0 0; letter-spacing: -0.01em; text-wrap: balance; }
-#panel-close { border: 1px solid var(--ash); background: none; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; line-height: 1; }
-#panel-body { display: grid; gap: 16px; }
-#panel p { margin: 0; }
-.muted { color: var(--muted); }
-.role { display: grid; gap: 4px; padding-top: 14px; border-top: 1px solid var(--ash); }
-.role:first-child { border-top: 0; padding-top: 0; }
-.role h3 { font: 600 16px/1.3 var(--body); margin: 0; }
-.role .when { font: 400 12px/1.4 var(--mono); color: var(--ochre); }
-.role ul { margin: 4px 0 0; padding-left: 18px; color: var(--muted); }
-.tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.tag { font: 500 12px/1 var(--mono); padding: 6px 9px; border-radius: 999px; background: rgba(200,116,58,0.14); color: #f0c9a3; }
-.group h4 { margin: 0 0 8px; font: 500 11px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-.contact-line { display: grid; gap: 4px; }
-.contact-line .value { font: 500 15px/1.4 var(--mono); user-select: all; word-break: break-all; }
-.linkrow { display: flex; gap: 8px; flex-wrap: wrap; }
-.linkrow a { color: var(--ember); text-decoration: none; border-bottom: 1px solid rgba(255,178,94,0.35); }
-.list { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+#panel.left { right: auto; left: max(16px, env(safe-area-inset-left)); top: calc(env(safe-area-inset-top) + 150px); }
+@keyframes appear { from { opacity: 0; } to { opacity: 1; } }
+@keyframes appear-c { from { opacity: 0; } to { opacity: 1; } }
+#panel header { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; margin-bottom: 16px; }
+#panel .kicker { font: italic 500 16px/1.3 var(--text); color: var(--ochre-lit); }
+#panel h2 { font: 800 38px/1 var(--text); margin-top: 6px; letter-spacing: -0.01em; text-wrap: balance; }
+#panel-close { width: 40px; height: 40px; font: 400 30px/1 var(--text); color: var(--kaolin-dim); }
+#panel-close:hover { color: var(--kaolin); }
+#panel-body { display: grid; gap: 18px; }
+#panel p { color: var(--kaolin-dim); }
+#panel h3 { font: 700 20px/1.25 var(--text); }
+.muted { color: var(--kaolin-dim); }
+.role { display: grid; gap: 4px; }
+.role .when { font: 500 14px/1.3 var(--label); color: var(--yellow); }
+.role ul { padding-left: 20px; color: var(--kaolin-dim); font-size: 17px; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.tag { font: 500 15px/1.3 var(--label); color: var(--kaolin); }
+.group h4 { margin: 0 0 6px; font: italic 500 16px/1.2 var(--text); color: var(--ochre-lit); }
+.contact-line { display: grid; gap: 2px; }
+.contact-line .value { font: 700 20px/1.3 var(--text); color: var(--kaolin); user-select: all; word-break: break-all; }
+.linkrow { display: flex; gap: 18px; flex-wrap: wrap; }
+.linkrow a { color: var(--kaolin); text-decoration: none; border-bottom: 2px solid var(--ochre-lit); font-weight: 700; }
+.list { padding-left: 20px; display: grid; gap: 6px; color: var(--kaolin-dim); }
 
-/* ---------- tracking view ---------- */
+/* ---------- tracking view (diagnostics) ---------- */
 #debug {
-  position: fixed; z-index: 11; right: max(16px, env(safe-area-inset-right)); bottom: calc(env(safe-area-inset-bottom) + 16px);
-  background: rgba(7,5,4,0.82); border: 1px solid var(--ash); border-radius: 12px; padding: 8px; display: grid; gap: 6px;
-  font: 400 11px/1.45 var(--mono); color: var(--muted); width: 256px;
+  position: fixed; z-index: 11; right: max(16px, env(safe-area-inset-right)); top: calc(env(safe-area-inset-top) + 130px);
+  background: var(--soot); border-radius: 6px; padding: 8px; display: grid; gap: 6px;
+  font: 400 12px/1.45 var(--label); font-variant-numeric: tabular-nums; color: var(--kaolin-dim); width: 256px;
 }
-#debug canvas { width: 240px; height: 180px; border-radius: 8px; background: #000; }
-#debug pre { margin: 0; white-space: pre-wrap; }
+#debug canvas { width: 240px; height: 180px; border-radius: 4px; background: #000; }
+#debug pre { margin: 0; white-space: pre-wrap; font: inherit; }
 
 @media (max-width: 720px) {
-  #panel { top: auto; bottom: calc(env(safe-area-inset-bottom) + 12px); max-height: 58%; }
-  #debug, #hud { display: none; }
-  #tools { max-width: calc(100vw - 32px); }
-  #gesture { font-size: 12px; }
-  #chips { bottom: calc(env(safe-area-inset-bottom) + 70px); }
-  #step-back { top: calc(env(safe-area-inset-top) + 56px); }
-  #shapes { width: auto; right: max(16px, env(safe-area-inset-right)); bottom: calc(env(safe-area-inset-bottom) + 74px); grid-template-columns: repeat(3, 1fr); }
+  body { font-size: 17px; }
+  #hud { top: calc(env(safe-area-inset-top) + 8px); padding: 8px 12px; }
+  #hud .who { font-size: 22px; }
+  #hud .role, #hud .status, #debug { display: none; }
+  #finds { top: calc(env(safe-area-inset-top) + 8px); padding: 8px 12px; }
+  #finds-text { font-size: 13px; }
+  #tools { max-width: calc(100vw - 24px); padding: 6px 8px; }
+  .tool { min-width: 52px; font-size: 12px; }
+  #gesture { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); max-width: none; bottom: calc(env(safe-area-inset-bottom) + 82px); }
+  #gesture .stencil { width: 42px; height: 42px; }
+  #gesture-label { font-size: 18px; }
+  #chips { bottom: calc(env(safe-area-inset-bottom) + 150px); }
+  #step-back { top: calc(env(safe-area-inset-top) + 56px); font-size: 16px; }
+  #panel { top: auto; bottom: calc(env(safe-area-inset-bottom) + 12px); max-height: 60%; padding: 22px 22px 26px; background: rgba(10, 6, 4, 0.95); }
+  /* On a phone the open section takes the bottom of the screen; what sat there steps aside. */
+  .panel-open #chips, .panel-open #gesture, .panel-open #shapes { visibility: hidden; }
+  #panel.left { top: auto; }
+  #shapes { width: auto; right: max(12px, env(safe-area-inset-right)); bottom: calc(env(safe-area-inset-bottom) + 160px); grid-template-columns: repeat(3, 1fr); }
   #shapes h3 { grid-column: 1 / -1; }
   .shape { flex-direction: column; text-align: center; }
   .shape span { display: none; }

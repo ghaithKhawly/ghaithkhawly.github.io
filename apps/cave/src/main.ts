@@ -42,6 +42,7 @@ import { detect, fireTarget, startMouse } from './tracking/camera';
 import { G, eye, eyeTarget, lastFaceAt, lastHint, pointer, stats, syntheticHand, toShadowPoints, updateGestures } from './tracking/state';
 import { openPanel, panel, panelKind } from './ui/panels';
 import { drawDebug } from './ui/tools';
+import { updateStatus } from './ui/status';
 import { clamp, easeInOut, paintQueue, runPaintQueue, vnoise } from './util';
 import { wallPoint } from './world/geometry';
 import { camera, chamber, column, embers, fillLight, fireLight, flameUniforms, flames, halo, lampLight, logMat, mouth, props, stalactites, washLight } from './world/scene';
@@ -174,17 +175,8 @@ export function frame(now) {
   hudTimer += dt;
   if (hudTimer > 0.12) {
     hudTimer = 0;
-    $('dot-cam').classList.toggle('on', S.mode === 'camera');
-    $('hud-cam').textContent = S.mode === 'camera' ? `camera on · ${stats.delegate}` : S.mode === 'mouse' ? 'painting mode' : 'camera off';
     const tracked = S.mode === 'camera' && S.headOn && S.faceRef && S.clock - lastFaceAt < 1.2;
-    $('headbox').classList.toggle('on', !!tracked || (S.mode === 'mouse' && Math.abs(eye.x) > 0.2));
-    $('head-dot').style.transform = `translate(${clamp(eye.x / 1.2, -1, 1) * 11}px, ${clamp(-eye.y / 0.6, -1, 1) * 6}px) scale(${clamp(EYE_D / eye.z, 0.6, 1.6).toFixed(2)})`;
-    $('hud-head').textContent = S.mode !== 'camera' ? 'lean: screen edges' : !S.headOn ? 'head: off' : !S.faceRef ? 'head: calibrating, look at the screen' : tracked ? 'head: tracked' : 'head: lost';
-    $('dot-hand').classList.toggle('on', S.mode === 'camera' ? S.hands.length > 0 : pointer.inside);
-    $('hud-hand').textContent = S.mode === 'camera' ? (S.hands.length ? `hand: ${G.label}` : 'hand: none') : 'hand: your cursor';
-    const found = SECRETS.filter((s) => s.found).length;
-    $('dot-found').classList.toggle('on', found > 0);
-    $('hud-found').textContent = `hidden: ${found} / 3 found`;
+    updateStatus(!!tracked);
     drawDebug();
   }
   requestAnimationFrame(frame);

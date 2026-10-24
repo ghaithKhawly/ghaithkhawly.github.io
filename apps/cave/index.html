@@ -6,64 +6,111 @@
 <title>The Cave · Ghaith Khawly</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;0,800;1,400;1,500&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <canvas id="scene" aria-label="A firelit cave wall covered in paintings"></canvas>
 <video id="cam" playsinline muted hidden></video>
 
+<!-- Paint filters: roughen an edge and let the rock's pores show through, so DOM text reads as pigment. -->
+<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <filter id="paint-light" x="-5%" y="-10%" width="110%" height="120%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7" result="warp"/>
+    <feDisplacementMap in="SourceGraphic" in2="warp" scale="3" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="2" result="grain"/>
+    <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  2.6 0 0 0 -0.45" result="pores"/>
+    <feComposite in="rough" in2="pores" operator="in"/>
+  </filter>
+  <!-- Large type: no gaps, just uneven pigment, so it reads as a brushed stroke rather than grit. -->
+  <filter id="paint-big" x="-5%" y="-10%" width="110%" height="120%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="11" result="warp"/>
+    <feDisplacementMap in="SourceGraphic" in2="warp" scale="5" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="3" seed="5" result="grain"/>
+    <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.9 0 0 0 0.45" result="pores"/>
+    <feComposite in="rough" in2="pores" operator="in"/>
+  </filter>
+  <filter id="rough-edge" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3" result="warp"/>
+    <feDisplacementMap in="SourceGraphic" in2="warp" scale="10" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <symbol id="g-spiral" viewBox="0 0 64 64"><path d="M29 32a3 3 0 1 1 6 0a6 6 0 1 1-12 0a9 9 0 1 1 18 0a12 12 0 1 1-24 0a15 15 0 1 1 30 0" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/></symbol>
+  <symbol id="g-head" viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><circle cx="32" cy="24" r="11"/><path d="M14 56c2-12 9-18 18-18s16 6 18 18"/><path d="M6 24h5M53 24h5"/></g></symbol>
+  <symbol id="g-hand" viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><ellipse cx="32" cy="41" rx="12" ry="13"/><path d="M22 30 19 13M30 28V9M37 29l3-17M43 33l5-12M21 44 10 35"/></g></symbol>
+  <symbol id="g-marks" viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"><path d="M12 54 16 10M26 55l3-45M40 54l3-44M54 55 56 10"/><path d="M6 36 60 26"/></g></symbol>
+  <symbol id="g-eye" viewBox="0 0 64 64"><path d="M5 32Q32 8 59 32Q32 56 5 32Z" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="32" cy="32" r="7.5" fill="currentColor"/></symbol>
+  <symbol id="g-ring" viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><circle cx="32" cy="32" r="18"/><path d="M32 4v14M32 46v14M4 32h14M46 32h14"/></g></symbol>
+  <symbol id="g-stencil" viewBox="0 0 64 64">
+    <defs>
+      <radialGradient id="st-spray"><stop offset="0" stop-color="#d2582c"/><stop offset="0.6" stop-color="#c24a24" stop-opacity="0.85"/><stop offset="1" stop-color="#b03e1c" stop-opacity="0"/></radialGradient>
+      <mask id="st-hand"><rect width="64" height="64" fill="#fff"/><g fill="#000">
+        <ellipse cx="32" cy="41" rx="12" ry="13"/>
+        <rect x="20" y="15" width="6" height="25" rx="3" transform="rotate(-9 23 27)"/>
+        <rect x="27.5" y="10" width="6" height="29" rx="3"/>
+        <rect x="35" y="13" width="6" height="27" rx="3" transform="rotate(7 38 26)"/>
+        <rect x="41.5" y="21" width="5.5" height="21" rx="2.8" transform="rotate(16 44 31)"/>
+        <rect x="11" y="33" width="6" height="17" rx="3" transform="rotate(-48 14 41)"/>
+      </g></mask>
+    </defs>
+    <!-- --p (0 to 1) comes from #gesture: the stencil fills in as you hold a shape -->
+    <circle cx="32" cy="34" r="31" fill="url(#st-spray)" mask="url(#st-hand)" style="opacity: calc(0.35 + 0.65 * var(--p, 0)); transform: scale(calc(0.74 + 0.26 * var(--p, 0))); transform-origin: 32px 34px"/>
+  </symbol>
+</svg>
+
 <section id="intro" aria-labelledby="intro-title">
   <div class="intro-inner">
-    <div class="eyebrow">Prototype · The Cave</div>
-    <h1 id="intro-title">Ghaith Khawly</h1>
-    <p>Full-stack developer. This portfolio is a cave. Bring your hands into the firelight and cast shadows on the wall; the paintings answer. Three things are hidden. Lean to find them.</p>
+    <h1 id="intro-title" class="painted big">Ghaith Khawly</h1>
+    <p class="lede">Full-stack developer in Damascus. This portfolio is a cave. Bring your hands into the firelight and cast shadows on the wall, and the paintings answer. Three things are hidden. Lean to find them.</p>
     <ul class="gestures">
-      <li><canvas class="thumb" data-thumb="wolf" width="88" height="88"></canvas><div><b>Wolf</b><span>Hand sideways, thumb up, three fingers together. Experience.</span></div></li>
-      <li><canvas class="thumb" data-thumb="rabbit" width="88" height="88"></canvas><div><b>Rabbit</b><span>Two fingers up, the rest folded. About.</span></div></li>
-      <li><canvas class="thumb" data-thumb="palm" width="88" height="88"></canvas><div><b>Open palm, held still</b><span>Leaves your handprint. Contact.</span></div></li>
-      <li><canvas class="thumb" data-thumb="point" width="88" height="88"></canvas><div><b>Touch a painting</b><span>Rest your shadow's fingertip on the phone or laptop.</span></div></li>
+      <li><canvas class="thumb" data-thumb="wolf" width="88" height="88"></canvas><div><b>Wolf</b><span>Hand sideways, thumb up, three fingers together. Opens Experience.</span></div></li>
+      <li><canvas class="thumb" data-thumb="rabbit" width="88" height="88"></canvas><div><b>Hare</b><span>Two fingers up, the rest folded. Opens About.</span></div></li>
+      <li><canvas class="thumb" data-thumb="palm" width="88" height="88"></canvas><div><b>Open palm, held still</b><span>Leaves your handprint. Opens Contact.</span></div></li>
+      <li><canvas class="thumb" data-thumb="point" width="88" height="88"></canvas><div><b>Touch a painting</b><span>Rest your shadow's fingertip on the phone or the laptop.</span></div></li>
     </ul>
     <div class="actions">
-      <button class="btn primary" id="start-cam" type="button">Light the fire · use camera</button>
-      <button class="btn" id="start-mouse" type="button">No camera · paint with the mouse</button>
+      <button class="btn primary" id="start-cam" type="button">Use the camera</button>
+      <button class="btn" id="start-mouse" type="button">Paint without a camera</button>
     </div>
     <div id="intro-status" role="status" aria-live="polite"></div>
-    <div class="note">Camera frames are processed on your device and never uploaded. With the camera on, lean left and right: the screen becomes a window into the cave.</div>
+    <p class="note">Camera frames stay on your device; nothing is uploaded. With the camera on, lean left and right and the screen becomes a window into the cave.</p>
   </div>
 </section>
 
-<div id="hud" hidden aria-hidden="true">
-  <div class="row"><span class="dot" id="dot-cam"></span><span id="hud-cam">camera off</span></div>
-  <div class="row"><span class="headbox" id="headbox"><i id="head-dot"></i></span><span id="hud-head">head</span></div>
-  <div class="row"><span class="dot" id="dot-hand"></span><span id="hud-hand">hand: none</span></div>
-  <div class="row"><span class="dot" id="dot-found"></span><span id="hud-found">hidden: 0 / 3 found</span></div>
+<div id="hud" class="soot" hidden>
+  <p class="who painted">Ghaith Khawly</p>
+  <p class="role">Full-stack developer, Damascus</p>
+  <p id="hud-status" class="status"></p>
 </div>
 
-<div id="tools" hidden>
-  <button class="tool" id="t-sound" type="button" aria-pressed="true">Sound</button>
-  <button class="tool" id="t-head" type="button" aria-pressed="true" hidden>Head tracking</button>
-  <button class="tool" id="t-shapes" type="button" aria-pressed="true" hidden>Shapes</button>
-  <button class="tool" id="t-shortcuts" type="button" aria-pressed="false" hidden>Shortcuts</button>
-  <button class="tool" id="t-debug" type="button" aria-pressed="false" hidden>Tracking view</button>
-  <button class="tool" id="t-recenter" type="button" hidden>Recenter</button>
-</div>
-<button id="step-back" type="button" hidden>← Step back from the wall</button>
-
-<div id="toast" hidden role="status"></div>
-
-<div id="gesture" hidden aria-live="polite">
-  <svg class="ring" viewBox="0 0 26 26" aria-hidden="true"><circle class="track" cx="13" cy="13" r="10"/><circle class="fill" id="ring-fill" cx="13" cy="13" r="10" stroke-dasharray="62.8" stroke-dashoffset="62.8"/></svg>
-  <span id="gesture-label">Raise a hand into the firelight</span>
+<div id="finds" class="soot" hidden>
+  <svg id="tally" height="44" aria-hidden="true"></svg>
+  <p id="finds-text"></p>
 </div>
 
-<div id="shapes" hidden>
-  <h3>Shadow shapes</h3>
-  <div class="shape" data-shape="wolf"><canvas class="thumb" data-thumb="wolf" width="88" height="88"></canvas><div><b>Wolf · Experience</b><span>Hand sideways. Thumb up as the ear, three fingers together as the snout.</span></div></div>
-  <div class="shape" data-shape="rabbit"><canvas class="thumb" data-thumb="rabbit" width="88" height="88"></canvas><div><b>Rabbit · About</b><span>Index and middle finger up as ears. Fold the rest.</span></div></div>
-  <div class="shape" data-shape="palm"><canvas class="thumb" data-thumb="palm" width="88" height="88"></canvas><div><b>Open palm · Contact</b><span>Fingers up and spread. Hold still for a second.</span></div></div>
+<div id="tools" class="soot" hidden>
+  <button class="tool" id="t-sound" type="button" aria-pressed="true"><svg class="glyph" aria-hidden="true"><use href="#g-spiral"/></svg>Sound</button>
+  <button class="tool" id="t-head" type="button" aria-pressed="true" hidden><svg class="glyph" aria-hidden="true"><use href="#g-head"/></svg>Head tracking</button>
+  <button class="tool" id="t-shapes" type="button" aria-pressed="true" hidden><svg class="glyph" aria-hidden="true"><use href="#g-hand"/></svg>Shapes</button>
+  <button class="tool" id="t-shortcuts" type="button" aria-pressed="false" hidden><svg class="glyph" aria-hidden="true"><use href="#g-marks"/></svg>Shortcuts</button>
+  <button class="tool" id="t-debug" type="button" aria-pressed="false" hidden><svg class="glyph" aria-hidden="true"><use href="#g-eye"/></svg>Tracking view</button>
+  <button class="tool" id="t-recenter" type="button" hidden><svg class="glyph" aria-hidden="true"><use href="#g-ring"/></svg>Recenter</button>
+</div>
+<button id="step-back" class="soot" type="button" hidden>Step back from the wall <kbd>Esc</kbd></button>
+
+<div id="toast" class="soot" hidden role="status"></div>
+
+<div id="gesture" class="soot" hidden aria-live="polite">
+  <svg class="stencil" aria-hidden="true"><use href="#g-stencil"/></svg>
+  <span id="gesture-label" class="painted">Raise a hand into the firelight</span>
 </div>
 
-<div id="chips" hidden>
+<div id="shapes" class="soot" hidden>
+  <h3>Shapes to make</h3>
+  <div class="shape" data-shape="wolf"><canvas class="thumb" data-thumb="wolf" width="88" height="88"></canvas><div><b>Wolf, for Experience</b><span>Hand sideways. Thumb up as the ear, three fingers together as the snout.</span></div></div>
+  <div class="shape" data-shape="rabbit"><canvas class="thumb" data-thumb="rabbit" width="88" height="88"></canvas><div><b>Hare, for About</b><span>Index and middle finger up as ears. Fold the rest.</span></div></div>
+  <div class="shape" data-shape="palm"><canvas class="thumb" data-thumb="palm" width="88" height="88"></canvas><div><b>Open palm, for Contact</b><span>Fingers up and spread. Hold still for a second.</span></div></div>
+</div>
+
+<div id="chips" class="soot" hidden>
   <button class="chip" type="button" data-section="experience">Experience</button>
   <button class="chip" type="button" data-section="about">About</button>
   <button class="chip" type="button" data-section="contact">Contact</button>
@@ -74,7 +121,7 @@
 
 <aside id="panel" hidden aria-labelledby="panel-title">
   <header>
-    <div><div class="eyebrow" id="panel-eyebrow"></div><h2 id="panel-title"></h2></div>
+    <div><p class="kicker" id="panel-eyebrow"></p><h2 id="panel-title" class="painted big"></h2></div>
     <button id="panel-close" type="button" aria-label="Close">×</button>
   </header>
   <div id="panel-body"></div>

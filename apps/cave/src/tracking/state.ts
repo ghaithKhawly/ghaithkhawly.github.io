@@ -115,13 +115,13 @@ export function updateGestures(dt, now) {
   const still = G.wrist.length > 5 && G.wrist.every((w) => Math.hypot(w.x - lastW.x, w.y - lastW.y) < 0.03);
 
   let progress = 0, hint = 'Raise a hand into the firelight', near = null;
-  if (G.label === 'wolf') { progress = G.hold / HOLD_GESTURE; hint = 'Wolf · Experience'; }
-  else if (G.label === 'rabbit') { progress = G.hold / HOLD_GESTURE; hint = 'Rabbit · About'; }
-  else if (G.label === 'palm') { progress = still ? G.hold / HOLD_PALM : 0; hint = still ? 'Open palm · hold still' : 'Open palm · hold still to leave a print'; }
+  if (G.label === 'wolf') { progress = G.hold / HOLD_GESTURE; hint = 'A wolf. Hold it still.'; }
+  else if (G.label === 'rabbit') { progress = G.hold / HOLD_GESTURE; hint = 'A hare. Hold it still.'; }
+  else if (G.label === 'palm') { progress = still ? G.hold / HOLD_PALM : 0; hint = still ? 'An open palm. Hold it still.' : 'An open palm. Hold still to leave a print.'; }
   else if (G.label === 'hand' && main) {
     const c = coach(main);
-    if (c) { near = c.name; hint = `Almost a ${c.name} · ${c.miss[1]}`; }
-    else hint = 'Make a wolf, a rabbit, or an open palm';
+    if (c) { near = c.name; hint = `Almost ${SHAPE_NAME[c.name]}: ${c.miss[1]}`; }
+    else hint = 'Make a wolf, a hare or an open palm';
   }
 
   if (G.latched !== G.label) {
@@ -141,7 +141,7 @@ export function updateGestures(dt, now) {
   if (dwellTarget && dwellTarget.id === G.dwell.id) G.dwell.t += dt; else G.dwell = { id: dwellTarget ? dwellTarget.id : null, t: 0 };
   if (dwellTarget && stepOut.id !== dwellTarget.id) {
     progress = G.dwell.t / HOLD_DWELL;
-    hint = `Touching · ${CV.projects[dwellTarget.project].title}`;
+    hint = `Touching ${CV.projects[dwellTarget.project].title}. Hold it there.`;
     if (G.dwell.t >= HOLD_DWELL) startStepOut(dwellTarget);
   }
   setGestureUI(hint, clamp(progress, 0, 1));
@@ -152,9 +152,10 @@ export function updateGestures(dt, now) {
 }
 
 export let lastHint = '';
+const SHAPE_NAME = { wolf: 'a wolf', rabbit: 'a hare', palm: 'an open palm' };
 export function setGestureUI(text, progress) {
   if (text !== lastHint) { $('gesture-label').textContent = text; lastHint = text; }
-  $('ring-fill').style.strokeDashoffset = String(62.8 * (1 - clamp(progress, 0, 1)));
+  $('gesture').style.setProperty('--p', clamp(progress, 0, 1).toFixed(2));   // fills the hand stencil
 }
 
 // pts: 21 points in shadow-canvas pixels.
