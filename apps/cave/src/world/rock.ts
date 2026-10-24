@@ -1,53 +1,51 @@
 import * as THREE from 'three';
-import { clamp, fbm, makeCanvas, mulberry, smooth } from '../util';
+import wallDiff from '../assets/rock/wall-diff.webp';
+import wallNormal from '../assets/rock/wall-normal.webp';
+import wallHeightUrl from '../assets/rock/wall-height.webp';
+import stoneDiff from '../assets/rock/stone-diff.webp';
+import stoneNormal from '../assets/rock/stone-normal.webp';
 
-// Rock textures (tileable colour + normal map + height, generated once)
-export const ROCK_N = 512;
-export function makeRockTextures(N = ROCK_N) {
-  const F = 6;
-  const H = new Float32Array(N * N);
-  const col = makeCanvas(N, N);
-  const cctx = col.getContext('2d');
-  const img = cctx.createImageData(N, N);
-  const r = mulberry(7);
-  for (let j = 0; j < N; j++) {
-    for (let i = 0; i < N; i++) {
-      const x = (i / N) * F, y = (j / N) * F;
-      const base = fbm(x, y, 5, 3, F);
-      const ridge = 1 - Math.abs(2 * fbm(x * 2, y * 2, 4, 9, F * 2) - 1);
-      const h = base * 0.75 + ridge * ridge * 0.25;
-      H[j * N + i] = h;
-      const stain = fbm(x * 0.5, y * 0.5, 3, 21, F / 2);
-      const shade = 0.64 + 0.48 * h;
-      const st = smooth(0.5, 0.78, stain);
-      let R = 184 * shade, G = 171 * shade, B = 154 * shade;
-      R = R * (1 - st * 0.45) + 96 * st * 0.45; G = G * (1 - st * 0.5) + 66 * st * 0.5; B = B * (1 - st * 0.55) + 48 * st * 0.55;
-      const crack = smooth(0.93, 0.99, ridge);
-      R *= 1 - crack * 0.16; G *= 1 - crack * 0.16; B *= 1 - crack * 0.16;
-      const speck = (r() - 0.5) * 14;
-      const k = (j * N + i) * 4;
-      img.data[k] = clamp(R + speck, 0, 255); img.data[k + 1] = clamp(G + speck, 0, 255); img.data[k + 2] = clamp(B + speck, 0, 255); img.data[k + 3] = 255;
-    }
+// Photo-scanned rock, CC0 from Poly Haven (see assets/rock/README.md): smooth limestone
+// for the painted wall and floor, flakier stone for the mouth, column and boulders.
+export const ROCK = {
+  wall: { map: wallDiff, normal: wallNormal },
+  stone: { map: stoneDiff, normal: stoneNormal },
+};
+
+// Each image loads once; every use gets its own texture (so its own repeat), which
+// fills in when the image arrives. `rockLoad.pending` counts images still on their way.
+export const rockLoad = { pending: 0 };
+const images = new Map<string, Promise<HTMLImageElement>>();
+function image(url: string) {
+  let p = images.get(url);
+  if (!p) {
+    rockLoad.pending++;
+    p = new THREE.ImageLoader().loadAsync(url).finally(() => { rockLoad.pending--; });
+    images.set(url, p);
   }
-  cctx.putImageData(img, 0, 0);
-  const nrm = makeCanvas(N, N);
-  const nctx = nrm.getContext('2d');
-  const nimg = nctx.createImageData(N, N);
-  const S = 7;
-  for (let j = 0; j < N; j++) {
-    for (let i = 0; i < N; i++) {
-      const hl = H[j * N + ((i - 1 + N) % N)], hr = H[j * N + ((i + 1) % N)];
-      const hu = H[((j - 1 + N) % N) * N + i], hd = H[((j + 1) % N) * N + i];
-      let nx = -(hr - hl) * S, ny = -(hu - hd) * S, nz = 1;
-      const L = Math.hypot(nx, ny, nz); nx /= L; ny /= L; nz /= L;
-      const k = (j * N + i) * 4;
-      nimg.data[k] = (nx * 0.5 + 0.5) * 255; nimg.data[k + 1] = (ny * 0.5 + 0.5) * 255; nimg.data[k + 2] = (nz * 0.5 + 0.5) * 255; nimg.data[k + 3] = 255;
-    }
-  }
-  nctx.putImageData(nimg, 0, 0);
-  const map = new THREE.CanvasTexture(col);
-  map.colorSpace = THREE.SRGBColorSpace;
-  const normal = new THREE.CanvasTexture(nrm);
-  for (const t of [map, normal]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; }
-  return { map, normal, height: H };
+  return p;
 }
+export function rockTexture(url: string, rx: number, ry: number, colour = false) {
+  const t = new THREE.Texture();
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(rx, ry);
+  t.anisotropy = 8;
+  if (colour) t.colorSpace = THREE.SRGBColorSpace;
+  image(url).then((img) => { t.image = img; t.needsUpdate = true; });
+  return t;
+}
+export function rockMaterial(set: { map: string; normal: string }, rx: number, ry: number, params: THREE.MeshStandardMaterialParameters) {
+  return new THREE.MeshStandardMaterial({ map: rockTexture(set.map, rx, ry, true), normalMap: rockTexture(set.normal, rx, ry), ...params });
+}
+
+// Relief of the wall rock (0 to 1), so pigment can catch on the bumps. Flat until the image is in.
+export const ROCK_N = 512;
+export const wallHeight = new Float32Array(ROCK_N * ROCK_N).fill(0.5);
+image(wallHeightUrl).then((img) => {
+  const c = document.createElement('canvas');
+  c.width = c.height = ROCK_N;
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.drawImage(img, 0, 0, ROCK_N, ROCK_N);
+  const d = x.getImageData(0, 0, ROCK_N, ROCK_N).data;
+  for (let i = 0; i < wallHeight.length; i++) wallHeight[i] = d[i * 4] / 255;
+});

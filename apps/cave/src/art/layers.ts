@@ -16,15 +16,18 @@ artTex.colorSpace = THREE.SRGBColorSpace; artTex.anisotropy = 4;
 export const artMat = new THREE.MeshStandardMaterial({ map: artTex, alphaMap: crackTex, normalMap: rock.normal, transparent: true, roughness: 0.95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
 // Pigment soaks into the stone: it takes on the rock's grain and colour, and thins over
 // pits and stains. The rock texture is sampled through the normal map's wall UVs.
+// Mean linear luminance of the wall rock (assets/rock/wall-diff.webp): paint over brighter
+// rock than this looks lighter, over darker rock deeper.
+const WALL_ROCK_L = 0.219;
 export function soakIntoRock(mat) {
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uRock = { value: rock.map };
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D uRock;')
+      .replace('#include <common>', `#include <common>\nuniform sampler2D uRock;\n#define ROCK_L ${WALL_ROCK_L.toFixed(3)}`)
       .replace('#include <map_fragment>', `#include <map_fragment>
         vec3 rockC = texture2D(uRock, vNormalMapUv).rgb;
         float rockL = dot(rockC, vec3(0.2126, 0.7152, 0.0722));
-        diffuseColor.rgb *= mix(1.0, clamp(rockL / 0.3, 0.5, 1.4), 0.7);
+        diffuseColor.rgb *= mix(1.0, clamp(rockL / ROCK_L, 0.6, 1.35), 0.6);
         diffuseColor.a *= mix(0.8, 1.0, smoothstep(0.08, 0.3, rockL));`);
   };
   mat.customProgramCacheKey = () => 'soak';

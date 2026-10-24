@@ -3,7 +3,7 @@ import './styles.css';
 // it sets up; see late.ts for calls the other way.
 import './config';
 import './util';
-import './world/rock';
+import { rockLoad } from './world/rock';
 import './world/geometry';
 import './paint/pigment';
 import './paint/painters';
@@ -204,7 +204,7 @@ window.__cave = {
   get secrets() { return SECRETS.map((s) => ({ id: s.id, found: s.found, visible: +visibleFraction(s).toFixed(2) })); },
   get audio() { return audio ? { state: audio.ac.state, fire: audio.fire } : null; },
   get hint() { return lastHint; },
-  get pending() { return paintQueue.length; },
+  get pending() { return paintQueue.length + rockLoad.pending; },
   setEye: (x, y, z = EYE_D, snap = false) => { S.eyeLocked = true; eyeTarget.x = x; eyeTarget.y = y; eyeTarget.z = z; if (snap) Object.assign(eye, eyeTarget); },
   guidePath: (id) => GUIDES.find((g) => g.id === id).samples.map(([x, y]) => artToClient(x, y)),
   guideCenter: (id) => { const g = GUIDES.find((q) => q.id === id); return artToClient(g.x + g.w / 2, g.y + g.h / 2); },

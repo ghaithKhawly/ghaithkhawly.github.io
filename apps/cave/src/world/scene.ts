@@ -6,7 +6,7 @@ import { makeStencil, posePoints } from '../hands/silhouette';
 import { PAINT_RES, paintedCanvas } from '../paint/painters';
 import { clamp, fbm, makeCanvas, mulberry, queuePaint, supportsFilter, vnoise } from '../util';
 import { makeColumn, makeFloor, makeRock, makeStalactite, makeWall, wallPoint } from './geometry';
-import { ROCK_N, makeRockTextures } from './rock';
+import { ROCK, ROCK_N, rockMaterial, rockTexture, wallHeight } from './rock';
 
 // Renderer, scene, camera
 export const canvas = $('scene');
@@ -19,12 +19,12 @@ scene.background = new THREE.Color(0x030202);
 scene.fog = new THREE.FogExp2(0x050302, 0.045);
 export const camera = new THREE.PerspectiveCamera();
 
-export const rock = makeRockTextures();
-rock.map.repeat.set(3.2, 1.6); rock.normal.repeat.set(3.2, 1.6);
+// The painted wall's rock. The paint layers share its normal map, so pigment follows the relief.
+export const rock = { map: rockTexture(ROCK.wall.map, 3.2, 1.6, true), normal: rockTexture(ROCK.wall.normal, 3.2, 1.6) };
 // Rock relief at a paint-layer pixel, so pigment can catch on the bumps.
 export function rockHeight(ax, ay) {
   const u = ((ax / ART_W) * 3.2) % 1, v = (((1 - ay / ART_H) * 1.6) % 1 + 1) % 1;
-  return rock.height[Math.floor((1 - v) * (ROCK_N - 1)) * ROCK_N + Math.floor(u * (ROCK_N - 1))];
+  return wallHeight[Math.floor((1 - v) * (ROCK_N - 1)) * ROCK_N + Math.floor(u * (ROCK_N - 1))];
 }
 
 // The crack: a hole in the wall's alpha mask that opens onto a hidden chamber.
@@ -47,26 +47,24 @@ crackPath.closePath();
 export const crackTex = new THREE.CanvasTexture(crackMask);
 export const inCrack = (ax, ay) => { const i = (Math.floor(ay / 2) * SH_W + Math.floor(ax / 2)) * 4; return ax >= 0 && ay >= 0 && ax < ART_W && ay < ART_H && crackData[i] < 128; };
 
-export const wallMat = new THREE.MeshStandardMaterial({ map: rock.map, normalMap: rock.normal, normalScale: new THREE.Vector2(1.2, 1.2), roughness: 0.95, metalness: 0, color: 0xe8ddd0, alphaMap: crackTex, alphaTest: 0.5 });
+export const wallMat = new THREE.MeshStandardMaterial({ map: rock.map, normalMap: rock.normal, normalScale: new THREE.Vector2(1.0, 1.0), roughness: 0.95, metalness: 0, color: 0xffffff, alphaMap: crackTex, alphaTest: 0.5 });
 export const wallGeo = makeWall();
 export const wall = new THREE.Mesh(wallGeo, wallMat);
 scene.add(wall);
 
-export const floorMap = rock.map.clone(); floorMap.repeat.set(4, 2.4); floorMap.needsUpdate = true;
-export const floorNormal = rock.normal.clone(); floorNormal.repeat.set(4, 2.4); floorNormal.needsUpdate = true;
-scene.add(new THREE.Mesh(makeFloor(), new THREE.MeshStandardMaterial({ map: floorMap, normalMap: floorNormal, roughness: 1, color: 0x9a8a78 })));
+scene.add(new THREE.Mesh(makeFloor(), rockMaterial(ROCK.wall, 4, 2.4, { roughness: 1, color: 0xb6a38e })));
 
 // Floor props: hidden while you're up at the wall, where they'd only block the view.
 export const props = new THREE.Group();
 scene.add(props);
-export const rockPieceMat = new THREE.MeshStandardMaterial({ map: rock.map, normalMap: rock.normal, roughness: 0.95, color: 0xb9a996 });
+export const rockPieceMat = rockMaterial(ROCK.stone, 1, 1, { roughness: 0.95, color: 0xfae4cb });
 for (const [x, z, rad, seed] of [[-2.4, -1.0, 0.55, 3], [2.2, -0.8, 0.45, 5], [-1.3, -0.4, 0.22, 9], [1.4, -0.3, 0.26, 12], [-3.0, -2.2, 0.7, 14], [2.9, -2.4, 0.6, 18], [0.8, -2.6, 0.3, 21]]) {
   const m = new THREE.Mesh(makeRock(rad, seed), rockPieceMat);
   m.position.set(x, FLOOR_Y + rad * 0.25, z);
   m.rotation.y = seed;
   props.add(m);
 }
-export const column = new THREE.Mesh(makeColumn(), new THREE.MeshStandardMaterial({ map: rock.map, normalMap: rock.normal, roughness: 0.95, color: 0xa39280 }));
+export const column = new THREE.Mesh(makeColumn(), rockMaterial(ROCK.stone, 1, 2, { roughness: 0.95, color: 0xdcc5ad }));
 column.position.set(COLUMN.x, 0, COLUMN.z);
 scene.add(column);
 
@@ -199,8 +197,7 @@ export const CH = { w: 0.9, h: 1.3, d: 1.9 };
   chamber.position.copy(S).addScaledVector(dir, 0.12);
   const box = new THREE.BoxGeometry(CH.w, CH.h, CH.d);
   box.translate(0, 0, -CH.d / 2);
-  const inner = rock.map.clone(); inner.repeat.set(1.2, 1.2); inner.needsUpdate = true;
-  chamber.add(new THREE.Mesh(box, new THREE.MeshStandardMaterial({ map: inner, normalMap: rock.normal, color: 0x7a6656, roughness: 1, side: THREE.BackSide })));
+  chamber.add(new THREE.Mesh(box, rockMaterial(ROCK.stone, 1.2, 1.2, { color: 0xa58a74, roughness: 1, side: THREE.BackSide })));
   const lamp = new THREE.PointLight(0xffa04a, 2.2, 2.6, 2);
   lamp.position.set(0, -0.38, -CH.d * 0.62);
   chamber.add(lamp);
@@ -251,13 +248,11 @@ chamber.add(certsDecal, langDecal);
 export const MOUTH_Z = -0.4;
 export const mouthMask = makeCanvas(512, 512);
 export const mouthMaskTex = new THREE.CanvasTexture(mouthMask);
-export const mouthMap = rock.map.clone(); mouthMap.repeat.set(1.1, 1.1); mouthMap.needsUpdate = true;
-export const mouthNormal = rock.normal.clone(); mouthNormal.repeat.set(1.1, 1.1); mouthNormal.needsUpdate = true;
-export const mouthMat = new THREE.MeshStandardMaterial({ map: mouthMap, normalMap: mouthNormal, alphaMap: mouthMaskTex, alphaTest: 0.5, alphaToCoverage: true, color: 0x6e5d50, roughness: 1, side: THREE.DoubleSide });
+export const mouthMat = rockMaterial(ROCK.stone, 1.1, 1.1, { alphaMap: mouthMaskTex, alphaTest: 0.5, alphaToCoverage: true, color: 0x947e6c, roughness: 1, side: THREE.DoubleSide });
 export let mouth = null, mouthData = null, mouthDims = { W: 1, H: 1 };
 export const stalactites = new THREE.Group();
 scene.add(stalactites);
-export const stalMat = new THREE.MeshStandardMaterial({ map: rock.map, normalMap: rock.normal, color: 0x9d8b79, roughness: 0.9 });
+export const stalMat = rockMaterial(ROCK.stone, 1, 1, { color: 0xd4bca3, roughness: 0.9 });
 for (let i = 0; i < 7; i++) {
   const m = new THREE.Mesh(makeStalactite(0.35 + (i % 3) * 0.18, 0.05 + (i % 2) * 0.03, 70 + i), stalMat);
   m.userData = { fx: [-0.42, -0.3, -0.16, 0.05, 0.2, 0.33, 0.44][i], z: [-0.9, -1.4, -0.75, -1.8, -1.1, -0.85, -1.5][i] };
