@@ -126,7 +126,9 @@ prototype/        frozen reference
   Source switches to "GitHub Actions" (one click, done by you), and the
   workflow's deploy job is turned on.
 - **Tracking:** MediaPipe is only downloaded after the visitor turns the
-  camera on.
+  camera on, from the site itself (the runtime from the pinned npm package, the
+  models pinned by hash, all gzipped: 9.4 MB).
+- **Fonts:** served from the site, not Google Fonts.
 
 ## Budgets
 
@@ -137,9 +139,10 @@ prototype/        frozen reference
 | Frame rate | 60 fps | 30 fps or better |
 | Intro usable | ≤ 2 s | ≤ 3 s on 4G |
 
-Device tiers pick the bloom, shadow resolution, pixel ratio and particle
-count. A browser without WebGL gets a 2D version of the cave (the paintings as
-images, the same content).
+`npm run budget` checks the first two on every build. Device tiers pick the
+pixel ratio, the bloom and how finely the rock is meshed, and the cave lowers
+its resolution further when frames run slow. A browser without WebGL gets a 2D
+version of the cave (the paintings as images, the same content).
 
 ## Milestones
 
@@ -149,7 +152,7 @@ images, the same content).
 | M1 | Art direction | Replace the status display; type and colour system; sections painted on the rock beside their paintings; fire glare; CC0 rock; paintings baked at build time; cave mouth and column sculpted to match | You approve still frames |
 | M2 | Content in the cave | All projects above as paintings that step out with real screenshots, their words painted on the rock like the other sections | Every section reachable by gesture, by painting and by shortcut |
 | M3 | Camera | A short setup walkthrough; gesture confidence and hysteresis; tested with real hands in different light; lean thresholds tuned. Measured on 2,542 real hands: [docs/m3-gestures.md](m3-gestures.md) | 9 out of 10 real tries succeed (`?trial` scores it) |
-| M4 | Phones and performance | Device tiers, budgets above, tilt on iOS and Android, self-hosted MediaPipe files | Budgets met on a real mid-range phone |
+| M4 | Phones and performance | Device tiers, budgets above, tilt on iOS and Android, self-hosted MediaPipe files. Measured under phone throttling: [docs/m4-performance.md](m4-performance.md) | Budgets met on a real mid-range phone (`?perf` shows it) |
 | M5 | Fallbacks and reach | 2D version, reduced motion, keyboard, a screen-reader copy of the CV in the page, share and search metadata | Lighthouse accessibility ≥ 90 |
 | M6 | Launch | Switch Pages to Actions; `/classic` live; old deploy script retired | The cave is live |
 

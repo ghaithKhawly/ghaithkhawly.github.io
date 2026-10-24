@@ -6,6 +6,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { EYE_D, SCREEN_H } from '../config';
+import { quality } from './quality';
 import { buildMouth, camera, flameUniforms, renderer, scene } from '../world/scene';
 
 // Earlier modules reach these through `late` (see late.ts). The getters are lazy, so
@@ -44,13 +45,29 @@ composer.addPass(new OutputPass());
 
 export let screenW = SCREEN_H;
 export const pan = { x: 0, target: 0 };   // sideways look-around where the window is narrow (phones)
+// Render size and quality, for resizes and the frame-rate watcher. Each buffer is
+// reallocated once, and only when it changes: three's setPixelRatio resizes at the old
+// size, so calling it and setSize would reallocate twice.
+let sized = { w: 0, h: 0, pr: 0 };
+export function applyQuality() {
+  const w = window.innerWidth, h = window.innerHeight, pr = quality.pr;
+  if (w !== sized.w || h !== sized.h || pr !== sized.pr) {
+    renderer.setDrawingBufferSize(w, h, pr);
+    if (pr !== sized.pr) composer.setPixelRatio(pr);
+    if (w !== sized.w || h !== sized.h) composer.setSize(w, h);
+    sized = { w, h, pr };
+  }
+  bloom.enabled = quality.bloom;
+  flameUniforms.uProj.value = (h * renderer.getPixelRatio() * EYE_D) / SCREEN_H;
+}
+let builtFor = '';
 export function resize() {
   const w = window.innerWidth, h = window.innerHeight;
-  renderer.setSize(w, h, false);
-  composer.setSize(w, h);
   screenW = SCREEN_H * (w / h);
-  flameUniforms.uProj.value = (h * renderer.getPixelRatio() * EYE_D) / SCREEN_H;
-  buildMouth();
+  applyQuality();
+  // The cave mouth is shaped to the window; rebuild it only when the shape changes.
+  const shape = `${w}x${h}`;
+  if (shape !== builtFor) { builtFor = shape; buildMouth(); }
 }
 window.addEventListener('resize', resize);
 resize();

@@ -66,3 +66,14 @@ export interface PigmentOpts {
   fade?: number; pits?: number; flakes?: number;
   reach?: number;
 }
+
+// Set by the inline script in index.html when the intro is tapped before the cave loads.
+export interface EarlyStart {
+  choice: 'cam' | 'mouse' | null;
+  audio?: AudioContext;
+  tilt?: Promise<string>;
+  stream?: Promise<MediaStream | { error: unknown }>;
+}
+declare global {
+  interface Window { __early?: EarlyStart; __caveReady?: boolean }
+}

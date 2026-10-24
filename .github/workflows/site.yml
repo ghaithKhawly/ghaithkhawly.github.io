@@ -36,6 +36,9 @@ jobs:
         run: npm run setup
       - name: Build both sites
         run: npm run build
+      - name: Size budgets (docs/v1-plan.md)
+        working-directory: apps/cave
+        run: npm run budget
       - name: Gesture check (the classifier on real hands, no browser)
         working-directory: apps/cave
         run: npm run test:gestures

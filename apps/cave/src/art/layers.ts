@@ -124,7 +124,8 @@ export function makeGlowSprite(src, w, h) {
   gc.drawImage(tint, GLOW_PAD, GLOW_PAD);
   return g;
 }
-export function addPaintingState(p) { p.alpha = 1; p.g = 0; p.boostFrom = 0; p.boostTo = 0; p.glow = makeGlowSprite(p.canvas, p.w / 2, p.h / 2); }
+// The glow is made once the painting is on its canvas (the canvas starts blank).
+export function addPaintingState(p) { p.alpha = 1; p.g = 0; p.boostFrom = 0; p.boostTo = 0; p.glow = null; }
 for (const p of PAINTINGS) {
   p.canvas = makeCanvas(p.w * PAINT_RES, p.h * PAINT_RES);
   addPaintingState(p);

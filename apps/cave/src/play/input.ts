@@ -4,25 +4,45 @@ import { GUIDES, SECTION_NAME, checkGuides, guideAt, guideProgress, traceGuides 
 import { PAINTINGS, artCtx } from '../art/layers';
 import { TOOLS, dab, markArt, renderStroke, strokesCtx } from '../art/strokes';
 import { playChime, setScratch } from '../audio';
-import { $, ART_H, ART_W } from '../config';
+import { $, ART_H, ART_W, WALL_H, WALL_W } from '../config';
 import { pan, screenW } from '../core/view';
 import { PIG } from '../paint/pigment';
 import { finish, focus, startFocus } from './focus';
 import { startStepOut, stepOut } from './stepout';
-import { paintingHint, startCamera, startMouse } from '../tracking/camera';
+import { paintingHint, press, startCamera, startMouse, tiltOn } from '../tracking/camera';
 import { eyeTarget, pointer, setGestureUI } from '../tracking/state';
 import { boost, openPanel } from '../ui/panels';
 import { clamp, smooth } from '../util';
-import { camera, canvas, wall } from '../world/scene';
+import { camera, canvas } from '../world/scene';
+import { wallZ } from '../world/geometry';
 
 // Painting mode input (mouse, pen or touch)
 export const raycaster = new THREE.Raycaster();
 export const ndc = new THREE.Vector2();
+// Where a screen point lands on the wall, in paint-layer pixels. The wall is a known
+// surface (z = wallZ(x, y)), so the ray is marched to its first crossing and refined by
+// bisection: a few hundred noise lookups instead of testing 67,000 triangles per move.
+const rayAt = new THREE.Vector3();
 export function wallHit(clientX, clientY) {
   ndc.set((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
-  const hit = raycaster.intersectObject(wall, false)[0];
-  return hit ? [hit.uv.x * ART_W, (1 - hit.uv.y) * ART_H] : null;
+  const { origin: o, direction: d } = raycaster.ray;
+  const f = (t) => { rayAt.copy(o).addScaledVector(d, t); return rayAt.z - wallZ(rayAt.x, rayAt.y); };
+  // From where the ray could first reach the wall (its nearest point is about z = 1) to well behind it.
+  const t0 = d.z < 0 ? Math.max(0, (o.z - 1.2) / -d.z) : 0, t1 = t0 + 12, step = 0.05;
+  let a = t0, fa = f(a);
+  if (fa < 0) return null;   // already behind the wall
+  for (let b = t0 + step; b <= t1; b += step) {
+    const fb = f(b);
+    if (fb < 0) {
+      for (let i = 0; i < 18; i++) { const m = (a + b) / 2; if (f(m) > 0) a = m; else b = m; }
+      rayAt.copy(o).addScaledVector(d, (a + b) / 2);
+      const u = rayAt.x / WALL_W + 0.5, v = 0.5 - rayAt.y / WALL_H;
+      return u < 0 || u > 1 || v < 0 || v > 1 ? null : [u * ART_W, v * ART_H];
+    }
+    a = b;
+  }
+  return null;
 }
 export function paintingAt(ax, ay, filter) { return PAINTINGS.find((p) => filter(p) && ax > p.x && ax < p.x + p.w && ay > p.y && ay < p.y + p.h) || null; }
 export function clickTarget(ax, ay) {
@@ -78,8 +98,9 @@ canvas.addEventListener('pointermove', (e) => {
     canvas.style.cursor = clickTarget(hit[0], hit[1]) ? 'pointer' : 'none';
     if (!focus.active) {
       const g = guideAt(hit[0], hit[1], 30);
-      setGestureUI(g && !g.done ? `Click to paint ${g.title}. It opens ${SECTION_NAME[g.section]}.` : paintingHint(), 0);
-      if (!S.eyeLocked) {
+      setGestureUI(g && !g.done ? `${press} to paint ${g.title}. It opens ${SECTION_NAME[g.section]}.` : paintingHint(), 0);
+      // Leaning by the screen edges is for a mouse; a phone leans by tilting.
+      if (!S.eyeLocked && e.pointerType === 'mouse' && !tiltOn) {
         eyeTarget.x = -edgeLean((e.clientX / window.innerWidth - 0.5) * 2) * 1.5;
         eyeTarget.y = edgeLean((e.clientY / window.innerHeight - 0.5) * 2) * 0.5;
       }
@@ -130,7 +151,7 @@ window.addEventListener('pointercancel', endPointer);
 canvas.addEventListener('pointerleave', () => {
   if (pointer.drawing) return;
   pointer.inside = false;
-  if (S.mode === 'mouse' && !S.eyeLocked) { eyeTarget.x = 0; eyeTarget.y = 0; }
+  if (S.mode === 'mouse' && !S.eyeLocked && !tiltOn) { eyeTarget.x = 0; eyeTarget.y = 0; }
 });
 
 $('start-cam').addEventListener('click', startCamera);

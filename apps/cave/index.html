@@ -4,9 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Cave · Ghaith Khawly</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;0,800;1,400;1,500&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <canvas id="scene" aria-label="A firelit cave wall covered in paintings"></canvas>
@@ -150,11 +147,37 @@
   <div id="panel-body"></div>
 </aside>
 
+<pre id="perf" hidden aria-hidden="true"></pre>
+
 <div id="debug" hidden>
   <canvas id="debug-cam" width="240" height="180"></canvas>
   <pre id="debug-text"></pre>
 </div>
 
+<script>
+// The intro answers before the cave has loaded (the 3D scene is most of the page's
+// weight). A tap is remembered and the cave starts with it once it's ready; whatever
+// must happen inside the tap happens now: the camera prompt, the iOS motion permission,
+// and the sound, which browsers only allow to start from a tap.
+(() => {
+  const early = (window.__early = { choice: null });
+  const $ = (id) => document.getElementById(id);
+  const pick = (choice) => () => {
+    if (early.choice || window.__caveReady) return;   // once the cave is loaded, its own handlers answer
+    early.choice = choice;
+    try { early.audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* no sound */ }
+    const DOE = window.DeviceOrientationEvent;
+    if (DOE && typeof DOE.requestPermission === 'function') early.tilt = DOE.requestPermission().catch(() => 'denied');
+    if (choice === 'cam' && window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      early.stream = navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false }).catch((error) => ({ error }));
+    }
+    $('start-cam').disabled = $('start-mouse').disabled = true;
+    $('intro-status').textContent = choice === 'cam' ? 'Asking for your camera while the fire is lit…' : 'Lighting the fire…';
+  };
+  $('start-cam').addEventListener('click', pick('cam'));
+  $('start-mouse').addEventListener('click', pick('mouse'));
+})();
+</script>
 <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

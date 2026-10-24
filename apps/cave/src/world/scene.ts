@@ -7,11 +7,14 @@ import { PAINT_RES, paintedCanvas } from '../paint/painters';
 import { bakedJob, clamp, fbm, makeCanvas, mulberry, supportsFilter, vnoise } from '../util';
 import { makeColumn, makeFloor, makeRock, makeStalactite, makeWall, wallPoint } from './geometry';
 import { ROCK, ROCK_N, rockMaterial, rockTexture, wallHeight } from './rock';
+import { quality } from '../core/quality';
 
 // Renderer, scene, camera
 export const canvas = $('scene');
-export const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+// No antialias on the canvas: everything is drawn through the post-processing chain's own
+// render targets, so a multisampled canvas would only cost memory.
+export const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(quality.pr);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.35;
 export const scene = new THREE.Scene();
@@ -292,7 +295,7 @@ export function buildMouth() {
   mouthMaskTex.needsUpdate = true;
   mouthData = mctx.getImageData(0, 0, 512, 512).data;
   mouthDims = { W, H };
-  const g = new THREE.PlaneGeometry(W, H, 90, 90);
+  const g = new THREE.PlaneGeometry(W, H, 64, 64);
   const p = g.attributes.position;
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i), y = p.getY(i);

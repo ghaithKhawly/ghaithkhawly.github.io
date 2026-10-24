@@ -15,6 +15,7 @@ What happens next is in the [v1 plan](../../docs/v1-plan.md).
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # typecheck, then build into dist/
+npm run budget     # check the build against the size budgets
 npm test           # Playwright browser checks against the built site
 npm run test:gestures  # the gesture classifier on 2,542 real hands, in a second
 npm run bake       # re-paint the baked paintings (see below)
@@ -23,6 +24,18 @@ npm run bake       # re-paint the baked paintings (see below)
 The camera needs `https` or `localhost`. Add `?setup` to see the first-time camera
 walkthrough again, or `?trial` to score ten tries at the three shapes with your own
 hands (see [docs/m3-gestures.md](../../docs/m3-gestures.md)).
+
+For performance (see [docs/m4-performance.md](../../docs/m4-performance.md)):
+
+| Add | What it does |
+|---|---|
+| `?perf` | Shows the frame rate, device tier, resolution, draw calls and memory in a corner |
+| `?tier=low`, `mid` or `high` | Starts at that tier instead of the one guessed from the device |
+| `?fixed` | Stops the cave lowering its resolution when frames run slow |
+
+Hand tracking (MediaPipe) is served from the site itself. The build takes the runtime
+from the pinned npm package and fetches the two models once, checked against hashes in
+`scripts/mediapipe/plugin.ts`, so the first build needs the network.
 
 ## How the code is laid out
 
@@ -38,8 +51,8 @@ changes it from there.
 | `tracking/` | Camera, MediaPipe, head and hand state |
 | `play/` | Painting mode input, the zoom and ghost hand, hidden things, devices that step out of paintings |
 | `fx/` | Live shadows and glows |
-| `core/` | Post-processing and the window camera |
-| `ui/` | Panels, toasts, tool buttons |
+| `core/` | Post-processing, the window camera, device tiers and the frame-rate watcher |
+| `ui/` | Panels, toasts, tool buttons, the camera walkthrough, `?trial` and `?perf` |
 | `content.ts` | CV content, read from `../classic/src/data/cv-fulltime.json` |
 | `assets/rock/` | Photo-scanned rock textures (CC0, Poly Haven); credits in its README |
 | `assets/baked/` | The paintings, painted once by `npm run bake` |

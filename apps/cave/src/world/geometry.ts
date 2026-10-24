@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { COLUMN, FLOOR_Y, WALL_H, WALL_W, WALL_Z } from '../config';
 import { clamp, fbm } from '../util';
+import { quality } from '../core/quality';
 
 // Cave geometry
 export function wallZ(x, y) {
@@ -12,8 +13,13 @@ export function wallPoint(u, vTop, out = new THREE.Vector3()) {
   const x = (u - 0.5) * WALL_W, y = (0.5 - vTop) * WALL_H;
   return out.set(x, y, wallZ(x, y));
 }
+// The wall is drawn five times (rock, older marks, paint, shadows, glow), so its detail
+// follows the device tier. Even the lowest stays within a few millimetres of the true
+// surface, which the paint decals and the pointer use.
+const WALL_SEGS = { high: [260, 130], mid: [200, 100], low: [160, 80] };
 export function makeWall() {
-  const g = new THREE.PlaneGeometry(WALL_W, WALL_H, 260, 130);
+  const [sx, sy] = WALL_SEGS[quality.tier];
+  const g = new THREE.PlaneGeometry(WALL_W, WALL_H, sx, sy);
   const p = g.attributes.position;
   for (let i = 0; i < p.count; i++) p.setZ(i, wallZ(p.getX(i), p.getY(i)));
   g.computeVertexNormals();
@@ -26,7 +32,7 @@ export function offsetGeometry(g, d) {
   return c;
 }
 export function makeFloor() {
-  const g = new THREE.PlaneGeometry(12, 7, 150, 90);
+  const g = quality.tier === 'high' ? new THREE.PlaneGeometry(12, 7, 150, 90) : new THREE.PlaneGeometry(12, 7, 100, 60);
   g.rotateX(-Math.PI / 2);
   const p = g.attributes.position;
   for (let i = 0; i < p.count; i++) {

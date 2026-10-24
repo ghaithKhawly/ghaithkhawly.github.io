@@ -1,3 +1,4 @@
+import './fonts.css';
 import './styles.css';
 // Every module, in the order the cave is built. Each one may only use earlier ones while
 // it sets up; see late.ts for calls the other way.
@@ -27,18 +28,20 @@ import './play/input';
 import * as THREE from 'three';
 import { S } from './state';
 import { GUIDES, guideProgress } from './art/guides';
-import { PAINTINGS, artTex, baseTex, shadowMat } from './art/layers';
+import { PAINTINGS, artTex, baseTex, fxMesh, shadowMat, shadowMesh } from './art/layers';
 import { redrawArt } from './art/strokes';
 import { audio } from './audio';
 import { $, ART_H, ART_W, EYE_D, FIRE, HOLD_DWELL, params } from './config';
-import { applyWindowCamera, bloom, composer, pan, vignette, win } from './core/view';
+import { applyQuality, applyWindowCamera, bloom, composer, pan, vignette, win } from './core/view';
+import { quality, sampleFrame } from './core/quality';
+import { perfFrameStart, updatePerf } from './ui/perf';
 import { drawFx, drawShadows } from './fx/draw';
 import { analyzeHand, coach } from './hands/gestures';
 import { POSES, posePoints } from './hands/silhouette';
 import { FILL_T, finish, focus, updateFinish } from './play/focus';
 import { SECRETS, tmpV, updateSecrets, visibleFraction } from './play/secrets';
 import { DEVICES, FLAKES, flakeGeo, flakePos, flakeVel, flakes, screens, startStepOut, stepOut, updateStepOut } from './play/stepout';
-import { detect, fireTarget, startMouse } from './tracking/camera';
+import { detect, fireTarget, startCamera, startMouse, tiltOn, tiltRef } from './tracking/camera';
 import { G, eye, eyeTarget, lastFaceAt, lastHint, pointer, stats, syntheticHand, toShadowPoints, updateGestures } from './tracking/state';
 import { openPanel, panel, panelKind } from './ui/panels';
 import { drawDebug } from './ui/tools';
@@ -47,7 +50,7 @@ import { setup, updateSetup } from './ui/setup';
 import { trial, updateTrial } from './ui/trial';
 import { bakeLoad, bakeTargets, clamp, easeInOut, paintQueue, runPaintQueue, vnoise } from './util';
 import { wallPoint } from './world/geometry';
-import { camera, chamber, column, embers, fillLight, fireLight, flameUniforms, flames, halo, lampLight, logMat, mouth, props, stalactites, washLight } from './world/scene';
+import { camera, chamber, column, embers, fillLight, fireLight, flameUniforms, flames, halo, lampLight, logMat, mouth, props, renderer, scene, stalactites, washLight } from './world/scene';
 
 // Main loop
 export let prev = performance.now();
@@ -56,6 +59,8 @@ export const forcedPose = params.get('pose');
 const glareAt = new THREE.Vector3();
 let calm = 0;
 export function frame(now) {
+  sampleFrame(now, S.mode !== 'idle' && !document.hidden, applyQuality);
+  perfFrameStart();
   const dt = Math.min(0.05, (now - prev) / 1000);
   prev = now;
   S.clock += dt;
@@ -153,6 +158,8 @@ export function frame(now) {
   const wantShadow = handPts.length ? (S.mode === 'mouse' ? 0.7 : 0.86) * (0.92 + S.flickerNow * 0.4) * (0.5 + 0.5 * S.fireLevel) : 0;
   S.shadowAlpha += (wantShadow - S.shadowAlpha) * (1 - Math.exp(-dt * 10));
   shadowMat.opacity = S.shadowAlpha;
+  // Layers with nothing on them aren't drawn: each is a full copy of the wall.
+  shadowMesh.visible = S.shadowAlpha > 0.01;
   if (handPts.length || S.shadowAlpha > 0.01) drawShadows(handPts, stick);
 
   for (const p of PAINTINGS) {
@@ -165,7 +172,7 @@ export function frame(now) {
     p.g += (target - p.g) * (1 - Math.exp(-dt * 6));
   }
   for (const s of SECRETS) if (s.decal) (s.decal.material as THREE.MeshStandardMaterial).emissiveIntensity = s.found ? 0.25 + 0.5 * Math.max(0, 1 - (S.clock - s.foundAt) / 2.5) : 0;
-  drawFx(handPts);
+  fxMesh.visible = drawFx(handPts);
 
   updateFinish(dt);
   updateSecrets(dt);
@@ -192,11 +199,14 @@ export function frame(now) {
     updateSetup();
     updateTrial();
     drawDebug();
+    updatePerf(now);
   }
   requestAnimationFrame(frame);
 }
 redrawArt();
-requestAnimationFrame(frame);
+// Compile the shaders before the first frame, in parallel where the browser can
+// (KHR_parallel_shader_compile), rather than stalling the first frame on them.
+renderer.compileAsync(scene, camera).catch((e) => console.warn('Shader warm-up failed', e)).finally(() => requestAnimationFrame(frame));
 setTimeout(runPaintQueue, 0);
 
 // Test hooks (used by the automated check; harmless for visitors).
@@ -214,6 +224,8 @@ window.__cave = {
   get screen() { const d = screens.project && DEVICES[screens.project.device]; return screens.project ? { project: screens.project.id, index: screens.index, shown: !!d?.userData.screen.material.map } : null; },
   paintingCenter: (id) => { const p = PAINTINGS.find((q) => q.id === id); return artToClient(p.x + p.w / 2, p.y + p.h / 2); },
   get stepOutState() { return stepOut.device ? { t: stepOut.t, dir: stepOut.dir, pos: stepOut.device.position.toArray().map((v) => +v.toFixed(2)) } : null; },
+  get tilt() { return { on: tiltOn, ref: tiltRef, target: { ...eyeTarget }, angle: screen.orientation?.angle }; },
+  get quality() { return { ...quality, w: renderer.domElement.width, h: renderer.domElement.height }; },
   get stats() { return { ...stats, eye: { ...eye }, faceRef: S.faceRef, faceSamples: S.faceCal.length }; },
   get guides() { return GUIDES.map((g) => ({ id: g.id, done: g.done, progress: +guideProgress(g).toFixed(2), precision: g.inBox ? +(g.near / g.inBox).toFixed(2) : null })); },
   get focus() { return { active: focus.active, t: +focus.t.toFixed(2), guide: focus.guide && focus.guide.id, finishing: !!finish.g }; },
@@ -233,3 +245,7 @@ window.__cave = {
   openPanel, startStepOut: (id) => startStepOut(PAINTINGS.find((p) => p.id === id)),
 };
 if (params.get('start') === 'mouse') startMouse();
+// A tap on the intro before the cave had loaded (see index.html) starts it now.
+window.__caveReady = true;
+if (window.__early?.choice === 'cam') startCamera();
+else if (window.__early?.choice === 'mouse') startMouse();

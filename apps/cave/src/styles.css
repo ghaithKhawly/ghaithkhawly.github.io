@@ -214,6 +214,9 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
 /* More below: the words fade into the rock until you scroll to them. */
 #panel.more { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 70px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 70px), transparent); }
 
+/* ?perf */
+#perf { position: fixed; z-index: 30; left: max(10px, env(safe-area-inset-left)); bottom: calc(env(safe-area-inset-bottom) + 90px); margin: 0; padding: 8px 10px; border-radius: 6px; background: rgba(10, 6, 4, 0.82); color: var(--kaolin); font: 500 12px/1.45 var(--label); font-variant-numeric: tabular-nums; white-space: pre; pointer-events: none; }
+
 /* ---------- tracking view (diagnostics) ---------- */
 #debug {
   position: fixed; z-index: 11; right: max(16px, env(safe-area-inset-right)); top: calc(env(safe-area-inset-top) + 130px);

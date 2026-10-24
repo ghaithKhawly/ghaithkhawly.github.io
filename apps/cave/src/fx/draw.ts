@@ -71,10 +71,11 @@ export function emberEye(x, y, R) {
   fxCtx.beginPath(); fxCtx.arc(x, y, R * 3, 0, Math.PI * 2); fxCtx.fill();
 }
 export let fxWasActive = true;
-export function drawFx(handPts) {
+// Returns whether there's anything on the glow layer.
+export function drawFx(handPts): boolean {
   const eyesOpen = S.mode === 'camera' && (G.label === 'wolf' || G.label === 'rabbit') && S.analyses.some((a) => a.label === G.label);
   const active = S.mode === 'mouse' || eyesOpen || PAINTINGS.some((p) => p.g > 0.01 && p.alpha > 0.01) || STENCILS.some((st) => st.glow && S.clock <= st.glowUntil);
-  if (!active && !fxWasActive) return;
+  if (!active && !fxWasActive) return false;
   fxWasActive = active;
   fxCtx.clearRect(0, 0, SH_W, SH_H);
   for (const p of PAINTINGS) {
@@ -127,4 +128,5 @@ export function drawFx(handPts) {
     }
   }
   fxTex.needsUpdate = true;
+  return true;
 }

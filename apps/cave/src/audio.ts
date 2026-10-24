@@ -28,7 +28,9 @@ export function audioOn() { return $('t-sound').getAttribute('aria-pressed') ===
 export function startAudio() {
   if (audio) return;
   try {
-    const ac: AudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    // A context made inside an early tap (see index.html) is allowed to play; use it.
+    const ac: AudioContext = window.__early?.audio || new (window.AudioContext || (window as any).webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume().catch(() => {});
     const master = ac.createGain(); master.gain.value = 0; master.connect(ac.destination);
     master.gain.setTargetAtTime(audioOn() ? 0.9 : 0, ac.currentTime, 0.8);
     const verb = ac.createConvolver(); verb.buffer = impulse(ac, 3.2, 2.6);
