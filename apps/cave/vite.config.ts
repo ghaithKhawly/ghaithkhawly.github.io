@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import { mediapipe } from './scripts/mediapipe/plugin.ts';
+import { cvPage, preloadCave } from './scripts/cv-page.ts';
 
 export default defineConfig({
   // Relative asset paths, so a build works at the site root and in previews under a sub-path.
@@ -7,5 +8,5 @@ export default defineConfig({
   // Content is read from the classic site's data, one level up.
   server: { fs: { allow: ['..'] } },
   build: { target: 'es2022', sourcemap: true },
-  plugins: [mediapipe()],
+  plugins: [mediapipe(), cvPage(), preloadCave()],
 });

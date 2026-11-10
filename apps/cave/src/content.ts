@@ -3,6 +3,8 @@
 import cv from '../../classic/src/data/cv-fulltime.json';
 
 const dash = (s: string) => s.replace(/ - /g, ' – ');
+// CV bullet points read as one paragraph of sentences.
+export const sentences = (lines: string[]) => lines.map((l) => l.trim().replace(/\.?$/, '.')).join(' ');
 
 export interface Experience { company: string; position: string; period: string; description: string[]; technologies: string[] }
 export interface Project { title: string; description: string; technologies: string[] }

@@ -1,6 +1,6 @@
 import { late, provide } from '../late';
 import { S } from '../state';
-import { CV } from '../content';
+import { CV, sentences } from '../content';
 import { PAINTINGS } from '../art/layers';
 import { $ } from '../config';
 import { returnStepOut, screens, showScreen } from '../play/stepout';
@@ -17,7 +17,6 @@ export let panelKind = null, panelArg = null;
 // Everything opened so far (sections, and `project:<id>`), for the tally of finds.
 export const opened = new Set<string>();
 export function el(tag: string, cls?: string | null, text?: string | null): HTMLElement { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
-const sentences = (lines: string[]) => lines.map((l) => l.trim().replace(/\.?$/, '.')).join(' ');
 export function openPanel(kind: string, arg?: any) {
   panelKind = kind; panelArg = arg;
   opened.add(kind === 'project' ? `project:${arg}` : kind);

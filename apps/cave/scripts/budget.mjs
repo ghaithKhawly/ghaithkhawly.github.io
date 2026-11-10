@@ -34,7 +34,8 @@ for (const f of refs(/<link[^>]+rel="modulepreload"[^>]+href="([^"]+)"/g)) await
 const css = refs(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g);
 const fonts = [];
 for (const f of css) {
-  for (const m of (await readFile(f, 'utf8')).matchAll(/url\((?!#|data:)["']?([^)"']+)["']?\)/g)) fonts.push(path.join(path.dirname(f), m[1]));
+  // Only the fonts: the stylesheet's other pictures (the plain page's rock) load only where they're shown.
+  for (const m of (await readFile(f, 'utf8')).matchAll(/url\((?!#|data:)["']?([^)"']+\.woff2)["']?\)/g)) fonts.push(path.join(path.dirname(f), m[1]));
 }
 
 const rows = [];

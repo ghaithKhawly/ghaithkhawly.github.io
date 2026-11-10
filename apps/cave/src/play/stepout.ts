@@ -6,7 +6,8 @@ import { ART_H, ART_W, EYE_D, WALL_H, WALL_W } from '../config';
 import { clamp, easeInOut, mulberry, smooth } from '../util';
 import { wallPoint } from '../world/geometry';
 import { scene } from '../world/scene';
-import { type ProjectInfo, projectById, screenUrl } from '../content/projects';
+import { type ProjectInfo, projectById } from '../content/projects';
+import { screenUrl } from '../content/screens';
 
 // Step-out devices: a project's painting becomes the phone or laptop it runs on, showing
 // real screens. One phone and one laptop serve every project; their screens are swapped.

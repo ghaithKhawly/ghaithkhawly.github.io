@@ -4,8 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Cave · Ghaith Khawly</title>
+<script>
+// The cave is drawn over a plain page of the CV. Mark the page `cave` only where it can be
+// drawn (three.js needs WebGL 2) and the plain page wasn't asked for (?flat). Without
+// JavaScript nothing marks it, and the plain page is the site.
+if ('WebGL2RenderingContext' in window && !/[?&]flat(&|=|$)/.test(location.search)) document.documentElement.classList.add('cave');
+</script>
 </head>
 <body>
+<a class="skip" href="?flat">Read the CV as a plain page</a>
 <canvas id="scene" aria-label="A firelit cave wall covered in paintings"></canvas>
 <video id="cam" playsinline muted hidden></video>
 
@@ -69,6 +76,7 @@
     </div>
     <div id="intro-status" role="status" aria-live="polite"></div>
     <p class="note">Camera frames stay on your device; nothing is uploaded. With the camera on, lean left and right and the screen becomes a window into the cave.</p>
+    <p class="note"><a href="?flat">Or read the CV as a plain page</a></p>
   </div>
 </section>
 
@@ -148,6 +156,8 @@
 </aside>
 
 <pre id="perf" hidden aria-hidden="true"></pre>
+
+<!-- cv page -->
 
 <div id="debug" hidden>
   <canvas id="debug-cam" width="240" height="180"></canvas>

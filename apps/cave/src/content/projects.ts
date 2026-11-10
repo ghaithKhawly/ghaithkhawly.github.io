@@ -2,9 +2,6 @@
 // same Palaeolithic style as the rest) that steps out as the device it runs on, showing
 // real screens. Facts come from each project's own README.
 
-// Screens load only when their project opens: Vite gives a URL per file, nothing more.
-const SCREEN_URLS = import.meta.glob('../assets/screens/*/*.webp', { query: '?url', import: 'default' }) as Record<string, () => Promise<string>>;
-
 export interface Screen { file: string; caption: string }
 export interface ProjectInfo {
   id: string;
@@ -164,8 +161,3 @@ export const PROJECTS: ProjectInfo[] = [
 ];
 
 export const projectById = (id: string) => PROJECTS.find((p) => p.id === id);
-export function screenUrl(project: ProjectInfo, screen: Screen): Promise<string> {
-  const load = SCREEN_URLS[`../assets/screens/${project.id}/${screen.file}.webp`];
-  if (!load) return Promise.reject(new Error(`No screen ${project.id}/${screen.file}`));
-  return load();
-}
