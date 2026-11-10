@@ -1,0 +1,7 @@
+/* Alegreya and Alegreya Sans, served from the site (SIL Open Font License 1.1; the
+   licences are next to the files). Latin only: everything on the page is in English. */
+@font-face { font-family: 'Alegreya'; font-style: normal; font-weight: 400 900; font-display: swap; src: url(./assets/fonts/alegreya.woff2) format('woff2'); }
+@font-face { font-family: 'Alegreya'; font-style: italic; font-weight: 400 900; font-display: swap; src: url(./assets/fonts/alegreya-italic.woff2) format('woff2'); }
+@font-face { font-family: 'Alegreya Sans'; font-style: normal; font-weight: 400; font-display: swap; src: url(./assets/fonts/alegreya-sans-400.woff2) format('woff2'); }
+@font-face { font-family: 'Alegreya Sans'; font-style: normal; font-weight: 500; font-display: swap; src: url(./assets/fonts/alegreya-sans-500.woff2) format('woff2'); }
+@font-face { font-family: 'Alegreya Sans'; font-style: normal; font-weight: 700; font-display: swap; src: url(./assets/fonts/alegreya-sans-700.woff2) format('woff2'); }

@@ -1,0 +1,99 @@
+name: Site
+
+# Builds the cave and the classic site into one dist/, runs the checks, and on `main`
+# publishes dist/ to the gh-pages branch, which GitHub Pages serves. Each deploy is one
+# commit there, so undoing one is reverting it. See docs/launch.md.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/*/package-lock.json
+      - name: Install
+        run: npm run setup
+      - name: Build both sites
+        run: npm run build
+      - name: Size budgets (docs/v1-plan.md)
+        working-directory: apps/cave
+        run: npm run budget
+      - name: Gesture check (the classifier on real hands, no browser)
+        working-directory: apps/cave
+        run: npm run test:gestures
+      - name: Install Chromium for the checks
+        working-directory: apps/cave
+        run: npx playwright install --with-deps chromium
+      - name: Install ffmpeg (makes the fake webcam video for the camera check)
+        run: sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Browser checks
+        working-directory: apps/cave
+        run: npx playwright test
+      - name: Keep traces of failed checks
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-traces
+          path: apps/cave/test-results
+          retention-days: 7
+      - name: Keep the built site for the deploy
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v6
+        with:
+          name: site
+          path: dist
+          include-hidden-files: true   # .nojekyll
+          retention-days: 7
+
+  # Publish dist/ as one commit on gh-pages. Pages builds from that branch's root.
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: site
+          path: dist
+      - uses: actions/checkout@v6
+        with:
+          ref: gh-pages
+          path: pages
+      - name: Publish to gh-pages
+        working-directory: pages
+        run: |
+          git rm -rq --ignore-unmatch .
+          cp -a ../dist/. .
+          touch .nojekyll
+          git add -A
+          if git diff --cached --quiet; then echo "The site hasn't changed."; exit 0; fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "Deploy ${GITHUB_SHA::7} from main"
+          git push origin HEAD:gh-pages
+      # A push made with the workflow's own token may not start a Pages build by itself.
+      - name: Ask Pages to build
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent

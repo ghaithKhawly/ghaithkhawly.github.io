@@ -1,0 +1,361 @@
+/* Painted: everything you read is pigment. Kaolin clay on the dark stone round the
+   cave mouth, red ochre for what matters, and a soot wash under text that has to sit
+   over lit rock. No pills, cards or glass. */
+:root {
+  --dark: #070504;
+  --kaolin: #efe3c9;
+  --kaolin-dim: rgba(239, 227, 201, 0.74);
+  --kaolin-faint: rgba(239, 227, 201, 0.3);
+  --ochre: #b23c1c;
+  --ochre-lit: #d2582c;     /* red ochre where it has to read on dark stone */
+  --yellow: #c98f35;
+  --charcoal: #2a1c14;
+  --soot: rgba(10, 6, 4, 0.82);
+  --text: "Alegreya", Georgia, "Times New Roman", serif;
+  --label: "Alegreya Sans", "Gill Sans", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: var(--dark); color: var(--kaolin); overflow: hidden; }
+body { font: 18px/1.5 var(--text); -webkit-font-smoothing: antialiased; }
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.defs { position: absolute; width: 0; height: 0; }
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; padding: 0; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--kaolin); outline-offset: 4px; border-radius: 2px; }
+[hidden] { display: none !important; }
+p, h1, h2, h3, ul { margin: 0; }
+kbd { font: 500 13px/1 var(--label); border: 1.5px solid currentColor; border-radius: 4px; padding: 2px 6px 3px; opacity: 0.8; }
+canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
+
+/* Pigment: a rough edge and the rock's pores. Only on large text; small text stays crisp. */
+.painted { filter: url(#paint-light); }
+.painted.big { filter: url(#paint-big); }
+/* Soot: a soft dark wash so kaolin reads even when the view is right up against lit rock. */
+.soot { background: radial-gradient(closest-side, rgba(7, 5, 4, 0.64), rgba(7, 5, 4, 0.4) 55%, rgba(7, 5, 4, 0)); }
+
+/* ---------- intro ---------- */
+#intro {
+  position: fixed; inset: 0; z-index: 30; display: grid; align-items: end; overflow: auto;
+  padding: max(28px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: radial-gradient(120% 90% at 30% 100%, rgba(7, 5, 4, 0.25), rgba(7, 5, 4, 0.93) 70%);
+}
+.intro-inner { max-width: 640px; margin-left: clamp(0px, 6vw, 96px); display: grid; gap: 20px; }
+#intro h1 { font: 800 clamp(46px, 7.5vw, 84px)/0.92 var(--text); letter-spacing: -0.015em; text-wrap: balance; }
+#intro .lede { color: var(--kaolin-dim); max-width: 50ch; font-size: 19px; line-height: 1.5; }
+.gestures { list-style: none; padding: 0; display: grid; gap: 12px 22px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.gestures li { display: flex; gap: 14px; align-items: center; }
+.gestures b { font: 700 17px/1.2 var(--text); display: block; }
+.gestures span { color: var(--kaolin-dim); display: block; font: 400 15px/1.35 var(--label); margin-top: 2px; }
+.actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; }
+/* A swatch of paint behind the words: the edge is roughened, the words stay sharp. */
+.btn { position: relative; isolation: isolate; padding: 13px 22px 15px; font: 700 18px/1 var(--text); color: var(--kaolin); }
+.btn::before { content: ''; position: absolute; inset: 0; z-index: -1; border: 2px solid var(--kaolin-faint); border-radius: 3px 7px 4px 6px; filter: url(#rough-edge); }
+.btn:hover::before { border-color: var(--kaolin-dim); }
+.btn.primary { color: #1a0d07; }
+.btn.primary::before { background: var(--ochre-lit); border-color: var(--ochre-lit); }
+.btn.primary:hover::before { background: #dd6532; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.note { font: 400 14px/1.5 var(--label); color: var(--kaolin-dim); max-width: 60ch; }
+#intro-status { font: italic 500 17px/1.5 var(--text); color: var(--ochre-lit); min-height: 1.5em; }
+
+/* ---------- in the cave: name, finds, gesture, tools ---------- */
+#hud {
+  position: fixed; z-index: 10; top: calc(env(safe-area-inset-top) + 18px); left: max(14px, env(safe-area-inset-left));
+  padding: 10px 16px 14px; pointer-events: none;
+}
+#hud .who { font: 700 31px/1 var(--text); letter-spacing: -0.005em; }
+#hud .role { font: italic 400 17px/1.3 var(--text); color: var(--kaolin-dim); margin-top: 6px; }
+#hud .status { font: 500 14px/1.4 var(--label); color: var(--kaolin-dim); margin-top: 10px; max-width: 30ch; }
+
+#finds {
+  position: fixed; z-index: 10; top: calc(env(safe-area-inset-top) + 18px); right: max(14px, env(safe-area-inset-right));
+  padding: 12px 16px 14px; text-align: right; pointer-events: none;
+}
+#tally { display: block; margin-left: auto; overflow: visible; }
+#tally path { fill: none; stroke-linecap: round; }
+#tally .found { stroke: var(--ochre-lit); stroke-width: 5.5; filter: url(#paint-light); }
+#tally .open { stroke: var(--kaolin-faint); stroke-width: 2; }
+#finds-text { font: 500 15px/1.3 var(--label); color: var(--kaolin-dim); margin-top: 8px; }
+
+#gesture {
+  --p: 0;
+  position: fixed; z-index: 10; left: max(14px, env(safe-area-inset-left)); bottom: calc(env(safe-area-inset-bottom) + 18px);
+  display: flex; align-items: center; gap: 14px; padding: 12px 18px 12px 12px; max-width: min(560px, calc(100vw - 420px));
+}
+#gesture .stencil { width: 54px; height: 54px; flex: none; }
+#gesture-label { font: 700 21px/1.2 var(--text); }
+
+#tools {
+  position: fixed; z-index: 10; right: max(14px, env(safe-area-inset-right)); bottom: calc(env(safe-area-inset-bottom) + 14px);
+  display: flex; gap: 6px; padding: 10px 12px; flex-wrap: wrap; justify-content: flex-end; max-width: 60vw;
+}
+.tool { display: grid; justify-items: center; gap: 6px; min-width: 58px; padding: 6px 6px 4px; font: 500 13px/1.1 var(--label); color: var(--kaolin-dim); }
+.tool .glyph { width: 28px; height: 28px; color: var(--kaolin-faint); filter: url(#paint-light); }
+.tool[aria-pressed="true"], .tool[aria-expanded="true"] { color: var(--kaolin); }
+.tool[aria-pressed="true"] .glyph, .tool[aria-expanded="true"] .glyph { color: var(--ochre-lit); }
+#panel-title:focus { outline: none; }
+.tool:not([aria-pressed]):not([aria-expanded]) .glyph { color: var(--kaolin); }
+.tool:hover .glyph { color: var(--kaolin); }
+
+#back {
+  position: fixed; z-index: 22; isolation: isolate; left: 50%; top: calc(env(safe-area-inset-top) + 16px); transform: translateX(-50%);
+  display: flex; gap: 10px; align-items: center; padding: 11px 20px 12px; font: 700 18px/1 var(--text); width: max-content; max-width: calc(100vw - 32px);
+  background: none;
+}
+/* A dab of soot behind it, so it reads over lit rock and over a section's limewash alike. */
+#back::before { content: ''; position: absolute; inset: 0; z-index: -1; background: rgba(10, 6, 4, 0.78); border-radius: 16px 20px 17px 19px; filter: url(#rough-edge); }
+#toast {
+  position: fixed; z-index: 12; left: 50%; top: calc(env(safe-area-inset-top) + 66px); transform: translateX(-50%);
+  padding: 14px 28px; font: 700 19px/1.3 var(--text); text-align: center; width: max-content; max-width: min(640px, calc(100vw - 32px));
+  animation: appear-c 0.6s ease;
+}
+
+/* The first-time camera walkthrough: steps, what the camera sees, what to do now. */
+#setup {
+  position: fixed; z-index: 14; left: 50%; top: calc(env(safe-area-inset-top) + 18px); transform: translateX(-50%);
+  width: min(560px, calc(100vw - 24px)); padding: 18px 26px 20px; display: grid; gap: 10px 18px;
+  background: rgba(10, 6, 4, 0.84); border-radius: 6px 12px 8px 14px; box-shadow: 0 0 50px 24px rgba(7, 5, 4, 0.5);
+  grid-template-columns: 240px 1fr; grid-template-areas: 'title title' 'view steps' 'view say' 'view skip';
+}
+/* The name and tally step aside while it's up; they'd crowd it on a smaller screen. */
+.setup-on #hud, .setup-on #finds, .setup-on #shapes { visibility: hidden; }
+#setup h2 { grid-area: title; font: 800 30px/1 var(--text); }
+.setup-steps { grid-area: steps; list-style: none; padding: 0; display: flex; gap: 14px; font: 500 15px/1 var(--label); color: var(--kaolin-faint); }
+.setup-steps li::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 50%; border: 2px solid currentColor; vertical-align: -1px; }
+.setup-steps .now { color: var(--kaolin); }
+.setup-steps .done { color: var(--kaolin-dim); }
+.setup-steps .done::before { background: var(--ochre-lit); border-color: var(--ochre-lit); }
+.setup-steps .warn::before { background: var(--yellow); border-color: var(--yellow); }
+#setup-view { grid-area: view; width: 240px; height: 180px; border-radius: 6px; background: #000; }
+#setup-say { grid-area: say; font: 700 19px/1.35 var(--text); color: var(--kaolin); align-self: start; }
+#setup-skip { grid-area: skip; justify-self: start; align-self: end; font: 500 15px/1 var(--label); color: var(--kaolin-dim); border-bottom: 1.5px solid var(--kaolin-faint); padding: 2px 0; }
+
+/* Trial mode (?trial): one prompt at a time, then the score. */
+#trial { position: fixed; z-index: 14; left: 50%; top: calc(env(safe-area-inset-top) + 18px); transform: translateX(-50%); width: min(520px, calc(100vw - 24px)); padding: 16px 26px 18px; text-align: center; display: grid; gap: 6px; background: rgba(10, 6, 4, 0.84); border-radius: 6px 12px 8px 14px; box-shadow: 0 0 50px 24px rgba(7, 5, 4, 0.5); }
+#trial-count { font: 500 15px/1 var(--label); color: var(--kaolin-dim); }
+#trial-say { font: 800 34px/1.1 var(--text); }
+#trial-how { font: 400 17px/1.35 var(--label); color: var(--kaolin-dim); min-height: 1.35em; }
+.trial-actions { display: flex; gap: 22px; justify-content: center; margin-top: 4px; }
+.trial-actions button { font: 500 15px/1 var(--label); color: var(--kaolin-dim); border-bottom: 1.5px solid var(--kaolin-faint); padding: 2px 0; }
+.trial-actions button:hover { color: var(--kaolin); }
+
+/* The shapes to make (camera mode), up the left side above the gesture hint */
+#shapes {
+  position: fixed; z-index: 10; left: max(14px, env(safe-area-inset-left)); bottom: calc(env(safe-area-inset-bottom) + 104px);
+  display: grid; gap: 4px; width: 270px; padding: 14px 16px;
+}
+#shapes h3 { font: italic 500 16px/1 var(--text); color: var(--kaolin-dim); margin: 0 0 6px; }
+.shape { display: flex; gap: 12px; align-items: center; padding: 5px 0; opacity: 0.8; transition: opacity 0.2s; }
+.shape b { display: block; font: 700 16px/1.2 var(--text); }
+.shape span { display: block; font: 400 14px/1.35 var(--label); color: var(--kaolin-dim); }
+.shape.near { opacity: 1; }
+.shape.active { opacity: 1; }
+.shape.active b { color: var(--ochre-lit); }
+
+/* The shortcuts open beside their button, in the dark corner of the cave mouth: two
+   lists, sections and projects. */
+#chips {
+  position: fixed; z-index: 10; right: max(10px, env(safe-area-inset-right)); bottom: calc(env(safe-area-inset-bottom) + 92px);
+  display: flex; gap: 34px; align-items: flex-end; padding: 22px 26px 20px 30px;
+  background: radial-gradient(farthest-side, rgba(7, 5, 4, 0.9), rgba(7, 5, 4, 0.82) 62%, rgba(7, 5, 4, 0));
+}
+.chip-group { display: grid; justify-items: end; gap: 3px; }
+.chip { padding: 6px 2px; font: 700 18px/1 var(--text); color: var(--kaolin); border-bottom: 2px solid var(--kaolin-faint); }
+.chip-row { font: italic 500 15px/1 var(--text); color: var(--kaolin-dim); margin: 0 0 4px; }
+.chip:hover { border-bottom-color: var(--ochre-lit); }
+
+/* ---------- a section, painted on the rock beside its painting ---------- */
+/* The words multiply into the rock like pigment. Under them a limewash evens the stone
+   out so they read, the way painters primed a wall. */
+#panel-prime, #panel-wash { position: fixed; z-index: 19; pointer-events: none; border-radius: 70px 90px 80px 60px; filter: url(#rough-edge) blur(22px); animation: appear 0.9s ease; }
+/* Two coats. The primer covers what was painted there before, so older figures don't show
+   through the words; the wash over it lifts the stone toward the colour of lime. */
+#panel-prime { background: rgba(214, 170, 120, 0.5); }
+#panel-wash { background: rgba(246, 226, 196, 0.42); mix-blend-mode: screen; }
+#panel {
+  position: fixed; z-index: 20; mix-blend-mode: multiply; color: var(--charcoal);
+  top: calc(env(safe-area-inset-top) + 9vh); max-height: 72vh; width: min(580px, 43vw); overflow: auto;
+  padding: 6px 10px 12px; animation: appear 0.9s ease; scrollbar-width: thin; scrollbar-color: rgba(42, 28, 20, 0.4) transparent;
+}
+#panel.side-right { left: 54vw; }
+#panel.side-left { left: 5vw; }
+#panel.side-below { left: 18px; right: 18px; width: auto; top: 46vh; max-height: calc(58vh - env(safe-area-inset-bottom)); }
+#panel.side-above { left: 18px; right: 18px; width: auto; top: calc(env(safe-area-inset-top) + 104px); height: 52vh; max-height: none; }
+@keyframes appear { from { opacity: 0; } to { opacity: 1; } }
+@keyframes appear-c { from { opacity: 0; } to { opacity: 1; } }
+#panel header { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; margin-bottom: 14px; }
+#panel .kicker { font: italic 500 17px/1.3 var(--text); color: #5c2812; }
+#panel h2 { font: 800 clamp(40px, 4.6vw, 60px)/0.95 var(--text); color: var(--ochre); margin-top: 4px; letter-spacing: -0.015em; text-wrap: balance; }
+#panel-close { width: 40px; height: 40px; font: 400 32px/1 var(--text); color: var(--charcoal); opacity: 0.75; }
+#panel-close:hover { opacity: 1; }
+#panel :focus-visible { outline-color: var(--charcoal); }
+#panel-body { display: grid; gap: 12px; font-size: 17px; line-height: 1.38; }
+#panel p { color: var(--charcoal); }
+#panel .lede { font: italic 500 19px/1.35 var(--text); }
+#panel h3 { font: 800 24px/1.12 var(--text); }
+#panel h3.painted { filter: none; }   /* at this size the pores eat the letters */
+#panel .used { font: 500 15px/1.35 var(--label); color: #4a1a08; }
+#panel .note { font: italic 400 15px/1.35 var(--text); }
+/* A charcoal line down the roles with an ochre finger-dot at each: the order they came in. */
+.roles { list-style: none; margin: 0; padding: 0 0 0 32px; position: relative; display: grid; gap: 14px; }
+.roles::before { content: ''; position: absolute; left: 10px; top: 28px; bottom: 44px; width: 3px; border-radius: 2px; background: var(--charcoal); filter: url(#paint-light); }
+.roles li { position: relative; }
+.roles li::before { content: ''; position: absolute; left: -30px; top: 22px; width: 17px; height: 17px; border-radius: 50%; background: var(--ochre); filter: url(#paint-light); }
+.roles li:first-child::before { left: -31.5px; top: 20px; width: 20px; height: 20px; }
+.roles .when { display: block; font: 700 14.5px/1.2 var(--label); color: #4a1a08; }
+.roles h3 { margin: 2px 0 3px; }
+.group h4 { margin: 0 0 2px; font: 800 19px/1.2 var(--text); color: var(--ochre); }
+.contact-line { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.contact-line .value { font: 800 24px/1.2 var(--text); user-select: all; word-break: break-all; }
+#panel .btn { color: #1a0d07; }
+#panel .btn::before { background: var(--ochre-lit); border-color: var(--ochre-lit); }
+.linkrow { display: flex; gap: 22px; flex-wrap: wrap; font: 800 20px/1.2 var(--text); }
+.linkrow a { color: var(--charcoal); text-decoration: none; border-bottom: 3px solid var(--ochre); }
+.list { padding-left: 22px; display: grid; gap: 6px; }
+.points { padding-left: 22px; display: grid; gap: 5px; }
+/* A project's screens: step through them under the words. */
+.screens { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; margin-top: 2px; }
+.screen-step { width: 40px; height: 40px; font: 700 28px/1 var(--text); color: var(--charcoal); border: 2px solid rgba(42, 28, 20, 0.45); border-radius: 50% 46% 52% 48%; }
+.screen-step:hover { border-color: var(--ochre); color: var(--ochre); }
+#panel .caption { font: italic 500 17px/1.3 var(--text); text-align: center; }
+.repo { justify-self: start; color: var(--charcoal); font: 800 19px/1.2 var(--text); text-decoration: none; border-bottom: 3px solid var(--ochre); }
+/* While a section is open, what sat over the wall steps aside. */
+.panel-open #chips, .panel-open #gesture, .panel-open #shapes, .panel-open #hud, .panel-open #finds { visibility: hidden; }
+/* More below: the words fade into the rock until you scroll to them, and a mark under
+   them says so. */
+#panel-more {
+  position: fixed; z-index: 21; isolation: isolate; display: flex; align-items: center; gap: 8px; padding: 8px 16px 9px; transform: translateX(-50%);
+  font: italic 700 16px/1 var(--text); color: var(--charcoal);
+}
+/* A dab of lime behind the words: its edge is rough, the words stay sharp. */
+#panel-more::before { content: ''; position: absolute; inset: 0; z-index: -1; background: rgba(244, 224, 192, 0.94); border-radius: 14px 18px 15px 17px; filter: url(#rough-edge); }
+#panel-more svg { width: 18px; height: 11px; fill: none; stroke: var(--ochre); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+#panel-more:hover::before { background: #fbe9cb; }
+#panel-more:focus-visible { outline-color: var(--charcoal); }
+#panel.more { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 70px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 70px), transparent); }
+
+/* ?perf */
+#perf { position: fixed; z-index: 30; left: max(10px, env(safe-area-inset-left)); bottom: calc(env(safe-area-inset-bottom) + 90px); margin: 0; padding: 8px 10px; border-radius: 6px; background: rgba(10, 6, 4, 0.82); color: var(--kaolin); font: 500 12px/1.45 var(--label); font-variant-numeric: tabular-nums; white-space: pre; pointer-events: none; }
+
+/* ---------- tracking view (diagnostics) ---------- */
+#debug {
+  position: fixed; z-index: 11; right: max(16px, env(safe-area-inset-right)); top: calc(env(safe-area-inset-top) + 130px);
+  background: var(--soot); border-radius: 6px; padding: 8px; display: grid; gap: 6px;
+  font: 400 12px/1.45 var(--label); font-variant-numeric: tabular-nums; color: var(--kaolin-dim); width: 256px;
+}
+#debug canvas { width: 240px; height: 180px; border-radius: 4px; background: #000; }
+#debug pre { margin: 0; white-space: pre-wrap; font: inherit; }
+
+@media (max-width: 720px) {
+  body { font-size: 17px; }
+  #hud { top: calc(env(safe-area-inset-top) + 8px); padding: 8px 12px; }
+  #hud .who { font-size: 22px; }
+  #hud .role, #hud .status, #debug { display: none; }
+  #finds { top: calc(env(safe-area-inset-top) + 8px); padding: 8px 12px; }
+  #finds-text { font-size: 13px; }
+  /* Up at the wall, the way back sits where the name and the count are. */
+  .at-wall #hud, .at-wall #finds { visibility: hidden; }
+  /* Five tools fit in a row; the tracking view is a desk tool. */
+  #t-debug { display: none; }
+  /* No room for the tally beside the name: the count says the same. */
+  #tally { display: none; }
+  #finds-text { margin-top: 6px; }
+  #tools { max-width: calc(100vw - 24px); padding: 6px 8px; }
+  .tool { min-width: 52px; font-size: 12px; }
+  #gesture { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); max-width: none; bottom: calc(env(safe-area-inset-bottom) + 82px); }
+  #gesture .stencil { width: 42px; height: 42px; }
+  #gesture-label { font-size: 18px; }
+  /* On a phone they sit across the screen, above the hint. */
+  #chips { left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 150px); flex-direction: column; align-items: center; gap: 8px; padding: 16px 14px; background: radial-gradient(closest-side, rgba(7, 5, 4, 0.8), rgba(7, 5, 4, 0.6) 60%, rgba(7, 5, 4, 0)); }
+  .chip-group { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 20px; }
+  .chip-row { flex-basis: 100%; text-align: center; margin: 4px 0 -2px; }
+  #back { top: calc(env(safe-area-inset-top) + 56px); font-size: 16px; }
+  #panel-body { font-size: 17px; }
+  /* The device is above the words, so the way through its screens comes first. */
+  .screens { order: -1; margin: 0 0 4px; }
+  /* The words take half a phone's screen, and part of that may be the dark floor: a thicker primer. */
+  #panel-prime { background: rgba(214, 170, 120, 0.74); }
+  #setup { grid-template-columns: 1fr; grid-template-areas: 'title' 'steps' 'view' 'say' 'skip'; padding: 14px 16px; }
+  #setup-view { width: 100%; height: auto; aspect-ratio: 4 / 3; }
+  #back { top: calc(env(safe-area-inset-top) + 12px); }
+  .panel-open #tools { visibility: hidden; }
+  #shapes { width: auto; right: max(12px, env(safe-area-inset-right)); bottom: calc(env(safe-area-inset-bottom) + 160px); grid-template-columns: repeat(3, 1fr); }
+  #shapes h3 { grid-column: 1 / -1; }
+  .shape { flex-direction: column; text-align: center; }
+  .shape span { display: none; }
+}
+/* A large monitor: the same layout, set a size up, so it isn't a small page in a big cave. */
+@media (min-width: 1700px) and (min-height: 900px) {
+  body { font-size: 20px; }
+  .intro-inner { max-width: 780px; gap: 24px; }
+  #intro .lede { font-size: 22.5px; }
+  .gestures { gap: 16px 28px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .gestures b { font-size: 20px; }
+  .gestures span { font-size: 17px; }
+  .gestures canvas.thumb { width: 54px; height: 54px; }
+  .btn { font-size: 21px; padding: 15px 26px 17px; }
+  .note { font-size: 16px; }
+  #hud .who { font-size: 38px; }
+  #hud .role { font-size: 20px; }
+  #hud .status, #finds-text { font-size: 16.5px; }
+  #gesture .stencil { width: 64px; height: 64px; }
+  #gesture-label { font-size: 25px; }
+  .tool { min-width: 68px; font-size: 15px; }
+  .tool .glyph { width: 34px; height: 34px; }
+  #chips { bottom: calc(env(safe-area-inset-bottom) + 106px); }
+  .chip { font-size: 21px; padding: 7px 2px; }
+  .chip-row { font-size: 17px; }
+  #back { font-size: 20px; }
+  #panel { width: min(700px, 43vw); }
+  #panel-body { font-size: 20px; gap: 14px; }
+  #panel .kicker { font-size: 19.5px; }
+  #panel .lede { font-size: 22.5px; }
+  #panel h3 { font-size: 28px; }
+  #panel .used { font-size: 17px; }
+  #panel .note { font-size: 17px; }
+  #panel .caption { font-size: 19.5px; }
+  .roles .when { font-size: 16.5px; }
+  .roles li::before { top: 27px; }
+  .roles li:first-child::before { top: 25px; }
+  .group h4 { font-size: 22px; }
+  .contact-line .value { font-size: 28px; }
+  .linkrow, .repo { font-size: 22px; }
+  #shapes { width: 320px; bottom: calc(env(safe-area-inset-bottom) + 120px); }
+  .shape b { font-size: 18.5px; }
+  .shape span { font-size: 16px; }
+  #toast { font-size: 22px; }
+}
+/* A short, wide view (a phone on its side): everything a size down, the way back in a
+   corner so it can't sit on the words, and the intro's two buttons in view without scrolling. */
+@media (max-height: 520px) and (min-width: 721px) {
+  #intro { padding-top: 14px; padding-bottom: 14px; }
+  .intro-inner { gap: 10px; max-width: 780px; }
+  #intro h1 { font-size: 42px; }
+  #intro .lede { font-size: 16.5px; max-width: 86ch; }
+  .gestures { grid-template-columns: repeat(4, auto); gap: 8px 22px; justify-content: start; }
+  .gestures li { gap: 8px; }
+  .gestures span { display: none; }
+  .gestures b { font-size: 15.5px; }
+  .gestures canvas.thumb { width: 36px; height: 36px; }
+  .actions { margin-top: 2px; }
+  .btn { padding: 10px 18px 12px; font-size: 16.5px; }
+  #intro-status { min-height: 0; font-size: 15px; }
+  .note { font-size: 13px; max-width: 90ch; }
+  #hud .status, #tally { display: none; }
+  #finds-text { margin-top: 0; }
+  #chips { bottom: calc(env(safe-area-inset-bottom) + 68px); gap: 24px; padding: 12px 20px; }
+  .chip { font-size: 16px; padding: 4px 2px; }
+  .chip-row { font-size: 13.5px; }
+  #gesture { max-width: calc(100vw - 230px); padding: 8px 14px 8px 8px; }
+  #gesture-label { font-size: 18px; }
+  #gesture .stencil { width: 42px; height: 42px; }
+  #back { font-size: 16px; }
+  /* With a section open the top is the section's; the hint's corner is free then. */
+  .panel-open #back { top: auto; bottom: calc(env(safe-area-inset-bottom) + 12px); left: max(12px, env(safe-area-inset-left)); transform: none; }
+  #panel { top: calc(env(safe-area-inset-top) + 16px); max-height: calc(100vh - 78px); }
+  #panel h2 { font-size: 34px; }
+  .panel-open #tools { visibility: hidden; }
+}
+/* No Esc key on a touch screen. */
+@media (pointer: coarse) { #back kbd { display: none; } }
+@media (prefers-reduced-motion: reduce) { #panel, #panel-prime, #panel-wash, #toast { animation: none; } }

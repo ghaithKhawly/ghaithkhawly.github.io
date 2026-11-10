@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- head -->
+<script>
+// The cave is drawn over a plain page of the CV. Mark the page `cave` only where it can be
+// drawn (three.js needs WebGL 2) and the plain page wasn't asked for (?flat). Without
+// JavaScript nothing marks it, and the plain page is the site.
+if ('WebGL2RenderingContext' in window && !/[?&]flat(&|=|$)/.test(location.search)) document.documentElement.classList.add('cave');
+</script>
+</head>
+<body>
+<a class="skip" href="?flat">Read the CV as a plain page</a>
+<canvas id="scene" aria-label="A firelit cave wall covered in paintings"></canvas>
+<video id="cam" playsinline muted hidden></video>
+
+<!-- Paint filters: roughen an edge and let the rock's pores show through, so DOM text reads as pigment. -->
+<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <filter id="paint-light" x="-5%" y="-10%" width="110%" height="120%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7" result="warp"/>
+    <feDisplacementMap in="SourceGraphic" in2="warp" scale="3" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="2" result="grain"/>
+    <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  2.6 0 0 0 -0.45" result="pores"/>
+    <feComposite in="rough" in2="pores" operator="in"/>
+  </filter>
+  <!-- Large type: no gaps, just uneven pigment, so it reads as a brushed stroke rather than grit. -->
+  <filter id="paint-big" x="-5%" y="-10%" width="110%" height="120%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="11" result="warp"/>
+    <feDisplacementMap in="SourceGraphic" in2="warp" scale="5" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="3" seed="5" result="grain"/>
+    <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.9 0 0 0 0.45" result="pores"/>
+    <feComposite in="rough" in2="pores" operator="in"/>
+  </filter>
+  <filter id="rough-edge" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3" result="warp"/>
+    <feDisplacementMap in="SourceGraphic" in2="warp" scale="10" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <symbol id="g-spiral" viewBox="0 0 64 64"><path d="M29 32a3 3 0 1 1 6 0a6 6 0 1 1-12 0a9 9 0 1 1 18 0a12 12 0 1 1-24 0a15 15 0 1 1 30 0" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/></symbol>
+  <symbol id="g-head" viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><circle cx="32" cy="24" r="11"/><path d="M14 56c2-12 9-18 18-18s16 6 18 18"/><path d="M6 24h5M53 24h5"/></g></symbol>
+  <symbol id="g-hand" viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><ellipse cx="32" cy="41" rx="12" ry="13"/><path d="M22 30 19 13M30 28V9M37 29l3-17M43 33l5-12M21 44 10 35"/></g></symbol>
+  <symbol id="g-marks" viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"><path d="M12 54 16 10M26 55l3-45M40 54l3-44M54 55 56 10"/><path d="M6 36 60 26"/></g></symbol>
+  <symbol id="g-eye" viewBox="0 0 64 64"><path d="M5 32Q32 8 59 32Q32 56 5 32Z" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="32" cy="32" r="7.5" fill="currentColor"/></symbol>
+  <symbol id="g-ring" viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><circle cx="32" cy="32" r="18"/><path d="M32 4v14M32 46v14M4 32h14M46 32h14"/></g></symbol>
+  <symbol id="g-stencil" viewBox="0 0 64 64">
+    <defs>
+      <radialGradient id="st-spray"><stop offset="0" stop-color="#d2582c"/><stop offset="0.6" stop-color="#c24a24" stop-opacity="0.85"/><stop offset="1" stop-color="#b03e1c" stop-opacity="0"/></radialGradient>
+      <mask id="st-hand"><rect width="64" height="64" fill="#fff"/><g fill="#000">
+        <ellipse cx="32" cy="41" rx="12" ry="13"/>
+        <rect x="20" y="15" width="6" height="25" rx="3" transform="rotate(-9 23 27)"/>
+        <rect x="27.5" y="10" width="6" height="29" rx="3"/>
+        <rect x="35" y="13" width="6" height="27" rx="3" transform="rotate(7 38 26)"/>
+        <rect x="41.5" y="21" width="5.5" height="21" rx="2.8" transform="rotate(16 44 31)"/>
+        <rect x="11" y="33" width="6" height="17" rx="3" transform="rotate(-48 14 41)"/>
+      </g></mask>
+    </defs>
+    <!-- --p (0 to 1) comes from #gesture: the stencil fills in as you hold a shape -->
+    <circle cx="32" cy="34" r="31" fill="url(#st-spray)" mask="url(#st-hand)" style="opacity: calc(0.35 + 0.65 * var(--p, 0)); transform: scale(calc(0.74 + 0.26 * var(--p, 0))); transform-origin: 32px 34px"/>
+  </symbol>
+</svg>
+
+<section id="intro" aria-labelledby="intro-title">
+  <div class="intro-inner">
+    <h1 id="intro-title" class="painted big">Ghaith Khawly</h1>
+    <p class="lede">Full-stack developer in Damascus. This portfolio is a cave. Bring your hands into the firelight and cast shadows on the wall, and the paintings answer. Three things are hidden. Lean to find them.</p>
+    <ul class="gestures">
+      <li><canvas class="thumb" data-thumb="wolf" width="88" height="88"></canvas><div><b>Wolf</b><span>Hand sideways, thumb up, three fingers together. Opens Experience.</span></div></li>
+      <li><canvas class="thumb" data-thumb="rabbit" width="88" height="88"></canvas><div><b>Hare</b><span>Two fingers up, the rest folded. Opens About.</span></div></li>
+      <li><canvas class="thumb" data-thumb="palm" width="88" height="88"></canvas><div><b>Open palm, held still</b><span>Leaves your handprint. Opens Contact.</span></div></li>
+      <li><canvas class="thumb" data-thumb="point" width="88" height="88"></canvas><div><b>Point at a small painting</b><span>Rest your shadow's fingertip on it. Opens that project.</span></div></li>
+    </ul>
+    <div class="actions">
+      <button class="btn primary" id="start-cam" type="button">Use the camera</button>
+      <button class="btn" id="start-mouse" type="button">Paint without a camera</button>
+    </div>
+    <div id="intro-status" role="status" aria-live="polite"></div>
+    <p class="note">Camera frames stay on your device; nothing is uploaded. With the camera on, lean left and right and the screen becomes a window into the cave.</p>
+    <p class="note"><a href="?flat">Or read the CV as a plain page</a></p>
+  </div>
+</section>
+
+<div id="hud" class="soot" hidden>
+  <p class="who painted">Ghaith Khawly</p>
+  <p class="role">Full-stack developer, Damascus</p>
+  <p id="hud-status" class="status"></p>
+</div>
+
+<div id="finds" class="soot" hidden>
+  <svg id="tally" height="44" aria-hidden="true"></svg>
+  <p id="finds-text"></p>
+</div>
+
+<div id="tools" class="soot" hidden>
+  <button class="tool" id="t-sound" type="button" aria-pressed="true"><svg class="glyph" aria-hidden="true"><use href="#g-spiral"/></svg>Sound</button>
+  <button class="tool" id="t-head" type="button" aria-pressed="true" hidden><svg class="glyph" aria-hidden="true"><use href="#g-head"/></svg>Head tracking</button>
+  <button class="tool" id="t-shapes" type="button" aria-pressed="true" hidden><svg class="glyph" aria-hidden="true"><use href="#g-hand"/></svg>Shapes</button>
+  <button class="tool" id="t-shortcuts" type="button" aria-expanded="false" aria-controls="chips" hidden><svg class="glyph" aria-hidden="true"><use href="#g-marks"/></svg>Shortcuts</button>
+  <button class="tool" id="t-debug" type="button" aria-pressed="false" hidden><svg class="glyph" aria-hidden="true"><use href="#g-eye"/></svg>Tracking view</button>
+  <button class="tool" id="t-recenter" type="button" hidden><svg class="glyph" aria-hidden="true"><use href="#g-ring"/></svg>Recenter</button>
+</div>
+<button id="back" class="soot" type="button" hidden>Back to the fire <kbd>Esc</kbd></button>
+
+<div id="toast" class="soot" hidden role="status"></div>
+
+<section id="setup" class="soot" hidden aria-labelledby="setup-title">
+  <h2 id="setup-title" class="painted">Getting ready</h2>
+  <ol class="setup-steps">
+    <li data-step="light">Light</li>
+    <li data-step="head">Your head</li>
+    <li data-step="hand">Your hand</li>
+  </ol>
+  <canvas id="setup-view" width="240" height="180" aria-label="What the camera sees, with the points it tracks on your hand"></canvas>
+  <p id="setup-say" role="status" aria-live="polite"></p>
+  <button id="setup-skip" type="button">Skip</button>
+</section>
+
+<section id="trial" class="soot" hidden aria-label="Gesture trial">
+  <p id="trial-count"></p>
+  <p id="trial-say" role="status" aria-live="polite" class="painted"></p>
+  <p id="trial-how"></p>
+  <div class="trial-actions"><button id="trial-copy" type="button" hidden>Copy the results</button><button id="trial-end" type="button">End the trial</button></div>
+</section>
+
+<div id="gesture" class="soot" hidden aria-live="polite">
+  <svg class="stencil" aria-hidden="true"><use href="#g-stencil"/></svg>
+  <span id="gesture-label" class="painted">Raise a hand into the firelight</span>
+</div>
+
+<div id="shapes" class="soot" hidden>
+  <h3>Shapes to make</h3>
+  <div class="shape" data-shape="wolf"><canvas class="thumb" data-thumb="wolf" width="88" height="88"></canvas><div><b>Wolf, for Experience</b><span>Hand sideways. Thumb up as the ear, three fingers together as the snout.</span></div></div>
+  <div class="shape" data-shape="rabbit"><canvas class="thumb" data-thumb="rabbit" width="88" height="88"></canvas><div><b>Hare, for About</b><span>Index and middle finger up as ears. Fold the rest.</span></div></div>
+  <div class="shape" data-shape="palm"><canvas class="thumb" data-thumb="palm" width="88" height="88"></canvas><div><b>Open palm, for Contact</b><span>Fingers up and spread. Hold still for a second.</span></div></div>
+</div>
+
+<div id="chips" hidden>
+  <div class="chip-group" role="group" aria-labelledby="chips-sections-label">
+    <p class="chip-row" id="chips-sections-label">Sections</p>
+    <button class="chip" type="button" data-section="experience">Experience</button>
+    <button class="chip" type="button" data-section="about">About</button>
+    <button class="chip" type="button" data-section="contact">Contact</button>
+    <button class="chip" type="button" data-section="education">Education</button>
+    <button class="chip" type="button" data-section="certs">Certifications</button>
+    <button class="chip" type="button" data-section="languages">Languages</button>
+  </div>
+  <div class="chip-group" id="chips-projects" role="group" aria-labelledby="chips-projects-label">
+    <p class="chip-row" id="chips-projects-label">Projects</p>
+    <!-- filled from content/projects.ts -->
+  </div>
+</div>
+
+<div id="panel-prime" hidden aria-hidden="true"></div>
+<div id="panel-wash" hidden aria-hidden="true"></div>
+<aside id="panel" hidden aria-labelledby="panel-title">
+  <header>
+    <div><p class="kicker" id="panel-eyebrow"></p><h2 id="panel-title" class="painted big" tabindex="-1"></h2></div>
+    <button id="panel-close" type="button" aria-label="Close">×</button>
+  </header>
+  <div id="panel-body"></div>
+</aside>
+<button id="panel-more" type="button" hidden><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M3 3 12 11 21 3"/></svg>More below</button>
+
+<pre id="perf" hidden aria-hidden="true"></pre>
+
+<!-- cv page -->
+
+<div id="debug" hidden>
+  <canvas id="debug-cam" width="240" height="180"></canvas>
+  <pre id="debug-text"></pre>
+</div>
+
+<script>
+// The intro answers before the cave has loaded (the 3D scene is most of the page's
+// weight). A tap is remembered and the cave starts with it once it's ready; whatever
+// must happen inside the tap happens now: the camera prompt, the iOS motion permission,
+// and the sound, which browsers only allow to start from a tap.
+(() => {
+  const early = (window.__early = { choice: null });
+  const $ = (id) => document.getElementById(id);
+  const pick = (choice) => () => {
+    if (early.choice || window.__caveReady) return;   // once the cave is loaded, its own handlers answer
+    early.choice = choice;
+    try { early.audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* no sound */ }
+    const DOE = window.DeviceOrientationEvent;
+    if (DOE && typeof DOE.requestPermission === 'function') early.tilt = DOE.requestPermission().catch(() => 'denied');
+    if (choice === 'cam' && window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      early.stream = navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false }).catch((error) => ({ error }));
+    }
+    $('start-cam').disabled = $('start-mouse').disabled = true;
+    $('intro-status').textContent = choice === 'cam' ? 'Asking for your camera while the fire is lit…' : 'Lighting the fire…';
+  };
+  $('start-cam').addEventListener('click', pick('cam'));
+  $('start-mouse').addEventListener('click', pick('mouse'));
+})();
+</script>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

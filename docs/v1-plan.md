@@ -1,0 +1,225 @@
+# The Cave: v1 plan
+
+The prototype (`prototype/cave/`) proved the idea. v1 turns it into the site at
+`ghaithkhawly.github.io`, with the current React site kept at `/classic`.
+
+## Where the prototype stands
+
+| | Karam | Salem | The Cave (prototype) |
+|---|---|---|---|
+| Originality | 7 | 6 | 9 |
+| Look and feel | 9 | 7.5 | 5.5 |
+| Interaction depth | 6 | 7.5 | 8.5 |
+| Works first time, any device | 8.5 | 8.5 | 4 |
+| Time to reach the content | 7 | 5 | 6 |
+| Overall | 8 | 7 | 6.5 (about 9 if v1 lands) |
+
+What v1 has to fix:
+
+- **Too close to Karam's site.** A flame-lit room, paintings as sections, a
+  painting interaction, "step back". What he can't do is the hook: your hands
+  and your head. v1 leads with that and drops the shared copy.
+- **The look doesn't hold together.** Realistic rock, generated paintings and a
+  monospace status display that reads like a developer tool.
+- **Reliability.** Only the wolf has been tried with a real hand; real phones,
+  tilt and low-end GPUs are untested.
+- **Content is thin and sits in plain panels.** Two projects; the references
+  put their CV inside objects.
+- **Prototype shortcuts.** One 3,000-line HTML file, no build, no types,
+  paintings generated in the browser (about a second of CPU), nothing for
+  browsers without WebGL.
+
+## Decisions
+
+| Question | Decision |
+|---|---|
+| Stack | Vite + TypeScript + three.js, no UI framework. The scene is imperative and the panels are small; React would add weight and a second render loop for little gain. |
+| Art | Real rock: CC0 photo-scanned textures (Poly Haven, ambientCG), plus the procedural pigment engine run **at build time** to bake paintings into WebP. Nothing heavy is generated in the visitor's browser. |
+| Current site | Kept, unchanged, at `/classic`. |
+| Projects | Picked from the GitHub account; see below. |
+
+## Art direction: Painted
+
+Picked from three style frames (Painted, Shadow, Field book). Everything you
+read is pigment: charcoal and ochre on the lit rock, pale kaolin clay on the dark
+stone round the cave mouth. No floating panels.
+
+| In the cave | A section open |
+|---|---|
+| ![The cave with the name, finds and gesture hint painted at the edges](m1/painted-1.jpg) | ![Experience painted on the rock beside the wolf](m1/painted-2.jpg) |
+
+| Colour | Value | Used for |
+|---|---|---|
+| Red ochre | `#b23c1c` | Headings, found marks, the hand stencil |
+| Yellow ochre | `#c98f35` | Second paint |
+| Charcoal | `#2a1c14` | Text on lit rock |
+| Kaolin | `#efe3c9` | Text on dark stone |
+| Cave dark | `#070504` | Background |
+
+Type: **Alegreya** for text and headings, **Alegreya Sans** for small labels
+(both free, SIL Open Font License). Painted text goes through a roughen-and-pores
+filter so it picks up the grain of the rock.
+
+- Text on lit rock is charcoal, multiplied into the rock. Text on dark stone is kaolin.
+- Body text is 18px or larger. Where the rock behind it is too dark for 4.5:1
+  contrast, a pale wash goes down first, the way painters primed a wall.
+- No pills, cards, blurred glass or monospace.
+- Opening a section walks you up to its painting, and the section is painted on
+  the rock beside it (below or above it on a phone). The words are real text,
+  multiplied into the rock over a limewash. While you read, leaning barely moves
+  the view, so the words don't slide across the rock.
+
+## Projects
+
+Each project gets a painting in the same Paleolithic style, a metaphor for what
+it does, that steps out of the wall as the device it runs on, showing real
+screenshots.
+
+| Project | State | Stack | Painting → steps out as |
+|---|---|---|---|
+| **Rakeb** (Damascus transit router) | Actively developed; the flagship | Expo / React Native, Fastify, PostgreSQL + PostGIS, Python graph pipeline, A\* in worker threads, Arabic free-text trips | Trails of dots between camps, along its real routes → a phone with the route network (the repo's design screens are generic mockups, so not used) |
+| **Office Order** | In daily use at an office, on an air-gapped LAN | Express, SQLite, React + Vite + Tailwind, SSE, Arabic-first RTL | Hunters sharing out a kill → a laptop and the wall display |
+| **Savings Tracker** | Finished (v3, 20 tests) | Expo / React Native, Zustand, Victory charts | A hoard and tally marks → a phone |
+| **justacalc** | Finished; private repo | Expo Router, mathjs + decimal.js, nerdamer | Counting marks → a phone |
+| **Aquarium Object Detection** | Finished university project, with Ammar Alzoubi | PyTorch: a from-scratch grid detector vs. Faster R-CNN | Fish and a shark → boxes snap round them |
+| **Gym Management System** | Finished coursework; private repo | Flutter, SQLite, offline-first | Figures lifting stones → a phone (its layout is a phone's) |
+| **Taza** | Startup concept; won a Startup Weekend in Syria. Landing page and vendor bot built for it | React + Vite, Telegram bot on Render | Bread and fruit → a phone |
+| **Medical App** | Team project, from the CV; no repo | FastAPI, PostgreSQL | Stays under Experience |
+
+Left out: **The-Gym-app** (unfinished, superseded by Gym Management System),
+**backend** (NestJS scaffold), **supabase-connectivity-suite** (an internal
+tool), **taza-year-in-review** (small; a candidate for a moving painting later).
+
+justacalc and Gym Management System stay private: they are described, shown with screenshots, and not linked.
+
+## Architecture
+
+```
+apps/
+  cave/           the new site (Vite + TypeScript + three.js)
+    src/
+      world/      rock, wall, floor, column, fire, crack chamber, cave mouth
+      paint/      pigment engine and the paintings built from it
+      art/        paint layers, painting decals, shapes to trace, strokes
+      hands/      silhouettes, poses, gesture classifier
+      tracking/   camera, MediaPipe, head and hand state
+      play/       painting mode, ghost hand, hidden things, step-out devices
+      fx/         live shadows and glows
+      core/       post-processing, window camera
+      ui/         intro, panels, toasts, tools (plain DOM)
+      content.ts  CV content
+    tests/        Playwright checks
+  classic/        the current React site, built with PUBLIC_URL=/classic
+scripts/build.mjs builds both into dist/
+docs/
+prototype/        frozen reference
+```
+
+- **Content:** both sites read `apps/classic/src/data/*.json`, which is
+  generated from the LaTeX CV. Cave-only content (the project list and the
+  painting each one gets) lands in `apps/cave/src/content/` in M2.
+- **Build output:** `dist/` holds the cave at the root and the classic site
+  under `dist/classic/`. The `Site` workflow builds both and runs the checks
+  on every push.
+- **Deploying:** Pages serves the `gh-pages` branch, as it always has. On
+  `main`, the workflow commits `dist/` there once every check passes, so no
+  repository setting had to change for the launch: [docs/launch.md](launch.md).
+- **Tracking:** MediaPipe is only downloaded after the visitor turns the
+  camera on, from the site itself (the runtime from the pinned npm package, the
+  models pinned by hash, all gzipped: 9.4 MB).
+- **Fonts:** served from the site, not Google Fonts.
+
+## Budgets
+
+| | Desktop | Mid-range phone |
+|---|---|---|
+| JS on first load (gzip, excluding MediaPipe) | ≤ 250 KB | ≤ 250 KB |
+| Everything before the intro is usable | ≤ 1.5 MB | ≤ 1.5 MB |
+| Frame rate | 60 fps | 30 fps or better |
+| Intro usable | ≤ 2 s | ≤ 3 s on 4G |
+
+`npm run budget` checks the first two on every build. Device tiers pick the
+pixel ratio, the bloom and how finely the rock is meshed, and the cave lowers
+its resolution further when frames run slow. A browser without WebGL gets a 2D
+version of the cave (the paintings as images, the same content).
+
+## Milestones
+
+| # | Milestone | Work | Done when |
+|---|---|---|---|
+| M0 | Foundation | Restructure into `apps/cave` + `apps/classic`; port the prototype to TypeScript modules; content from JSON; port the Playwright checks; CI that builds both apps and runs the checks | The cave matches the prototype; CI passes |
+| M1 | Art direction | Replace the status display; type and colour system; sections painted on the rock beside their paintings; fire glare; CC0 rock; paintings baked at build time; cave mouth and column sculpted to match | You approve still frames |
+| M2 | Content in the cave | All projects above as paintings that step out with real screenshots, their words painted on the rock like the other sections | Every section reachable by gesture, by painting and by shortcut |
+| M3 | Camera | A short setup walkthrough; gesture confidence and hysteresis; tested with real hands in different light; lean thresholds tuned. Measured on 2,542 real hands: [docs/m3-gestures.md](m3-gestures.md) | 9 out of 10 real tries succeed (`?trial` scores it) |
+| M4 | Phones and performance | Device tiers, budgets above, tilt on iOS and Android, self-hosted MediaPipe files. Measured under phone throttling: [docs/m4-performance.md](m4-performance.md) | Budgets met on a real mid-range phone (`?perf` shows it) |
+| M5 | Fallbacks and reach | 2D version, reduced motion, keyboard, a screen-reader copy of the CV in the page, share and search metadata. Done: [docs/m5-reach.md](m5-reach.md) | Lighthouse accessibility ≥ 90 on every state, not just the intro; an axe check in CI; the whole cave works from a keyboard |
+| M6 | Launch | `main` deploys to `gh-pages` after the checks; `/classic` live; old deploy script retired; a 404 page | The cave is live |
+
+## Where v1 stands (re-evaluated 10 November)
+
+| # | State | Left before it counts as done |
+|---|---|---|
+| M0–M2 | Done. Gym Management System got its screens on 10 November, from a web build with a web SQLite | Rakeb shows its route network, not the app itself |
+| M3 | Built, CI-checked on 2,542 real hands. 32 more real photos through the whole site as its webcam: 32 read correctly (no wolf among them) | Its exit test needs live hands, the wolf above all: one `?trial` run by you |
+| M4 | Built, measured under phone throttling | Its exit test needs a real phone: one `?perf` reading by you |
+| M5 | Done (10 November): Lighthouse 100 for accessibility, best practices and SEO; axe clean on every state, in CI | — |
+| M6 | Ready | Merging into `main` publishes it: [docs/launch.md](launch.md) |
+| Before showing it | Every state photographed at five screen sizes and fixed where it fell short: [docs/review.md](review.md) | — |
+
+| | Prototype | Now |
+|---|---|---|
+| Originality | 9 | 9 |
+| Look and feel | 5.5 | 8 |
+| Interaction depth | 8.5 | 9 |
+| Works first time, any device | 4 | 7: every check passes in a software renderer, but no real phone or real-hand trial yet |
+| Time to reach the content | 6 | 7: shortcuts and chips, but a screen reader or a browser without WebGL reaches nothing |
+| Overall | 6.5 | 8 |
+
+What changes:
+
+- **"Step back" is still on screen**, though the risks below rule it out. It
+  becomes "Back to the fire".
+- **One copy of the CV does three jobs in M5.** The build writes the whole CV
+  and every project into `index.html` as plain HTML, from the same content the
+  cave reads:
+  - it's what screen readers read and what search engines index;
+  - styled as painted pages with the baked paintings as pictures, it's the
+    2D version, for browsers without WebGL, a lost WebGL context, or anyone
+    who asks (`?flat`, or "Read it as a page").
+  
+  One source, so none of them can drift.
+- **M5's test as first written is too easy.** Lighthouse only audits the intro,
+  which already scores 100 for accessibility (best practices 96, SEO 82: no
+  favicon, description or robots.txt). The test is now every state: intro,
+  cave, an open section, a project, the 2D page. It also covers a keyboard-only
+  pass, and an axe check in CI.
+- **Reduced motion** (the visitor's system setting) means:
+  - walking up to the wall is a cut, not a zoom;
+  - no ghost hand painting by itself;
+  - no automatic look-round;
+  - calmer embers and flicker.
+
+  Leaning with the head or tilt stays, since the visitor drives it.
+- **M6 needs no repository setting.** Pages keeps serving `gh-pages`. The
+  workflow publishes there from `main`, after the checks pass, so launching is
+  the merge. Also: a 404 page, the classic site's old deploy script removed,
+  and a launch checklist.
+- **Not adding:** analytics (the intro promises nothing leaves the device) and
+  a custom domain.
+
+## Risks
+
+| Risk | Plan |
+|---|---|
+| Gestures fail for some hands or light | The setup walkthrough shows what the tracker sees; painting mode and shortcuts always work without the camera |
+| Looks like Karam's site | Lead with hands and head; no "step back" copy; content framed as cave things, not framed paintings in a gallery |
+| Phone GPUs | Device tiers; the 2D version as the floor |
+| Scope | Each milestone ships on its own; nothing waits on M6 |
+
+## Found while auditing the repos
+
+- **Rakeb's public history contains the local PostgreSQL admin password**
+  (removed from the code in `c2582a1`, still in `cc83c14` and earlier). If that
+  password is used anywhere else, change it. Rewriting the history is optional
+  once it's changed.
+- **The-Gym-app has `node_modules` committed** (about 29,000 files).
