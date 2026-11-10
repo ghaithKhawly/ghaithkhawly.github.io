@@ -81,6 +81,23 @@ each from a relaxed hand. A shape counts when it's held long enough to open its
 section; it opens nothing during the trial. After ten it shows the score, per shape and
 how long each took, with a button to copy the results. M3 is done when that's 9 of 10.
 
+## Real photos through the whole site
+
+The numbers above score the classifier on landmarks. On 10 November, 32 more HaGRID
+photos (not in that set, one per person within each gesture) were also fed to the built
+site as its webcam, in `?trial` mode, so each went through everything a visitor's hand
+does: video, MediaPipe in the browser, smoothing, and the hold.
+
+| Shown | Photos | Read correctly |
+|---|---|---|
+| Open palm | 10 | 10 |
+| The hare (peace, and two fingers held together) | 10 | 10 |
+| Other gestures (fist, one finger, thumbs up, "call me"), which should open nothing | 12 | 12 |
+
+The palm and the hare were recognised 5 to 9 seconds after the photo appeared, at the
+one or two frames a second of a software renderer; on real hardware the hold is about
+a second. This is not the live test: the photos are still, and HaGRID has no wolf.
+
 ## What's left
 
 - The wolf's numbers come from a model of real variation, not real photos. It's the

@@ -160,10 +160,10 @@ version of the cave (the paintings as images, the same content).
 | # | State | Left before it counts as done |
 |---|---|---|
 | M0–M2 | Done. Gym Management System got its screens on 10 November, from a web build with a web SQLite | Rakeb shows its route network, not the app itself |
-| M3 | Built, CI-checked on 2,542 real hands | Its exit test needs real hands: one `?trial` run by you |
+| M3 | Built, CI-checked on 2,542 real hands. 32 more real photos through the whole site as its webcam: 32 read correctly (no wolf among them) | Its exit test needs live hands, the wolf above all: one `?trial` run by you |
 | M4 | Built, measured under phone throttling | Its exit test needs a real phone: one `?perf` reading by you |
 | M5 | Done (10 November): Lighthouse 100 for accessibility, best practices and SEO; axe clean on every state, in CI | — |
-| M6 | Launching | Merged to `main`; the workflow publishes to `gh-pages`: [docs/launch.md](launch.md) |
+| M6 | Ready | Merging into `main` publishes it: [docs/launch.md](launch.md) |
 
 | | Prototype | Now |
 |---|---|---|
