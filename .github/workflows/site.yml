@@ -1,9 +1,8 @@
 name: Site
 
 # Builds the cave and the classic site into one dist/, runs the checks, and on `main`
-# deploys dist/ to GitHub Pages, once Pages is set to deploy from Actions (Settings →
-# Pages → Source → GitHub Actions). Until then the live site is whatever the gh-pages
-# branch holds, and the deploy is skipped with a notice. See docs/launch.md.
+# publishes dist/ to the gh-pages branch, which GitHub Pages serves. Each deploy is one
+# commit there, so undoing one is reverting it. See docs/launch.md.
 on:
   push:
   pull_request:
@@ -52,38 +51,49 @@ jobs:
           name: playwright-traces
           path: apps/cave/test-results
           retention-days: 7
-      - name: Package for Pages
-        uses: actions/upload-pages-artifact@v4
+      - name: Keep the built site for the deploy
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v6
         with:
+          name: site
           path: dist
+          include-hidden-files: true   # .nojekyll
+          retention-days: 7
 
-  # Deploying from Actions only works once Pages is set to it; before that, say so and stop.
-  pages-source:
+  # Publish dist/ as one commit on gh-pages. Pages builds from that branch's root.
+  deploy:
+    needs: build
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
-      pages: read
-    outputs:
-      actions: ${{ steps.source.outputs.actions }}
+      contents: write
+      pages: write
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
     steps:
-      - id: source
+      - uses: actions/download-artifact@v6
+        with:
+          name: site
+          path: dist
+      - uses: actions/checkout@v6
+        with:
+          ref: gh-pages
+          path: pages
+      - name: Publish to gh-pages
+        working-directory: pages
+        run: |
+          git rm -rq --ignore-unmatch .
+          cp -a ../dist/. .
+          touch .nojekyll
+          git add -A
+          if git diff --cached --quiet; then echo "The site hasn't changed."; exit 0; fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "Deploy ${GITHUB_SHA::7} from main"
+          git push origin HEAD:gh-pages
+      # A push made with the workflow's own token may not start a Pages build by itself.
+      - name: Ask Pages to build
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          type=$(gh api "repos/${{ github.repository }}/pages" --jq .build_type 2>/dev/null || echo none)
-          if [ "$type" = workflow ]; then echo "actions=true" >> "$GITHUB_OUTPUT"
-          else echo "::notice::Pages deploys from '$type', not GitHub Actions, so this run doesn't deploy. To launch: Settings → Pages → Source → GitHub Actions (docs/launch.md)."; fi
-
-  deploy:
-    needs: [build, pages-source]
-    if: needs.pages-source.outputs.actions == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent

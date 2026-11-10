@@ -91,8 +91,9 @@ Node 18+. Create React App (`react-scripts` 5) with TypeScript.
 ### Deployment
 
 There's no deploy script here any more. The repo's `Site` workflow builds this site
-into `dist/classic/` next to the cave and deploys both from `main` (see the
-[root README](../../README.md) and [docs/launch.md](../../docs/launch.md)).
+into `dist/classic/` next to the cave, and on `main` publishes both to the
+`gh-pages` branch (see the [root README](../../README.md) and
+[docs/launch.md](../../docs/launch.md)).
 
 ---
 

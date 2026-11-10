@@ -121,10 +121,9 @@ prototype/        frozen reference
 - **Build output:** `dist/` holds the cave at the root and the classic site
   under `dist/classic/`. The `Site` workflow builds both and runs the checks
   on every push.
-- **Deploy switch:** the live site deploys from the `gh-pages` branch today.
-  The workflow deploys from `main` as soon as Settings → Pages → Source is
-  "GitHub Actions"; until then it skips the deploy and says why. Launch is
-  that setting plus the merge: [docs/launch.md](launch.md).
+- **Deploying:** Pages serves the `gh-pages` branch, as it always has. On
+  `main`, the workflow commits `dist/` there once every check passes, so no
+  repository setting had to change for the launch: [docs/launch.md](launch.md).
 - **Tracking:** MediaPipe is only downloaded after the visitor turns the
   camera on, from the site itself (the runtime from the pinned npm package, the
   models pinned by hash, all gzipped: 9.4 MB).
@@ -154,7 +153,7 @@ version of the cave (the paintings as images, the same content).
 | M3 | Camera | A short setup walkthrough; gesture confidence and hysteresis; tested with real hands in different light; lean thresholds tuned. Measured on 2,542 real hands: [docs/m3-gestures.md](m3-gestures.md) | 9 out of 10 real tries succeed (`?trial` scores it) |
 | M4 | Phones and performance | Device tiers, budgets above, tilt on iOS and Android, self-hosted MediaPipe files. Measured under phone throttling: [docs/m4-performance.md](m4-performance.md) | Budgets met on a real mid-range phone (`?perf` shows it) |
 | M5 | Fallbacks and reach | 2D version, reduced motion, keyboard, a screen-reader copy of the CV in the page, share and search metadata. Done: [docs/m5-reach.md](m5-reach.md) | Lighthouse accessibility ≥ 90 on every state, not just the intro; an axe check in CI; the whole cave works from a keyboard |
-| M6 | Launch | Switch Pages to Actions; `/classic` live; old deploy script retired; a 404 page | The cave is live |
+| M6 | Launch | `main` deploys to `gh-pages` after the checks; `/classic` live; old deploy script retired; a 404 page | The cave is live |
 
 ## Where v1 stands (re-evaluated 10 November)
 
@@ -164,7 +163,7 @@ version of the cave (the paintings as images, the same content).
 | M3 | Built, CI-checked on 2,542 real hands | Its exit test needs real hands: one `?trial` run by you |
 | M4 | Built, measured under phone throttling | Its exit test needs a real phone: one `?perf` reading by you |
 | M5 | Done (10 November): Lighthouse 100 for accessibility, best practices and SEO; axe clean on every state, in CI | — |
-| M6 | Ready | Two steps only you can take: [docs/launch.md](launch.md) |
+| M6 | Launching | Merged to `main`; the workflow publishes to `gh-pages`: [docs/launch.md](launch.md) |
 
 | | Prototype | Now |
 |---|---|---|
@@ -200,11 +199,10 @@ What changes:
   - calmer embers and flicker.
 
   Leaning with the head or tilt stays, since the visitor drives it.
-- **M6 is prepared here but finished by you.** Switching Pages to "GitHub
-  Actions" is a repository setting, and merging to `main` is your call.
-  Everything else (deploying on `main`, a 404 page, the classic site's old
-  deploy script removed, a launch checklist) is done, so launch is those two
-  steps.
+- **M6 needs no repository setting.** Pages keeps serving `gh-pages`. The
+  workflow publishes there from `main`, after the checks pass, so launching is
+  the merge. Also: a 404 page, the classic site's old deploy script removed,
+  and a launch checklist.
 - **Not adding:** analytics (the intro promises nothing leaves the device) and
   a custom domain.
 

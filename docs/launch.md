@@ -1,16 +1,12 @@
 # Launching the cave
 
-Everything is ready on `claude/quirky-euler-u6my7s`. Launching takes two steps,
-and both are yours: one is a repository setting, the other a merge.
+GitHub Pages already serves this site from the `gh-pages` branch, so launching
+needs no settings change. The `Site` workflow publishes on `main`:
 
-1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
-   The `Site` workflow can only deploy once this is set. Until then, every run on
-   `main` skips the deploy and says why.
-2. **Merge the branch into `main`** (a pull request, or a fast-forward: `main`
-   hasn't moved since the branch started). The `Site` workflow on `main` builds
-   both sites, runs every check (about 15 minutes), and deploys `dist/`.
-
-After that:
+1. Every push to `main` builds both sites and runs every check (about 15
+   minutes).
+2. If they pass, it commits `dist/` to `gh-pages`, one commit per deploy, and
+   asks Pages to build.
 
 | Address | What's there |
 |---|---|
@@ -28,6 +24,14 @@ After that:
 
 ## If something's wrong
 
-Set Source back to **Deploy from a branch: `gh-pages` / root**. The previous
-site comes back exactly as it was: the `gh-pages` branch is untouched. Once
-you're happy with the launch, that branch can be deleted.
+Revert the deploy commit on `gh-pages` (the commit before it is the previous
+site, as it was). GitHub's web UI can't revert, so from a clone:
+
+```bash
+git fetch origin gh-pages
+git checkout gh-pages
+git revert --no-edit HEAD
+git push origin gh-pages
+```
+
+The next push to `main` deploys again.
