@@ -153,8 +153,60 @@ version of the cave (the paintings as images, the same content).
 | M2 | Content in the cave | All projects above as paintings that step out with real screenshots, their words painted on the rock like the other sections | Every section reachable by gesture, by painting and by shortcut |
 | M3 | Camera | A short setup walkthrough; gesture confidence and hysteresis; tested with real hands in different light; lean thresholds tuned. Measured on 2,542 real hands: [docs/m3-gestures.md](m3-gestures.md) | 9 out of 10 real tries succeed (`?trial` scores it) |
 | M4 | Phones and performance | Device tiers, budgets above, tilt on iOS and Android, self-hosted MediaPipe files. Measured under phone throttling: [docs/m4-performance.md](m4-performance.md) | Budgets met on a real mid-range phone (`?perf` shows it) |
-| M5 | Fallbacks and reach | 2D version, reduced motion, keyboard, a screen-reader copy of the CV in the page, share and search metadata | Lighthouse accessibility ≥ 90 |
-| M6 | Launch | Switch Pages to Actions; `/classic` live; old deploy script retired | The cave is live |
+| M5 | Fallbacks and reach | 2D version, reduced motion, keyboard, a screen-reader copy of the CV in the page, share and search metadata | Lighthouse accessibility ≥ 90 on every state, not just the intro; an axe check in CI; the whole cave works from a keyboard |
+| M6 | Launch | Switch Pages to Actions; `/classic` live; old deploy script retired; a 404 page | The cave is live |
+
+## Where v1 stands (re-evaluated 10 November)
+
+| # | State | Left before it counts as done |
+|---|---|---|
+| M0–M2 | Done | Gym Management System has no screens (Flutter with `sqflite` doesn't run in a browser); Rakeb shows its route network, not the app |
+| M3 | Built, CI-checked on 2,542 real hands | Its exit test needs real hands: one `?trial` run by you |
+| M4 | Built, measured under phone throttling | Its exit test needs a real phone: one `?perf` reading by you |
+| M5 | Next | Everything |
+| M6 | After M5 | Two steps only you can take (see M6 below) |
+
+| | Prototype | Now |
+|---|---|---|
+| Originality | 9 | 9 |
+| Look and feel | 5.5 | 8 |
+| Interaction depth | 8.5 | 9 |
+| Works first time, any device | 4 | 7: every check passes in a software renderer, but no real phone or real-hand trial yet |
+| Time to reach the content | 6 | 7: shortcuts and chips, but a screen reader or a browser without WebGL reaches nothing |
+| Overall | 6.5 | 8 |
+
+What changes:
+
+- **"Step back" is still on screen**, though the risks below rule it out. It
+  becomes "Back to the fire".
+- **One copy of the CV does three jobs in M5.** The build writes the whole CV
+  and every project into `index.html` as plain HTML, from the same content the
+  cave reads:
+  - it's what screen readers read and what search engines index;
+  - styled as painted pages with the baked paintings as pictures, it's the
+    2D version, for browsers without WebGL, a lost WebGL context, or anyone
+    who asks (`?flat`, or "Read it as a page").
+  
+  One source, so none of them can drift.
+- **M5's test as first written is too easy.** Lighthouse only audits the intro,
+  which already scores 100 for accessibility (best practices 96, SEO 82: no
+  favicon, description or robots.txt). The test is now every state: intro,
+  cave, an open section, a project, the 2D page. It also covers a keyboard-only
+  pass, and an axe check in CI.
+- **Reduced motion** (the visitor's system setting) means:
+  - walking up to the wall is a cut, not a zoom;
+  - no ghost hand painting by itself;
+  - no automatic look-round;
+  - calmer embers and flicker.
+
+  Leaning with the head or tilt stays, since the visitor drives it.
+- **M6 is prepared here but finished by you.** Switching Pages to "GitHub
+  Actions" is a repository setting, and merging to `main` is your call.
+  Everything else (deploying on `main`, a 404 page, the classic site's old
+  deploy script removed, a launch checklist) is done, so launch is those two
+  steps.
+- **Not adding:** analytics (the intro promises nothing leaves the device) and
+  a custom domain.
 
 ## Risks
 

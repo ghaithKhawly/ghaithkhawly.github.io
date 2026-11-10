@@ -25,15 +25,15 @@ export function startFocus(g) {
   const s = 0.42, dist = Math.max(1.9, (1.35 * gw * EYE_D) / screenW, (1.45 * gh * EYE_D) / SCREEN_H);
   focus.target = { x: P.x, y: P.y + 0.06, z: P.z + dist - EYE_D * s, s };
   focus.active = true; focus.guide = g;
-  $('step-back').hidden = false;
+  $('back').hidden = false;
   late.setGestureUI(`Trace ${g.title} with ${g.tool === 'charcoal' ? 'charcoal' : 'red ochre'}`, guideProgress(g) / 0.68);
 }
 export function endFocus() {
   focus.active = false; focus.section = null;
-  $('step-back').hidden = true;
+  $('back').hidden = true;
   if (S.mode === 'mouse') late.setGestureUI(late.paintingHint(), 0);
 }
-$('step-back').addEventListener('click', () => { if (panelKind) closePanel(); else if (!finish.g) endFocus(); });
+$('back').addEventListener('click', () => { if (panelKind) closePanel(); else if (!finish.g) endFocus(); });
 
 // Opening a section walks you up to its painting and paints the section on the rock
 // beside it: the painting on one side of the view and the words on the other. On a
@@ -67,7 +67,7 @@ export function frameSection(kind: string, arg?: string): 'left' | 'right' | 'ab
   const Wv = (screenW * dist) / EYE_D, Hv = (SCREEN_H * dist) / EYE_D;
   focus.target = { x: P.x + (0.5 - fx) * Wv, y: P.y - (0.5 - fy) * Hv, z: P.z + dist - EYE_D * s, s };
   focus.active = true; focus.guide = null; focus.section = kind;
-  $('step-back').hidden = false;
+  $('back').hidden = false;
   return side;
 }
 

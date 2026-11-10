@@ -96,7 +96,7 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
 .tool:not([aria-pressed]) .glyph { color: var(--kaolin); }
 .tool:hover .glyph { color: var(--kaolin); }
 
-#step-back {
+#back {
   position: fixed; z-index: 12; left: 50%; top: calc(env(safe-area-inset-top) + 16px); transform: translateX(-50%);
   display: flex; gap: 10px; align-items: center; padding: 12px 22px; font: 700 18px/1 var(--text); width: max-content; max-width: calc(100vw - 32px);
 }
@@ -239,11 +239,11 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
   #gesture .stencil { width: 42px; height: 42px; }
   #gesture-label { font-size: 18px; }
   #chips { bottom: calc(env(safe-area-inset-bottom) + 150px); }
-  #step-back { top: calc(env(safe-area-inset-top) + 56px); font-size: 16px; }
+  #back { top: calc(env(safe-area-inset-top) + 56px); font-size: 16px; }
   #panel-body { font-size: 17px; }
   #setup { grid-template-columns: 1fr; grid-template-areas: 'title' 'steps' 'view' 'say' 'skip'; padding: 14px 16px; }
   #setup-view { width: 100%; height: auto; aspect-ratio: 4 / 3; }
-  #step-back { top: calc(env(safe-area-inset-top) + 12px); }
+  #back { top: calc(env(safe-area-inset-top) + 12px); }
   .panel-open #tools { visibility: hidden; }
   #shapes { width: auto; right: max(12px, env(safe-area-inset-right)); bottom: calc(env(safe-area-inset-bottom) + 160px); grid-template-columns: repeat(3, 1fr); }
   #shapes h3 { grid-column: 1 / -1; }
