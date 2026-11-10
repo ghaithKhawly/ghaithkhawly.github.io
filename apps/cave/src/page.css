@@ -5,6 +5,7 @@
 /* ---------- the cave is up: the page is for screen readers only ---------- */
 html.cave #page { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 html.cave #page img { display: none; }   /* so none of its pictures load */
+html.cave #page .shots { overflow: visible; }   /* nothing to scroll out of sight */
 
 /* Shown when focused: the first thing a keyboard reaches. */
 .skip { position: fixed; z-index: 60; left: 16px; top: 12px; padding: 10px 16px 12px; font: 700 17px/1 var(--text); color: #1a0d07; background: var(--kaolin); border-radius: 3px 7px 4px 6px; text-decoration: none; transform: translateY(-160%); }
@@ -74,6 +75,7 @@ html:not(.cave) body {
 .projects-title { max-width: 1080px; margin: 0 auto 28px; font: 800 clamp(48px, 6vw, 72px)/0.95 var(--text); color: var(--kaolin); letter-spacing: -0.015em; text-shadow: 0 2px 18px rgba(7, 5, 4, 0.6); filter: url(#paint-big); }
 .project .words h3 { font-size: clamp(30px, 3.4vw, 40px); color: var(--ochre); line-height: 1; }
 /* Its screens in a row under it, scrolled sideways inside the row, never the page. */
+.shots:focus-visible { outline: 3px solid var(--charcoal); outline-offset: 2px; }
 .shots { grid-column: 1 / -1; display: flex; gap: 18px; overflow-x: auto; padding: 4px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: rgba(42, 28, 20, 0.5) transparent; }
 .shots figure { margin: 0; flex: none; width: 200px; scroll-snap-align: start; display: grid; gap: 8px; }
 .shots.wide figure { width: min(420px, 78vw); }

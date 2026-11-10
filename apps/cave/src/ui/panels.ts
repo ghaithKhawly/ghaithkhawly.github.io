@@ -17,7 +17,12 @@ export let panelKind = null, panelArg = null;
 // Everything opened so far (sections, and `project:<id>`), for the tally of finds.
 export const opened = new Set<string>();
 export function el(tag: string, cls?: string | null, text?: string | null): HTMLElement { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+// Keyboard and screen reader focus follows the section: into its heading when it opens,
+// and back where it came from when it closes.
+let returnFocus: HTMLElement | null = null;
 export function openPanel(kind: string, arg?: any) {
+  const active = document.activeElement as HTMLElement | null;
+  if (active && active !== document.body && !panel.contains(active)) returnFocus = active;
   panelKind = kind; panelArg = arg;
   opened.add(kind === 'project' ? `project:${arg}` : kind);
   panelBody.replaceChildren();
@@ -100,6 +105,7 @@ export function openPanel(kind: string, arg?: any) {
   }
   document.body.classList.add('panel-open');
   place();
+  title.focus({ preventScroll: true });
 }
 // Walk up to the painting, then lay the words on the free side of the view.
 function place() {
@@ -130,11 +136,17 @@ window.addEventListener('keydown', (e) => {
 });
 export function selectText(node) { const r = document.createRange(); r.selectNodeContents(node); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
 export function closePanel() {
+  const hadFocus = panel.contains(document.activeElement) || document.activeElement === document.body;
   panel.hidden = true; wash.hidden = true;
   document.body.classList.remove('panel-open');
   if (panelKind === 'project') returnStepOut();
   if (late.focus.section) late.endFocus();
   panelKind = null; panelArg = null;
+  if (hadFocus) {
+    const back = returnFocus?.isConnected && returnFocus.offsetParent !== null ? returnFocus : $('t-shortcuts');
+    back.focus({ preventScroll: true });
+  }
+  returnFocus = null;
 }
 $('panel-close').addEventListener('click', closePanel);
 

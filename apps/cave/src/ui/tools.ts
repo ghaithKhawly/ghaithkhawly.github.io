@@ -21,16 +21,11 @@ $('t-head').addEventListener('click', (e) => {
   e.currentTarget.setAttribute('aria-pressed', String(S.headOn));
   if (!S.headOn) { eyeTarget.x = 0; eyeTarget.y = 0; eyeTarget.z = EYE_D; }
 });
-$('t-shapes').addEventListener('click', (e) => {
-  const show = $('shapes').hidden;
-  $('shapes').hidden = !show;
-  e.currentTarget.setAttribute('aria-pressed', String(show));
-});
-$('t-shortcuts').addEventListener('click', (e) => {
-  const show = $('chips').hidden;
-  $('chips').hidden = !show;
-  e.currentTarget.setAttribute('aria-pressed', String(show));
-});
+// The shapes list and the shortcuts sit in the same place: opening one closes the other.
+function showShapes(show: boolean) { $('shapes').hidden = !show; $('t-shapes').setAttribute('aria-pressed', String(show)); }
+function showShortcuts(show: boolean) { $('chips').hidden = !show; $('t-shortcuts').setAttribute('aria-expanded', String(show)); }
+$('t-shapes').addEventListener('click', () => { const show = $('shapes').hidden; showShapes(show); if (show) showShortcuts(false); });
+$('t-shortcuts').addEventListener('click', () => { const show = $('chips').hidden; showShortcuts(show); if (show) showShapes(false); });
 // One shortcut per project, after the sections: it steps the project out of the wall.
 for (const p of PROJECTS) {
   const b = document.createElement('button');

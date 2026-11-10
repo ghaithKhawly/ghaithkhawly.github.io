@@ -30,7 +30,7 @@ import { GUIDES, guideProgress } from './art/guides';
 import { PAINTINGS, artTex, baseTex, fxMesh, shadowMat, shadowMesh } from './art/layers';
 import { redrawArt } from './art/strokes';
 import { audio } from './audio';
-import { $, ART_H, ART_W, EYE_D, FIRE, HOLD_DWELL, params } from './config';
+import { $, ART_H, ART_W, EYE_D, FIRE, HOLD_DWELL, params, reducedMotion } from './config';
 import { applyQuality, applyWindowCamera, bloom, composer, pan, vignette, win } from './core/view';
 import { quality, sampleFrame } from './core/quality';
 import { perfFrameStart, updatePerf } from './ui/perf';
@@ -67,13 +67,15 @@ export function frame(now) {
 
   // Fire. Up at the wall it's behind you: it dims and the lamp in your hand takes over.
   S.fireLevel += (fireTarget - S.fireLevel) * (1 - Math.exp(-dt * 0.9));
-  const fl = 0.84 + 0.08 * Math.sin(S.clock * 7.3) + 0.05 * Math.sin(S.clock * 13.1 + 1.3) + 0.12 * (vnoise(S.clock * 9, 0.5, 5) - 0.5);
+  const flk = reducedMotion() ? 0.35 : 1;
+  const fl = 0.84 + flk * (0.08 * Math.sin(S.clock * 7.3) + 0.05 * Math.sin(S.clock * 13.1 + 1.3) + 0.12 * (vnoise(S.clock * 9, 0.5, 5) - 0.5));
   S.flickerNow = fl - 0.84;
   const behind = 1 - 0.78 * easeInOut(focus.t);
   fireLight.intensity = 24 * S.fireLevel * fl * behind;
   fillLight.intensity = 5 * S.fireLevel * (0.9 + 0.2 * vnoise(S.clock * 14, 2.5, 9)) * behind;
   washLight.intensity = 5 * S.fireLevel * (0.94 + S.flickerNow * 0.5) * behind;
   flames.visible = embers.visible = halo.visible = focus.t < 0.55;
+  if (reducedMotion()) embers.visible = false;
   bloom.strength = 0.6 * (0.45 + 0.55 * behind);
   fireLight.position.x = FIRE.x + (vnoise(S.clock * 3, 1, 3) - 0.5) * 0.08;
   halo.material.opacity = 0.55 * S.fireLevel * fl;
@@ -131,7 +133,7 @@ export function frame(now) {
   eye.z = Math.max(1.6, eye.z);
   pan.x += (pan.target - pan.x) * k;
   // Window: blend between standing back and being up at the wall.
-  focus.t = clamp(focus.t + (focus.active ? dt : -dt) / 0.9, 0, 1);
+  focus.t = reducedMotion() ? (focus.active ? 1 : 0) : clamp(focus.t + (focus.active ? dt : -dt) / 0.9, 0, 1);
   if (!focus.active && focus.t === 0) focus.guide = null;
   const fe = easeInOut(focus.t), ft = focus.target;
   win.x = THREE.MathUtils.lerp(pan.x, ft.x, fe);
@@ -166,7 +168,7 @@ export function frame(now) {
     let target = 0;
     if (S.clock >= p.boostFrom && S.clock <= p.boostTo) target = 0.85;
     if (G.dwell.id === p.id && stepOut.id !== p.id) target = Math.max(target, 0.2 + (G.dwell.t / HOLD_DWELL) * 0.75);
-    if (S.mode === 'mouse' && p.project && stepOut.id !== p.id && !focus.active) target = Math.max(target, 0.18 + 0.12 * Math.sin(S.clock * 2.2));
+    if (S.mode === 'mouse' && p.project && stepOut.id !== p.id && !focus.active) target = Math.max(target, reducedMotion() ? 0.24 : 0.18 + 0.12 * Math.sin(S.clock * 2.2));
     if (p.group === 'traced') target *= 0.25;   // a big, close painting needs little glow to read as alive
     p.g += (target - p.g) * (1 - Math.exp(-dt * 6));
   }

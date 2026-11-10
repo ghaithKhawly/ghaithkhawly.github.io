@@ -2,7 +2,7 @@ import { late } from '../late';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { S } from '../state';
-import { ART_H, ART_W, EYE_D, WALL_H, WALL_W } from '../config';
+import { ART_H, ART_W, EYE_D, WALL_H, WALL_W, reducedMotion } from '../config';
 import { clamp, easeInOut, mulberry, smooth } from '../util';
 import { wallPoint } from '../world/geometry';
 import { scene } from '../world/scene';
@@ -140,17 +140,19 @@ export function finishReturn() {
 }
 export function updateStepOut(dt, time) {
   if (!stepOut.id) return;
-  stepOut.t = clamp(stepOut.t + (dt / 1.5) * stepOut.dir, 0, 1);
+  // Reduced motion: the device is simply there, and holds still.
+  stepOut.t = reducedMotion() ? (stepOut.dir > 0 ? 1 : 0) : clamp(stepOut.t + (dt / 1.5) * stepOut.dir, 0, 1);
+  const sway = reducedMotion() ? 0 : 1;
   const e = easeInOut(stepOut.t);
   const dvc = stepOut.device;
   dvc.position.lerpVectors(stepOut.from, stepOut.to, e);
-  dvc.position.y += Math.sin(e * Math.PI) * 0.25 + (stepOut.t === 1 ? Math.sin(time * 1.4) * 0.02 : 0);
+  dvc.position.y += Math.sin(e * Math.PI) * 0.25 + (stepOut.t === 1 ? Math.sin(time * 1.4) * 0.02 * sway : 0);
   const s = THREE.MathUtils.lerp(stepOut.startScale, 1, e);
   const isPhone = dvc === DEVICES.phone;
   dvc.scale.set(s, s, Math.max(0.02, e));
-  dvc.rotation.set(isPhone ? 0 : THREE.MathUtils.lerp(Math.PI / 2, 0.42, e), THREE.MathUtils.lerp(0, stepOut.yaw, e) + (stepOut.t === 1 ? Math.sin(time * 0.6) * 0.04 : 0), 0);
+  dvc.rotation.set(isPhone ? 0 : THREE.MathUtils.lerp(Math.PI / 2, 0.42, e), THREE.MathUtils.lerp(0, stepOut.yaw, e) + (stepOut.t === 1 ? Math.sin(time * 0.6) * 0.04 * sway : 0), 0);
   // Screens move on by themselves, slowly, until the visitor picks one.
-  if (stepOut.t === 1 && stepOut.dir > 0 && screens.auto && S.clock - screens.at > 6) showScreen(screens.index + 1);
+  if (stepOut.t === 1 && stepOut.dir > 0 && screens.auto && !reducedMotion() && S.clock - screens.at > 6) showScreen(screens.index + 1);
   // Fade the painting in a few steps: re-uploading the whole paint layer every frame is expensive.
   const fade = Math.round((1 - smooth(0.0, 0.5, stepOut.t)) * 6) / 6;
   stepOut.painting.alpha = fade;

@@ -3,7 +3,7 @@ import type { Guide, Painting } from '../types';
 import { S } from '../state';
 import { GUIDES, guideProgress } from '../art/guides';
 import { PAINTINGS, addPaintingDecal, makeGlowSprite } from '../art/layers';
-import { $, ART_H, ART_W, CRACK, EYE_D, SCREEN_H, WALL_H, WALL_W } from '../config';
+import { $, ART_H, ART_W, CRACK, EYE_D, SCREEN_H, WALL_H, WALL_W, reducedMotion } from '../config';
 import { screenW } from '../core/view';
 import { PAINT_RES } from '../paint/painters';
 import { atRes, fingerDots, line, shapePath, sprayAround, wash } from '../paint/pigment';
@@ -136,7 +136,7 @@ export function updateFinish(dt) {
   if (!finish.g) return;
   // Wait until the camera has arrived at the wall.
   if (focus.t < 0.98 && finish.t === 0) return;
-  finish.t += dt;
+  finish.t += reducedMotion() ? 60 : dt;   // reduced motion: painted at once
   const { g, p, pad } = finish;
   const fillT = g.stencil ? SPRAY_T : FILL_T, lineT = g.stencil ? 0 : LINE_T;
   let changed = false;
@@ -180,6 +180,6 @@ export function updateFinish(dt) {
     const section = g.section;
     finish.g = null;
     // Stay up at the wall: the section opens beside the painting you just finished.
-    setTimeout(() => openPanel(section), 500);
+    setTimeout(() => openPanel(section), reducedMotion() ? 0 : 500);
   }
 }

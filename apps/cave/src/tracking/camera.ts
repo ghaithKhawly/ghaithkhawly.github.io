@@ -135,12 +135,14 @@ export function startTilt() {
 
 export let fireTarget = 0.35;
 export function enterScene() {
+  // A keyboard that started the cave from the intro carries on from the tools.
+  const fromIntro = $('intro').contains(document.activeElement);
   $('intro').hidden = true;
   $('hud').hidden = false; $('finds').hidden = false; $('tools').hidden = false; $('gesture').hidden = false;
   const cam = S.mode === 'camera';
   $('shapes').hidden = !cam;
   for (const id of ['t-head', 't-shapes', 't-debug', 't-recenter']) $(id).hidden = !cam;
-  $('t-shortcuts').hidden = cam;
+  $('t-shortcuts').hidden = false;   // the keyboard's way to every section, camera or not
   canvas.style.cursor = cam ? 'default' : 'none';
   if (params.has('debug') && cam) late.toggleDebug(true);
   // ?setup shows the walkthrough again; ?trial runs it, then the gesture trial.
@@ -149,6 +151,7 @@ export function enterScene() {
   // On a narrow screen the middle of the wall is the fire; start looking at the rabbit instead.
   if (screenW < 1.6) pan.target = pan.x = 0.9;
   fireTarget = 1;
+  if (fromIntro) $('t-shortcuts').focus({ preventScroll: true });
 }
 // Touch screens get "tap", whichever way round the phone is held.
 export const press = matchMedia('(pointer: coarse)').matches ? 'Tap' : 'Click';

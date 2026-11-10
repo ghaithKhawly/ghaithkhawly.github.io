@@ -1,18 +1,18 @@
 // Writes the CV page (src/content/page.ts) into index.html where `<!-- cv page -->`
-// stands. It runs before Vite resolves the page's assets, so the paintings and screens it
+// stands, and the title, description and share tags where `<!-- head -->` does. It runs before Vite resolves the page's assets, so the paintings and screens it
 // shows are bundled like any other image.
 //
 // Also preloads the cave's script: main.ts imports it only where the cave can be drawn,
 // so without a hint the browser would find it one round trip late.
 import type { Plugin } from 'vite';
-import { pageHtml } from '../src/content/page.ts';
+import { headHtml, pageHtml } from '../src/content/page.ts';
 
 export function cvPage(): Plugin {
   return {
     name: 'cave-cv-page',
     transformIndexHtml: {
       order: 'pre',
-      handler: (html) => html.replace('<!-- cv page -->', pageHtml()),
+      handler: (html) => html.replace('<!-- head -->', headHtml()).replace('<!-- cv page -->', pageHtml()),
     },
   };
 }

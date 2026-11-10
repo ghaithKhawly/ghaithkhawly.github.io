@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>The Cave · Ghaith Khawly</title>
+<!-- head -->
 <script>
 // The cave is drawn over a plain page of the CV. Mark the page `cave` only where it can be
 // drawn (three.js needs WebGL 2) and the plain page wasn't asked for (?flat). Without
@@ -95,7 +95,7 @@ if ('WebGL2RenderingContext' in window && !/[?&]flat(&|=|$)/.test(location.searc
   <button class="tool" id="t-sound" type="button" aria-pressed="true"><svg class="glyph" aria-hidden="true"><use href="#g-spiral"/></svg>Sound</button>
   <button class="tool" id="t-head" type="button" aria-pressed="true" hidden><svg class="glyph" aria-hidden="true"><use href="#g-head"/></svg>Head tracking</button>
   <button class="tool" id="t-shapes" type="button" aria-pressed="true" hidden><svg class="glyph" aria-hidden="true"><use href="#g-hand"/></svg>Shapes</button>
-  <button class="tool" id="t-shortcuts" type="button" aria-pressed="false" hidden><svg class="glyph" aria-hidden="true"><use href="#g-marks"/></svg>Shortcuts</button>
+  <button class="tool" id="t-shortcuts" type="button" aria-expanded="false" aria-controls="chips" hidden><svg class="glyph" aria-hidden="true"><use href="#g-marks"/></svg>Shortcuts</button>
   <button class="tool" id="t-debug" type="button" aria-pressed="false" hidden><svg class="glyph" aria-hidden="true"><use href="#g-eye"/></svg>Tracking view</button>
   <button class="tool" id="t-recenter" type="button" hidden><svg class="glyph" aria-hidden="true"><use href="#g-ring"/></svg>Recenter</button>
 </div>
@@ -149,7 +149,7 @@ if ('WebGL2RenderingContext' in window && !/[?&]flat(&|=|$)/.test(location.searc
 <div id="panel-wash" hidden aria-hidden="true"></div>
 <aside id="panel" hidden aria-labelledby="panel-title">
   <header>
-    <div><p class="kicker" id="panel-eyebrow"></p><h2 id="panel-title" class="painted big"></h2></div>
+    <div><p class="kicker" id="panel-eyebrow"></p><h2 id="panel-title" class="painted big" tabindex="-1"></h2></div>
     <button id="panel-close" type="button" aria-label="Close">×</button>
   </header>
   <div id="panel-body"></div>

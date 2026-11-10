@@ -20,5 +20,10 @@ export const COLUMN = { x: -1.8, z: -0.9, bottom: FLOOR_Y - 0.05, height: 3.7 };
 export const CRACK = { ax: 1500, ay: 420, halfW: 66, halfH: 120 };   // in paint-layer pixels
 
 export const params = new URLSearchParams(location.search);
+// The visitor's "reduce motion" setting: walking up to the wall is a cut, nothing paints
+// or turns by itself, embers don't drift and the fire flickers less. Leaning stays: the
+// visitor moves it.
+const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+export const reducedMotion = () => motionQuery.matches;
 // Elements are looked up by id; callers know what kind each one is.
 export const $ = (id: string): any => document.getElementById(id);

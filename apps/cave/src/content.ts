@@ -1,6 +1,6 @@
 // Content comes from the same JSON the classic site uses, which is generated from the
 // LaTeX CV (apps/classic/cv-fulltime.tex). This maps it to the shape the cave reads.
-import cv from '../../classic/src/data/cv-fulltime.json';
+import cv from '../../classic/src/data/cv-fulltime.json' with { type: 'json' };
 
 const dash = (s: string) => s.replace(/ - /g, ' – ');
 // CV bullet points read as one paragraph of sentences.

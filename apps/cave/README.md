@@ -19,7 +19,12 @@ npm run budget     # check the build against the size budgets
 npm test           # Playwright browser checks against the built site
 npm run test:gestures  # the gesture classifier on 2,542 real hands, in a second
 npm run bake       # re-paint the baked paintings (see below)
+npm run share-images  # re-render the link-preview still and the favicon PNGs
 ```
+
+`?flat` shows the CV as a plain page, which is also what browsers without WebGL 2
+or JavaScript get, and what screen readers read in the cave (see
+[docs/m5-reach.md](../../docs/m5-reach.md)).
 
 The camera needs `https` or `localhost`. Add `?setup` to see the first-time camera
 walkthrough again, or `?trial` to score ten tries at the three shapes with your own
@@ -61,7 +66,7 @@ changes it from there.
 
 Three pieces of plumbing hold the split together:
 
-- **`main.ts` imports every module in the order the prototype ran.** A module may
+- **`main.ts` is the entry; `cave.ts` imports every module in the order the prototype ran.** A module may
   only use earlier modules while it sets up.
 - **`late.ts`** is for calls the other way round, made at runtime (painting mode
   opening a panel, say): the later module registers getters on `late`, and the

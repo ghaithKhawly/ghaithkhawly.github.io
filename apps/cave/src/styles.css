@@ -91,9 +91,10 @@ canvas.thumb { width: 44px; height: 44px; flex: none; display: block; }
 }
 .tool { display: grid; justify-items: center; gap: 6px; min-width: 58px; padding: 6px 6px 4px; font: 500 13px/1.1 var(--label); color: var(--kaolin-dim); }
 .tool .glyph { width: 28px; height: 28px; color: var(--kaolin-faint); filter: url(#paint-light); }
-.tool[aria-pressed="true"] { color: var(--kaolin); }
-.tool[aria-pressed="true"] .glyph { color: var(--ochre-lit); }
-.tool:not([aria-pressed]) .glyph { color: var(--kaolin); }
+.tool[aria-pressed="true"], .tool[aria-expanded="true"] { color: var(--kaolin); }
+.tool[aria-pressed="true"] .glyph, .tool[aria-expanded="true"] .glyph { color: var(--ochre-lit); }
+#panel-title:focus { outline: none; }
+.tool:not([aria-pressed]):not([aria-expanded]) .glyph { color: var(--kaolin); }
 .tool:hover .glyph { color: var(--kaolin); }
 
 #back {

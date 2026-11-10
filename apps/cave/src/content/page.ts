@@ -4,8 +4,8 @@
 // site itself where the cave can't be drawn (no WebGL 2, no JavaScript, or ?flat).
 //
 // No DOM here: the build runs this in Node.
-import { CV, sentences } from '../content';
-import { PROJECTS } from './projects';
+import { CV, sentences } from '../content.ts';
+import { PROJECTS } from './projects.ts';
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 // Paintings are pictures of what each section is about; the words carry the content.
@@ -33,13 +33,44 @@ function about() {
 function projects() {
   return PROJECTS.map((p) => {
     const shots = p.screens.length
-      ? `<div class="shots${p.device === 'laptop' ? ' wide' : ''}" role="group" aria-label="${esc(`Screens from ${p.title}`)}">${p.screens.map((s) => `<figure><img src="/src/assets/screens/${p.id}/${s.file}.webp" alt="${esc(s.caption)}" loading="lazy" decoding="async"><figcaption>${esc(s.caption)}</figcaption></figure>`).join('')}</div>`
+      ? `<div class="shots${p.device === 'laptop' ? ' wide' : ''}" role="group" tabindex="0" aria-label="${esc(`Screens from ${p.title}`)}">${p.screens.map((s) => `<figure><img src="/src/assets/screens/${p.id}/${s.file}.webp" alt="${esc(s.caption)}" loading="lazy" decoding="async"><figcaption>${esc(s.caption)}</figcaption></figure>`).join('')}</div>`
       : '';
     return `<article class="slab project" id="cv-project-${p.id}" aria-labelledby="cv-project-${p.id}-title">${art(`painting-project-${p.id}`)}<div class="words">`
       + `<p class="kicker">${esc(p.status)}</p><h3 id="cv-project-${p.id}-title">${esc(p.title)}</h3><p class="lede">${esc(p.what)}</p>`
       + `<ul class="points">${p.points.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>${used(p.stack)}`
       + `${p.note ? `<p class="note">${esc(p.note)}</p>` : ''}${p.link ? `<p>${link(p.link, 'The code on GitHub')}</p>` : ''}</div>${shots}</article>`;
   }).join('');
+}
+
+// What search engines and link previews read: the title, a description, the share
+// picture (public/og.jpg) and who this is, as schema.org data.
+export const SITE = 'https://ghaithkhawly.github.io/';
+export function headHtml() {
+  const role = CV.title.toLowerCase(), city = CV.location.split(',')[0];
+  const title = `${CV.name}, ${role} in ${city}`;
+  const desc = `${CV.title} in ${city}. My portfolio is a firelit cave: cast shadows on its wall with your hands and a webcam, or paint on it. The same CV is here as a plain page too.`;
+  const person = {
+    '@context': 'https://schema.org', '@type': 'Person', name: CV.name, jobTitle: CV.title, url: SITE,
+    address: { '@type': 'PostalAddress', addressLocality: city, addressCountry: 'SY' },
+    sameAs: [CV.github, CV.linkedin],
+    knowsAbout: CV.skills.flatMap((g) => g.skills).slice(0, 20),
+  };
+  const meta = (k: string, v: string, attr = 'name') => `<meta ${attr}="${k}" content="${esc(v)}">`;
+  return [
+    `<title>${esc(title)}</title>`,
+    meta('description', desc),
+    `<link rel="canonical" href="${SITE}">`,
+    meta('theme-color', '#070504'),
+    '<link rel="icon" href="./favicon.svg" type="image/svg+xml">',
+    '<link rel="icon" href="./favicon-32.png" sizes="32x32" type="image/png">',
+    '<link rel="apple-touch-icon" href="./apple-touch-icon.png">',
+    meta('og:type', 'website', 'property'), meta('og:site_name', CV.name, 'property'),
+    meta('og:title', title, 'property'), meta('og:description', desc, 'property'), meta('og:url', SITE, 'property'),
+    meta('og:image', `${SITE}og.jpg`, 'property'), meta('og:image:width', '1200', 'property'), meta('og:image:height', '630', 'property'),
+    meta('og:image:alt', `${CV.name}'s name painted at the mouth of a firelit cave, its wall covered in red ochre paintings`, 'property'),
+    meta('twitter:card', 'summary_large_image'),
+    `<script type="application/ld+json">${JSON.stringify(person).replace(/</g, '\\u003c')}</script>`,
+  ].join('\n');
 }
 
 export function pageHtml() {
