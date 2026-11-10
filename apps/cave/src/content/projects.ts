@@ -154,8 +154,14 @@ export const PROJECTS: ProjectInfo[] = [
       'Three roles, admin, receptionist and coach, enforced in the database schema.',
     ],
     stack: ['Flutter', 'Dart', 'SQLite'],
-    note: 'The code is private.',
-    screens: [],
+    note: 'The code is private. Screens from a web build, with a made-up gym.',
+    device: 'phone',
+    screens: [
+      { file: '1-dashboard', caption: 'The day at a glance' },
+      { file: '2-members', caption: 'Members' },
+      { file: '3-check-in', caption: 'Who’s in the gym' },
+      { file: '4-finance', caption: 'Memberships and what they paid' },
+    ],
     painting: { kind: 'lifters', x: 1172, y: 408, w: 232, h: 160, seed: 37 },
   },
 ];

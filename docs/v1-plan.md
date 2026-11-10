@@ -82,7 +82,7 @@ screenshots.
 | **Savings Tracker** | Finished (v3, 20 tests) | Expo / React Native, Zustand, Victory charts | A hoard and tally marks → a phone |
 | **justacalc** | Finished; private repo | Expo Router, mathjs + decimal.js, nerdamer | Counting marks → a phone |
 | **Aquarium Object Detection** | Finished university project, with Ammar Alzoubi | PyTorch: a from-scratch grid detector vs. Faster R-CNN | Fish and a shark → boxes snap round them |
-| **Gym Management System** | Finished coursework; private repo | Flutter, SQLite, offline-first | Figures lifting stones → a tablet |
+| **Gym Management System** | Finished coursework; private repo | Flutter, SQLite, offline-first | Figures lifting stones → a phone (its layout is a phone's) |
 | **Taza** | Startup concept; won a Startup Weekend in Syria. Landing page and vendor bot built for it | React + Vite, Telegram bot on Render | Bread and fruit → a phone |
 | **Medical App** | Team project, from the CV; no repo | FastAPI, PostgreSQL | Stays under Experience |
 
@@ -160,7 +160,7 @@ version of the cave (the paintings as images, the same content).
 
 | # | State | Left before it counts as done |
 |---|---|---|
-| M0–M2 | Done | Gym Management System has no screens (Flutter with `sqflite` doesn't run in a browser); Rakeb shows its route network, not the app |
+| M0–M2 | Done. Gym Management System got its screens on 10 November, from a web build with a web SQLite | Rakeb shows its route network, not the app itself |
 | M3 | Built, CI-checked on 2,542 real hands | Its exit test needs real hands: one `?trial` run by you |
 | M4 | Built, measured under phone throttling | Its exit test needs a real phone: one `?perf` reading by you |
 | M5 | Done (10 November): Lighthouse 100 for accessibility, best practices and SEO; axe clean on every state, in CI | — |

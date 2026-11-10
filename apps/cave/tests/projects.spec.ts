@@ -23,10 +23,11 @@ test('a project steps out of its painting with real screens', async ({ page }) =
   await closePanel(page);
   await page.waitForFunction(() => window.__cave.stepOut === null, null, { timeout: 120_000 });
 
-  // A project with no screens yet opens its words alone, from the shortcuts.
+  // From the shortcuts too: the Gym steps out as a phone with its own screens.
   await page.click('#t-shortcuts');
   await page.click('#chips button[data-project="gym"]');
   await waitForPanel(page, 'project');
   await expect(page.locator('#panel-title')).toHaveText('Gym Management System');
-  expect(await page.evaluate(() => window.__cave.stepOut)).toBe(null);
+  await page.waitForFunction(() => window.__cave.screen?.project === 'gym' && window.__cave.screen.shown, null, { timeout: 120_000 });
+  await expect(page.locator('#screen-caption')).toHaveText(/^1 of 4/);
 });
