@@ -3,3 +3,4 @@ dist
 apps/classic/build
 apps/cave/test-results
 apps/cave/playwright-report
+apps/cave/frames

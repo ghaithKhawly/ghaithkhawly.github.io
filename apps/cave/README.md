@@ -20,6 +20,7 @@ npm test           # Playwright browser checks against the built site
 npm run test:gestures  # the gesture classifier on 2,542 real hands, in a second
 npm run bake       # re-paint the baked paintings (see below)
 npm run share-images  # re-render the link-preview still and the favicon PNGs
+npm run frames     # photograph every state at five screen sizes, into frames/
 ```
 
 `?flat` shows the CV as a plain page, which is also what browsers without WebGL 2

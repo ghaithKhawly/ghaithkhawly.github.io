@@ -68,7 +68,7 @@ if ('WebGL2RenderingContext' in window && !/[?&]flat(&|=|$)/.test(location.searc
       <li><canvas class="thumb" data-thumb="wolf" width="88" height="88"></canvas><div><b>Wolf</b><span>Hand sideways, thumb up, three fingers together. Opens Experience.</span></div></li>
       <li><canvas class="thumb" data-thumb="rabbit" width="88" height="88"></canvas><div><b>Hare</b><span>Two fingers up, the rest folded. Opens About.</span></div></li>
       <li><canvas class="thumb" data-thumb="palm" width="88" height="88"></canvas><div><b>Open palm, held still</b><span>Leaves your handprint. Opens Contact.</span></div></li>
-      <li><canvas class="thumb" data-thumb="point" width="88" height="88"></canvas><div><b>Touch a painting</b><span>Rest your shadow's fingertip on the phone or the laptop.</span></div></li>
+      <li><canvas class="thumb" data-thumb="point" width="88" height="88"></canvas><div><b>Point at a small painting</b><span>Rest your shadow's fingertip on it. Opens that project.</span></div></li>
     </ul>
     <div class="actions">
       <button class="btn primary" id="start-cam" type="button">Use the camera</button>
@@ -134,18 +134,23 @@ if ('WebGL2RenderingContext' in window && !/[?&]flat(&|=|$)/.test(location.searc
   <div class="shape" data-shape="palm"><canvas class="thumb" data-thumb="palm" width="88" height="88"></canvas><div><b>Open palm, for Contact</b><span>Fingers up and spread. Hold still for a second.</span></div></div>
 </div>
 
-<div id="chips" class="soot" hidden>
-  <p class="chip-row">Sections</p>
-  <button class="chip" type="button" data-section="experience">Experience</button>
-  <button class="chip" type="button" data-section="about">About</button>
-  <button class="chip" type="button" data-section="contact">Contact</button>
-  <button class="chip" type="button" data-section="education">Education</button>
-  <button class="chip" type="button" data-section="certs">Certifications</button>
-  <button class="chip" type="button" data-section="languages">Languages</button>
-  <p class="chip-row">Projects</p>
-  <!-- filled from content/projects.ts -->
+<div id="chips" hidden>
+  <div class="chip-group" role="group" aria-labelledby="chips-sections-label">
+    <p class="chip-row" id="chips-sections-label">Sections</p>
+    <button class="chip" type="button" data-section="experience">Experience</button>
+    <button class="chip" type="button" data-section="about">About</button>
+    <button class="chip" type="button" data-section="contact">Contact</button>
+    <button class="chip" type="button" data-section="education">Education</button>
+    <button class="chip" type="button" data-section="certs">Certifications</button>
+    <button class="chip" type="button" data-section="languages">Languages</button>
+  </div>
+  <div class="chip-group" id="chips-projects" role="group" aria-labelledby="chips-projects-label">
+    <p class="chip-row" id="chips-projects-label">Projects</p>
+    <!-- filled from content/projects.ts -->
+  </div>
 </div>
 
+<div id="panel-prime" hidden aria-hidden="true"></div>
 <div id="panel-wash" hidden aria-hidden="true"></div>
 <aside id="panel" hidden aria-labelledby="panel-title">
   <header>
@@ -154,6 +159,7 @@ if ('WebGL2RenderingContext' in window && !/[?&]flat(&|=|$)/.test(location.searc
   </header>
   <div id="panel-body"></div>
 </aside>
+<button id="panel-more" type="button" hidden><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M3 3 12 11 21 3"/></svg>More below</button>
 
 <pre id="perf" hidden aria-hidden="true"></pre>
 

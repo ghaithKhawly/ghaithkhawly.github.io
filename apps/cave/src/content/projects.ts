@@ -127,7 +127,7 @@ export const PROJECTS: ProjectInfo[] = [
     id: 'taza',
     title: 'Taza',
     status: 'Won a Startup Weekend in Syria',
-    what: 'A startup idea: restaurants, bakeries and cafés sell the day’s surplus as surprise bags at half price, and customers reserve them in Telegram and pay on pickup. It won a Startup Weekend in Syria.',
+    what: 'A startup idea: restaurants, bakeries and cafés sell the day’s surplus as surprise bags at half price, and customers reserve them in Telegram and pay on pickup.',
     points: [
       'Built for it: the landing page for merchants, and a Telegram bot with a mini app for reserving bags.',
       'All in Arabic, cash on pickup, no delivery.',
@@ -148,7 +148,7 @@ export const PROJECTS: ProjectInfo[] = [
     id: 'gym',
     title: 'Gym Management System',
     status: 'Finished coursework',
-    what: 'Runs a gym’s front desk: members, memberships with partial payments, payments, check-in and check-out, coaches, and where the money came from.',
+    what: 'Runs a gym’s front desk: members, memberships paid in full or in part, check-in and check-out, coaches, and where the money came from.',
     points: [
       'Offline first: SQLite on the device and no server, so a bad connection never stops the desk.',
       'Three roles, admin, receptionist and coach, enforced in the database schema.',

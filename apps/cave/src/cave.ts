@@ -48,7 +48,7 @@ import { updateStatus } from './ui/status';
 import { setup, updateSetup } from './ui/setup';
 import { trial, updateTrial } from './ui/trial';
 import { bakeLoad, bakeTargets, clamp, easeInOut, paintQueue, runPaintQueue, vnoise } from './util';
-import { wallPoint } from './world/geometry';
+import { wallPoint, wallZ } from './world/geometry';
 import { camera, canvas, chamber, column, embers, fillLight, fireLight, flameUniforms, flames, halo, lampLight, logMat, mouth, props, renderer, scene, stalactites, washLight } from './world/scene';
 
 // Main loop
@@ -149,11 +149,20 @@ export function frame(now) {
   if (mouth) { mouth.visible = fe < 0.5; mouth.position.x = pan.x; }
   stalactites.position.x = pan.x;
 
-  // The oil lamp follows the painting hand while you're up at the wall.
-  const lampAt = finish.g && finish.hand ? [finish.g.x + finish.hand[0], finish.g.y + finish.hand[1]] : [pointer.ax, pointer.ay];
-  wallPoint(lampAt[0] / ART_W, lampAt[1] / ART_H, tmpV);
-  lampLight.position.set(tmpV.x + 0.35, tmpV.y + 0.3, tmpV.z + 0.55);
-  lampLight.intensity = fe * 3.2 * (0.9 + 0.2 * vnoise(S.clock * 11, 3.3, 17));
+  // The oil lamp follows the painting hand while you're up at the wall. Reading a section,
+  // it's held back and up, so the painting and the rock under the words are both lit.
+  const handFl = 0.9 + 0.2 * vnoise(S.clock * 11, 3.3, 17) * (reducedMotion() ? 0.35 : 1);
+  if (focus.section && !finish.g) {
+    lampLight.position.set(ft.x, ft.y + 0.25, wallZ(ft.x, ft.y) + 1.15);
+    lampLight.distance = 6;
+    lampLight.intensity = fe * 8 * handFl;
+  } else {
+    const lampAt = finish.g && finish.hand ? [finish.g.x + finish.hand[0], finish.g.y + finish.hand[1]] : [pointer.ax, pointer.ay];
+    wallPoint(lampAt[0] / ART_W, lampAt[1] / ART_H, tmpV);
+    lampLight.position.set(tmpV.x + 0.35, tmpV.y + 0.3, tmpV.z + 0.55);
+    lampLight.distance = 3.2;
+    lampLight.intensity = fe * 3.2 * handFl;
+  }
 
   // Shadows + glow
   const wantShadow = handPts.length ? (S.mode === 'mouse' ? 0.7 : 0.86) * (0.92 + S.flickerNow * 0.4) * (0.5 + 0.5 * S.fireLevel) : 0;
@@ -225,6 +234,17 @@ window.__cave = {
   get screen() { const d = screens.project && DEVICES[screens.project.device]; return screens.project ? { project: screens.project.id, index: screens.index, shown: !!d?.userData.screen.material.map } : null; },
   paintingCenter: (id) => { const p = PAINTINGS.find((q) => q.id === id); return artToClient(p.x + p.w / 2, p.y + p.h / 2); },
   get stepOutState() { return stepOut.device ? { t: stepOut.t, dir: stepOut.dir, pos: stepOut.device.position.toArray().map((v) => +v.toFixed(2)) } : null; },
+  // Where the stepped-out device is on screen, in CSS pixels.
+  get deviceRect() {
+    if (!stepOut.device) return null;
+    const box = new THREE.Box3().setFromObject(stepOut.device), ends = [box.min, box.max];
+    const rect = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+    for (const x of ends) for (const y of ends) for (const z of ends) {
+      const v = tmpV.set(x.x, y.y, z.z).project(camera), px = ((v.x + 1) / 2) * window.innerWidth, py = ((1 - v.y) / 2) * window.innerHeight;
+      rect.left = Math.min(rect.left, px); rect.right = Math.max(rect.right, px); rect.top = Math.min(rect.top, py); rect.bottom = Math.max(rect.bottom, py);
+    }
+    return rect;
+  },
   get tilt() { return { on: tiltOn, ref: tiltRef, target: { ...eyeTarget }, angle: screen.orientation?.angle }; },
   get quality() { return { ...quality, w: renderer.domElement.width, h: renderer.domElement.height }; },
   get stats() { return { ...stats, eye: { ...eye }, faceRef: S.faceRef, faceSamples: S.faceCal.length }; },

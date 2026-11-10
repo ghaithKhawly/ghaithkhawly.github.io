@@ -2,7 +2,7 @@ import { late } from '../late';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { S } from '../state';
-import { ART_H, ART_W, EYE_D, WALL_H, WALL_W, reducedMotion } from '../config';
+import { ART_H, ART_W, EYE_D, SCREEN_H, WALL_H, WALL_W, reducedMotion } from '../config';
 import { clamp, easeInOut, mulberry, smooth } from '../util';
 import { wallPoint } from '../world/geometry';
 import { scene } from '../world/scene';
@@ -25,9 +25,10 @@ export function makePhone() {
   g.userData.screen = screen;
   return g;
 }
+const LAPTOP_W = 0.9;
 export function makeLaptop() {
   const g = new THREE.Group();
-  g.add(new THREE.Mesh(new RoundedBoxGeometry(0.9, 0.03, 0.6, 3, 0.012), deviceMat));
+  g.add(new THREE.Mesh(new RoundedBoxGeometry(LAPTOP_W, 0.03, 0.6, 3, 0.012), deviceMat));
   const lid = new THREE.Group();
   lid.position.set(0, 0.015, -0.3);
   lid.rotation.x = -0.22;
@@ -111,12 +112,18 @@ export function startStepOut(painting) {
   wallPoint(u, v, stepOut.from);
   stepOut.from.z += 0.05;
   // It comes off the wall toward you, along the line from your eye to the painting, so it
-  // stays where the painting was on screen and ends up about a third bigger than it.
+  // stays where the painting was on screen, and stops where it fills a set share of the
+  // view: big enough to read its screen, whatever size the painting was.
   const worldW = (painting.w / ART_W) * WALL_W, worldH = (painting.h / ART_H) * WALL_H;
   const t = late.focus.target, eye = new THREE.Vector3(t.x, t.y, t.z + EYE_D * t.s);
-  const k = Math.min(0.85, isPhone ? PHONE.h / (1.35 * worldH) : 0.9 / (1.15 * worldW));
+  const narrow = window.innerWidth <= 720;
+  // At a distance d from the eye, the view is SCREEN_H * d / EYE_D tall and screenW * d / EYE_D wide.
+  const d = isPhone
+    ? (PHONE.h * EYE_D) / (SCREEN_H * (narrow ? 0.31 : 0.6))
+    : (LAPTOP_W * EYE_D) / (late.screenW * (narrow ? 0.62 : 0.33));
+  const k = clamp(d / eye.distanceTo(stepOut.from), 0.2, 0.85);
   stepOut.to.copy(eye).lerp(stepOut.from, k);
-  if (!isPhone) stepOut.to.y -= 0.12;
+  if (!isPhone) stepOut.to.y -= 0.12 * k;
   const side = late.focus.target.x > stepOut.from.x ? 1 : -1;   // turn a little toward the words
   stepOut.yaw = window.innerWidth <= 720 ? 0 : side * 0.22;
   stepOut.id = painting.id; stepOut.painting = painting; stepOut.device = dvc; stepOut.t = 0; stepOut.dir = 1;

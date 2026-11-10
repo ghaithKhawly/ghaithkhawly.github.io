@@ -4,6 +4,7 @@
 //
 // Also preloads the cave's script: main.ts imports it only where the cave can be drawn,
 // so without a hint the browser would find it one round trip late.
+import { readFile } from 'node:fs/promises';
 import type { Plugin } from 'vite';
 import { headHtml, pageHtml } from '../src/content/page.ts';
 
@@ -13,6 +14,17 @@ export function cvPage(): Plugin {
     transformIndexHtml: {
       order: 'pre',
       handler: (html) => html.replace('<!-- head -->', headHtml()).replace('<!-- cv page -->', pageHtml()),
+    },
+  };
+}
+
+// The 404 page stands alone (GitHub Pages serves it at whatever address was asked for,
+// so it can't use the hashed, relative assets). It gets the heading font at a fixed address.
+export function standaloneFont(): Plugin {
+  return {
+    name: 'cave-404-font',
+    async generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'fonts/alegreya.woff2', source: await readFile(new URL('../src/assets/fonts/alegreya.woff2', import.meta.url)) });
     },
   };
 }

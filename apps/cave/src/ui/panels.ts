@@ -12,7 +12,7 @@ provide({ get openPanel() { return openPanel; }, get screenChanged() { return sc
 
 // Sections, painted on the rock beside their paintings. The words are real text, laid
 // over the canvas and multiplied into it; a limewash goes down first so they read.
-export const panel = $('panel'), panelBody = $('panel-body'), wash = $('panel-wash');
+export const panel = $('panel'), panelBody = $('panel-body'), wash = $('panel-wash'), prime = $('panel-prime'), more = $('panel-more');
 export let panelKind = null, panelArg = null;
 // Everything opened so far (sections, and `project:<id>`), for the tally of finds.
 export const opened = new Set<string>();
@@ -112,16 +112,29 @@ function place() {
   const side = late.frameSection(panelKind, panelArg);
   panel.classList.remove('side-left', 'side-right', 'side-above', 'side-below');
   panel.classList.add(`side-${side}`);
-  panel.hidden = false; wash.hidden = false;
+  panel.hidden = false; wash.hidden = false; prime.hidden = false;
   panel.scrollTop = 0;
   requestAnimationFrame(() => { placeWash(); fadeIfMore(); });
 }
-const fadeIfMore = () => panel.classList.toggle('more', panel.scrollTop + panel.clientHeight < panel.scrollHeight - 8);
+// When a section is longer than its place on the rock, its end fades out and "More below"
+// sits under it; pressing that reads on.
+function fadeIfMore() {
+  const cut = !panel.hidden && panel.scrollTop + panel.clientHeight < panel.scrollHeight - 8;
+  panel.classList.toggle('more', cut);
+  more.hidden = !cut;
+  if (cut) { const r = panel.getBoundingClientRect(); Object.assign(more.style, { left: `${r.left + r.width / 2}px`, top: `${r.bottom - 6}px` }); }
+}
 panel.addEventListener('scroll', fadeIfMore, { passive: true });
+more.addEventListener('click', () => {
+  panel.scrollBy({ top: panel.clientHeight * 0.75, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  $('panel-close').focus({ preventScroll: true });   // the button is about to go; keep the keyboard in the section
+});
 export function placeWash() {
   if (panel.hidden) return;
-  const r = panel.getBoundingClientRect(), mx = 56, my = 44;
-  Object.assign(wash.style, { left: `${r.left - mx}px`, top: `${r.top - my}px`, width: `${r.width + mx * 2}px`, height: `${r.height + my * 2}px` });
+  // The coats reach a little past the words; less so on a phone, where the painting (or
+  // the device that stepped out of it) sits right above or below.
+  const r = panel.getBoundingClientRect(), narrow = window.innerWidth <= 720, mx = narrow ? 30 : 56, my = narrow ? 22 : 44;
+  for (const coat of [prime, wash]) Object.assign(coat.style, { left: `${r.left - mx}px`, top: `${r.top - my}px`, width: `${r.width + mx * 2}px`, height: `${r.height + my * 2}px` });
 }
 window.addEventListener('resize', () => { if (panelKind) place(); });
 // The caption under a project's device: which screen, and what it shows.
@@ -137,7 +150,7 @@ window.addEventListener('keydown', (e) => {
 export function selectText(node) { const r = document.createRange(); r.selectNodeContents(node); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
 export function closePanel() {
   const hadFocus = panel.contains(document.activeElement) || document.activeElement === document.body;
-  panel.hidden = true; wash.hidden = true;
+  panel.hidden = true; wash.hidden = true; prime.hidden = true; more.hidden = true;
   document.body.classList.remove('panel-open');
   if (panelKind === 'project') returnStepOut();
   if (late.focus.section) late.endFocus();

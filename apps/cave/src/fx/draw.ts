@@ -96,7 +96,7 @@ export function drawFx(handPts): boolean {
   for (const g of GUIDES) if (g.glowPatch) g.glowPatch.mesh.visible = false;
   if (S.mode === 'mouse') {
     for (const g of GUIDES) {
-      if (g.done) continue;
+      if (g.done || focus.section) continue;   // while a section is read, the shapes still to paint step aside
       const focused = focus.active && focus.guide === g;
       if (focused && focus.t > 0.3) { drawGuideGlow(g, 0.75 + 0.25 * Math.sin(S.clock * 2.2)); continue; }
       const breathe = (focused ? 0.75 : 0.32) + 0.2 * Math.sin(S.clock * 2.2 + g.x) + g.hover * 0.4;

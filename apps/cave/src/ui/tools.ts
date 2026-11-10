@@ -31,7 +31,7 @@ for (const p of PROJECTS) {
   const b = document.createElement('button');
   b.className = 'chip'; b.type = 'button'; b.dataset.project = p.id; b.textContent = p.title;
   b.addEventListener('click', () => startStepOut(PAINTINGS.find((q) => q.project === p.id)));
-  $('chips').append(b);
+  $('chips-projects').append(b);
 }
 for (const chip of document.querySelectorAll('.chip[data-section]')) {
   chip.addEventListener('click', () => {

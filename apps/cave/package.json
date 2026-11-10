@@ -8,6 +8,7 @@
     "budget": "node scripts/budget.mjs",
     "bake": "node scripts/bake.mjs",
     "share-images": "node scripts/share-images.mjs",
+    "frames": "node scripts/frames.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tests",
     "test": "playwright test",

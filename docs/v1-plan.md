@@ -164,6 +164,7 @@ version of the cave (the paintings as images, the same content).
 | M4 | Built, measured under phone throttling | Its exit test needs a real phone: one `?perf` reading by you |
 | M5 | Done (10 November): Lighthouse 100 for accessibility, best practices and SEO; axe clean on every state, in CI | — |
 | M6 | Ready | Merging into `main` publishes it: [docs/launch.md](launch.md) |
+| Before showing it | Every state photographed at five screen sizes and fixed where it fell short: [docs/review.md](review.md) | — |
 
 | | Prototype | Now |
 |---|---|---|

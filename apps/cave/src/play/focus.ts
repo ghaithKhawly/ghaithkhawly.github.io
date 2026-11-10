@@ -25,12 +25,12 @@ export function startFocus(g) {
   const s = 0.42, dist = Math.max(1.9, (1.35 * gw * EYE_D) / screenW, (1.45 * gh * EYE_D) / SCREEN_H);
   focus.target = { x: P.x, y: P.y + 0.06, z: P.z + dist - EYE_D * s, s };
   focus.active = true; focus.guide = g;
-  $('back').hidden = false;
+  $('back').hidden = false; document.body.classList.add('at-wall');
   late.setGestureUI(`Trace ${g.title} with ${g.tool === 'charcoal' ? 'charcoal' : 'red ochre'}`, guideProgress(g) / 0.68);
 }
 export function endFocus() {
   focus.active = false; focus.section = null;
-  $('back').hidden = true;
+  $('back').hidden = true; document.body.classList.remove('at-wall');
   if (S.mode === 'mouse') late.setGestureUI(late.paintingHint(), 0);
 }
 $('back').addEventListener('click', () => { if (panelKind) closePanel(); else if (!finish.g) endFocus(); });
@@ -42,7 +42,8 @@ $('back').addEventListener('click', () => { if (panelKind) closePanel(); else if
 export function sectionAnchor(kind: string, arg?: string): { x: number; y: number; w: number; h: number } | null {
   if (kind === 'project') return PAINTINGS.find((p) => p.project === arg) ?? null;
   const guide = GUIDES.find((g) => g.section === kind);
-  if (guide) return guide;
+  // The hand is a stencil: the ochre blown round it reaches well past its outline.
+  if (guide) return guide.stencil ? { x: guide.x - 34, y: guide.y - 34, w: guide.w + 68, h: guide.h + 68 } : guide;
   if (kind === 'education') return PAINTINGS.find((p) => p.secret === 'education');
   if (kind === 'certs' || kind === 'languages') return { x: CRACK.ax - CRACK.halfW, y: CRACK.ay - CRACK.halfH, w: CRACK.halfW * 2, h: CRACK.halfH * 2 };
   return null;
@@ -67,7 +68,7 @@ export function frameSection(kind: string, arg?: string): 'left' | 'right' | 'ab
   const Wv = (screenW * dist) / EYE_D, Hv = (SCREEN_H * dist) / EYE_D;
   focus.target = { x: P.x + (0.5 - fx) * Wv, y: P.y - (0.5 - fy) * Hv, z: P.z + dist - EYE_D * s, s };
   focus.active = true; focus.guide = null; focus.section = kind;
-  $('back').hidden = false;
+  $('back').hidden = false; document.body.classList.add('at-wall');
   return side;
 }
 

@@ -1,6 +1,19 @@
 # ghaithkhawly.github.io
 
-My portfolio. Two sites live in this repo:
+My portfolio: a firelit cave. With a webcam, your hands cast shadows on its wall and the
+paintings answer; without one, you paint on it.
+
+![The cave: a wall of paintings lit by a fire, with shapes to paint](docs/shots/cave.jpg)
+
+| A section, painted on the rock beside its painting | A project steps out of the wall as the device it runs on |
+|---|---|
+| ![Experience painted on a limewash beside the wolf](docs/shots/section.jpg) | ![The Gym Management System as a phone, its words beside it](docs/shots/project.jpg) |
+
+| On a phone | Where the cave can't be drawn: the same CV as a page |
+|---|---|
+| ![The cave, a section and a project on a phone](docs/shots/phone.jpg) | ![The plain page: words on limewash, paintings beside them](docs/shots/plain-page.jpg) |
+
+Two sites live in this repo:
 
 | | What | Path when deployed |
 |---|---|---|

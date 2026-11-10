@@ -48,7 +48,12 @@ html:not(.cave) body {
 /* A section: its painting on the rock, its words on a limewash beside it. */
 .slab { max-width: 1080px; margin: 0 auto 88px; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 24px 48px; align-items: center; }
 .slab:nth-of-type(even) { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); }
-.slab:nth-of-type(even) .art { order: 2; }
+/* Placed by name, not by order: the painting and the words share the first row, on
+   alternating sides, and a project's screens run under both. */
+.slab .art { grid-area: 1 / 1; }
+.slab .words { grid-area: 1 / 2; }
+.slab:nth-of-type(even) .art { grid-area: 1 / 2; }
+.slab:nth-of-type(even) .words { grid-area: 1 / 1; }
 .slab .art { width: 100%; max-width: 360px; justify-self: center; filter: brightness(1.18) saturate(1.15) drop-shadow(0 0 1px rgba(60, 20, 8, 0.3)); }
 .words { position: relative; isolation: isolate; padding: 30px 34px 34px; display: grid; gap: 12px; max-width: 64ch; }
 /* Limewash: the stone evened out under the words, its edge soft as a brush stroke. */
@@ -72,24 +77,29 @@ html:not(.cave) body {
 #page .points, #page .list { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
 
 /* Projects: a heading of their own, then each project like any other section. */
-.projects-title { max-width: 1080px; margin: 0 auto 28px; font: 800 clamp(48px, 6vw, 72px)/0.95 var(--text); color: var(--kaolin); letter-spacing: -0.015em; text-shadow: 0 2px 18px rgba(7, 5, 4, 0.6); filter: url(#paint-big); }
+#page .projects-title { max-width: 1080px; margin: 0 auto 28px; font: 800 clamp(48px, 6vw, 72px)/0.95 var(--text); color: var(--kaolin); letter-spacing: -0.015em; text-shadow: 0 2px 18px rgba(7, 5, 4, 0.6); filter: url(#paint-big); }
 .project .words h3 { font-size: clamp(30px, 3.4vw, 40px); color: var(--ochre); line-height: 1; }
 /* Its screens in a row under it, scrolled sideways inside the row, never the page. */
-.shots:focus-visible { outline: 3px solid var(--charcoal); outline-offset: 2px; }
-.shots { grid-column: 1 / -1; display: flex; gap: 18px; overflow-x: auto; padding: 4px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: rgba(42, 28, 20, 0.5) transparent; }
+#page .shots:focus-visible { outline: 3px solid var(--kaolin); outline-offset: 2px; }
+.shots { grid-area: 2 / 1 / 3 / -1; display: flex; gap: 18px; overflow-x: auto; padding: 4px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: rgba(42, 28, 20, 0.5) transparent; }
 .shots figure { margin: 0; flex: none; width: 200px; scroll-snap-align: start; display: grid; gap: 8px; }
 .shots.wide figure { width: min(420px, 78vw); }
 .shots img { width: 100%; height: auto; border-radius: 14px; box-shadow: 0 10px 28px rgba(20, 10, 4, 0.45); background: #1a120c; }
 .shots.wide img { border-radius: 6px; }
-.shots figcaption { font: italic 500 15px/1.3 var(--text); color: #1a0d07; }
+/* Captions sit on bare rock, so they're in kaolin like everything else painted on dark stone. */
+.shots figcaption { font: italic 500 15px/1.3 var(--text); color: var(--kaolin); text-shadow: 0 1px 6px rgba(7, 5, 4, 0.75); }
 
-.page-foot { max-width: 1080px; margin: 0 auto; font: 500 16px/1.4 var(--label); }
+.page-foot { max-width: 1080px; margin: 0 auto; font: 500 16px/1.4 var(--label); color: var(--kaolin); text-shadow: 0 1px 6px rgba(7, 5, 4, 0.75); }
+#page .page-foot a { color: var(--kaolin); text-decoration-color: var(--kaolin-dim); }
+#page .page-foot :focus-visible { outline-color: var(--kaolin); }
 
 @media (max-width: 760px) {
   #page { font-size: 17px; }
   .page-head { padding-bottom: 48px; }
   .slab, .slab:nth-of-type(even) { grid-template-columns: minmax(0, 1fr); gap: 4px; margin-bottom: 56px; }
-  .slab:nth-of-type(even) .art { order: 0; }
+  .slab .art, .slab:nth-of-type(even) .art { grid-area: 1 / 1; }
+  .slab .words, .slab:nth-of-type(even) .words { grid-area: 2 / 1; }
+  .shots { grid-area: 3 / 1; }
   .slab .art { max-width: 220px; }
   .words { padding: 24px 20px 28px; }
   .words::before { inset: 0 -6px; border-radius: 36px 48px 40px 30px / 30px 34px 40px 36px; filter: blur(7px); }
