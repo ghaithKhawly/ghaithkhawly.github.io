@@ -90,13 +90,9 @@ Node 18+. Create React App (`react-scripts` 5) with TypeScript.
 
 ### Deployment
 
-```bash
-npm run deploy   # predeploy runs build, then gh-pages -d build
-```
-
-GitHub Pages serves this site from the **`gh-pages`** branch root; `main` holds
-the source. At launch, the repo's `Site` workflow takes over deploying (see the
-[root README](../../README.md)).
+There's no deploy script here any more. The repo's `Site` workflow builds this site
+into `dist/classic/` next to the cave and deploys both from `main` (see the
+[root README](../../README.md) and [docs/launch.md](../../docs/launch.md)).
 
 ---
 
@@ -108,7 +104,7 @@ the source. At launch, the repo's `Site` workflow takes over deploying (see the
 | **framer-motion** | section and card animations |
 | **lucide-react** | icons |
 | **Plain CSS** | one `main.css`, custom properties for theming |
-| **gh-pages** | deployment |
+| **GitHub Actions** | deployment, with the cave (the repo's `Site` workflow) |
 
 No UI framework and no CSS-in-JS — the whole site is a single page of six
 sections in one 767-line stylesheet, and a design system would be more code

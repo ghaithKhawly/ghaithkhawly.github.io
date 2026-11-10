@@ -30,10 +30,8 @@ The checks drive the real WebGL scene in a software renderer, so they are slow
 
 ## Deploying
 
-Today the live site is the classic one, deployed from the `gh-pages` branch
-(`npm run deploy` inside `apps/classic`).
-
 The [`Site` workflow](.github/workflows/site.yml) builds and checks both sites on
-every push. Deploying from it is switched off until The Cave launches; then,
-Settings → Pages → Source changes to "GitHub Actions" and the workflow deploys
-`dist/`.
+every push, and on `main` deploys `dist/` to GitHub Pages, as long as Pages is
+set to deploy from GitHub Actions. Until launch the live site is still the classic
+one, served from the `gh-pages` branch. Launching is two steps:
+[docs/launch.md](docs/launch.md).

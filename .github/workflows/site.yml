@@ -1,18 +1,13 @@
 name: Site
 
-# Builds the cave and the classic site into one dist/, then runs the cave's browser checks.
-# Deploying is manual until launch: the live site still deploys from the gh-pages branch.
-# At launch, switch Settings → Pages → Source to "GitHub Actions", then run this workflow
-# with "deploy" ticked (or drop the condition on the deploy job).
+# Builds the cave and the classic site into one dist/, runs the checks, and on `main`
+# deploys dist/ to GitHub Pages, once Pages is set to deploy from Actions (Settings →
+# Pages → Source → GitHub Actions). Until then the live site is whatever the gh-pages
+# branch holds, and the deploy is skipped with a notice. See docs/launch.md.
 on:
   push:
   pull_request:
   workflow_dispatch:
-    inputs:
-      deploy:
-        description: Deploy to GitHub Pages (only once Pages is set to GitHub Actions)
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -62,9 +57,26 @@ jobs:
         with:
           path: dist
 
+  # Deploying from Actions only works once Pages is set to it; before that, say so and stop.
+  pages-source:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: read
+    outputs:
+      actions: ${{ steps.source.outputs.actions }}
+    steps:
+      - id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          type=$(gh api "repos/${{ github.repository }}/pages" --jq .build_type 2>/dev/null || echo none)
+          if [ "$type" = workflow ]; then echo "actions=true" >> "$GITHUB_OUTPUT"
+          else echo "::notice::Pages deploys from '$type', not GitHub Actions, so this run doesn't deploy. To launch: Settings → Pages → Source → GitHub Actions (docs/launch.md)."; fi
+
   deploy:
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy
-    needs: build
+    needs: [build, pages-source]
+    if: needs.pages-source.outputs.actions == 'true'
     runs-on: ubuntu-latest
     permissions:
       pages: write

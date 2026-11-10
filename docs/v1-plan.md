@@ -122,9 +122,9 @@ prototype/        frozen reference
   under `dist/classic/`. The `Site` workflow builds both and runs the checks
   on every push.
 - **Deploy switch:** the live site deploys from the `gh-pages` branch today.
-  Until launch (M6) nothing changes there. At launch, Settings → Pages →
-  Source switches to "GitHub Actions" (one click, done by you), and the
-  workflow's deploy job is turned on.
+  The workflow deploys from `main` as soon as Settings → Pages → Source is
+  "GitHub Actions"; until then it skips the deploy and says why. Launch is
+  that setting plus the merge: [docs/launch.md](launch.md).
 - **Tracking:** MediaPipe is only downloaded after the visitor turns the
   camera on, from the site itself (the runtime from the pinned npm package, the
   models pinned by hash, all gzipped: 9.4 MB).
@@ -153,7 +153,7 @@ version of the cave (the paintings as images, the same content).
 | M2 | Content in the cave | All projects above as paintings that step out with real screenshots, their words painted on the rock like the other sections | Every section reachable by gesture, by painting and by shortcut |
 | M3 | Camera | A short setup walkthrough; gesture confidence and hysteresis; tested with real hands in different light; lean thresholds tuned. Measured on 2,542 real hands: [docs/m3-gestures.md](m3-gestures.md) | 9 out of 10 real tries succeed (`?trial` scores it) |
 | M4 | Phones and performance | Device tiers, budgets above, tilt on iOS and Android, self-hosted MediaPipe files. Measured under phone throttling: [docs/m4-performance.md](m4-performance.md) | Budgets met on a real mid-range phone (`?perf` shows it) |
-| M5 | Fallbacks and reach | 2D version, reduced motion, keyboard, a screen-reader copy of the CV in the page, share and search metadata | Lighthouse accessibility ≥ 90 on every state, not just the intro; an axe check in CI; the whole cave works from a keyboard |
+| M5 | Fallbacks and reach | 2D version, reduced motion, keyboard, a screen-reader copy of the CV in the page, share and search metadata. Done: [docs/m5-reach.md](m5-reach.md) | Lighthouse accessibility ≥ 90 on every state, not just the intro; an axe check in CI; the whole cave works from a keyboard |
 | M6 | Launch | Switch Pages to Actions; `/classic` live; old deploy script retired; a 404 page | The cave is live |
 
 ## Where v1 stands (re-evaluated 10 November)
@@ -163,8 +163,8 @@ version of the cave (the paintings as images, the same content).
 | M0–M2 | Done | Gym Management System has no screens (Flutter with `sqflite` doesn't run in a browser); Rakeb shows its route network, not the app |
 | M3 | Built, CI-checked on 2,542 real hands | Its exit test needs real hands: one `?trial` run by you |
 | M4 | Built, measured under phone throttling | Its exit test needs a real phone: one `?perf` reading by you |
-| M5 | Next | Everything |
-| M6 | After M5 | Two steps only you can take (see M6 below) |
+| M5 | Done (10 November): Lighthouse 100 for accessibility, best practices and SEO; axe clean on every state, in CI | — |
+| M6 | Ready | Two steps only you can take: [docs/launch.md](launch.md) |
 
 | | Prototype | Now |
 |---|---|---|
